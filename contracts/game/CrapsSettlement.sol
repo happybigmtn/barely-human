@@ -304,7 +304,7 @@ contract CrapsSettlement is ICrapsSettlement, AccessControl, ReentrancyGuard {
     /**
      * @notice Settle Come and Don't Come bets
      */
-    function _settleComeBets(uint8 total) private returns (uint256) {
+    function _settleComeBets(uint8 /* total */) private pure returns (uint256) {
         // Implementation would iterate through active Come/Don't Come bets
         // and resolve based on total and established come points
         // This is simplified for the example
@@ -408,10 +408,10 @@ contract CrapsSettlement is ICrapsSettlement, AccessControl, ReentrancyGuard {
      * @notice Settle all bets of a specific type
      */
     function _settleBetType(
-        uint8 betType,
-        bool won,
-        uint256 multiplier
-    ) private returns (uint256) {
+        uint8 /* betType */,
+        bool /* won */,
+        uint256 /* multiplier */
+    ) private pure returns (uint256) {
         // This would iterate through all active players with this bet type
         // For now, simplified implementation
         return 0;
@@ -436,7 +436,7 @@ contract CrapsSettlement is ICrapsSettlement, AccessControl, ReentrancyGuard {
     /**
      * @notice Push (return) all bets of a type
      */
-    function _pushBetType(uint8 betType) private returns (uint256) {
+    function _pushBetType(uint8 /* betType */) private pure returns (uint256) {
         // Return original bet amount to players
         return 0;
     }

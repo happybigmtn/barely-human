@@ -278,7 +278,7 @@ contract BotManager is VRFConsumerBaseV2, AccessControl, ReentrancyGuard, Pausab
     /**
      * @notice Calculate decision factors for betting
      */
-    function _calculateDecisionFactors(uint256 botId, uint256 vaultBalance) 
+    function _calculateDecisionFactors(uint256 botId, uint256 /* vaultBalance */) 
         internal 
         view 
         returns (DecisionFactors memory) 
