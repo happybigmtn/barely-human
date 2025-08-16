@@ -1,0 +1,47 @@
+{
+  "network": "localhost",
+  "CrapsGame": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  },
+  "CrapsBets": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  },
+  "CrapsSettlement": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  },
+  "BotManager": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  },
+  "VaultFactory": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  },
+  "StakingPool": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  },
+  "Treasury": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  },
+  "GachaMintPass": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  },
+  "BotBettingEscrow": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  },
+  "BotSwapFeeHookV4": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  },
+  "BOTToken": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "startBlock": 0
+  }
+}

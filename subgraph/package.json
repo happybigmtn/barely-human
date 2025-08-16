@@ -1,0 +1,46 @@
+{
+  "name": "barely-human-subgraph",
+  "version": "1.0.0",
+  "description": "The Graph subgraph for Barely Human DeFi Casino",
+  "scripts": {
+    "prepare": "mustache config/config.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:base": "mustache config/base.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:sepolia": "mustache config/base-sepolia.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:local": "mustache config/local.json subgraph.template.yaml > subgraph.yaml",
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --studio barely-human-casino",
+    "deploy:base": "npm run prepare:base && npm run codegen && npm run build && npm run deploy",
+    "deploy:sepolia": "npm run prepare:sepolia && npm run codegen && npm run build && npm run deploy",
+    "deploy:local": "npm run prepare:local && npm run codegen && npm run build && graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 barely-human-local",
+    "create-local": "graph create --node http://localhost:8020/ barely-human-local",
+    "remove-local": "graph remove --node http://localhost:8020/ barely-human-local",
+    "test": "graph test",
+    "clean": "rm -rf build/ generated/"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "^0.79.0",
+    "@graphprotocol/graph-ts": "^0.35.1"
+  },
+  "devDependencies": {
+    "mustache": "^4.2.0",
+    "matchstick-as": "^0.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/barely-human/subgraph"
+  },
+  "keywords": [
+    "graphql",
+    "blockchain",
+    "ethereum",
+    "defi",
+    "casino",
+    "craps",
+    "bot",
+    "vault",
+    "staking"
+  ],
+  "author": "Barely Human Team",
+  "license": "MIT"
+}

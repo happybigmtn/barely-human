@@ -1,0 +1,726 @@
+# Barely Human DeFi Casino Subgraph Schema
+# This schema defines all queryable entities for the casino ecosystem
+
+# ==============================================================================
+# PROTOCOL ENTITIES
+# ==============================================================================
+
+type Protocol @entity {
+  id: ID! # "protocol"
+  totalGamesPlayed: BigInt!
+  totalAmountWagered: BigDecimal!
+  totalPayouts: BigDecimal!
+  totalPlayers: BigInt!
+  totalBots: BigInt!
+  totalVaultTVL: BigDecimal!
+  totalStaked: BigDecimal!
+  totalTreasuryFees: BigDecimal!
+  lastUpdated: BigInt!
+}
+
+# ==============================================================================
+# USER/PLAYER ENTITIES
+# ==============================================================================
+
+type User @entity {
+  id: ID! # wallet address
+  totalBetsPlaced: BigInt!
+  totalAmountWagered: BigDecimal!
+  totalWinnings: BigDecimal!
+  totalLosses: BigDecimal!
+  netPnL: BigDecimal!
+  gamesPlayed: BigInt!
+  winRate: BigDecimal!
+  favoriteGame: String
+  firstSeenBlock: BigInt!
+  lastActiveBlock: BigInt!
+  
+  # Relationships
+  bets: [Bet!]! @derivedFrom(field: "player")
+  vaultDeposits: [VaultDeposit!]! @derivedFrom(field: "user")
+  vaultWithdrawals: [VaultWithdrawal!]! @derivedFrom(field: "user")
+  stakingPositions: [StakingPosition!]! @derivedFrom(field: "user")
+  escrowBets: [EscrowBet!]! @derivedFrom(field: "user")
+  nftMintPasses: [NFTMintPass!]! @derivedFrom(field: "owner")
+}
+
+# ==============================================================================
+# GAME ENTITIES
+# ==============================================================================
+
+type GameSeries @entity {
+  id: ID! # seriesId
+  shooter: User!
+  startBlock: BigInt!
+  endBlock: BigInt
+  phase: GamePhase!
+  point: Int
+  rollCount: BigInt!
+  pointsMade: BigInt!
+  consecutiveWins: BigInt!
+  isActive: Boolean!
+  
+  # Tracking masks for complex bets
+  fireMask: Int!
+  doublesMask: Int!
+  smallTallMask: Int!
+  
+  # Relationships
+  rolls: [DiceRoll!]! @derivedFrom(field: "series")
+  bets: [Bet!]! @derivedFrom(field: "series")
+  
+  # Aggregations
+  totalBetsPlaced: BigInt!
+  totalAmountWagered: BigDecimal!
+  totalPayouts: BigDecimal!
+}
+
+enum GamePhase {
+  IDLE
+  COME_OUT
+  POINT
+}
+
+type DiceRoll @entity {
+  id: ID! # txHash-logIndex
+  series: GameSeries!
+  rollNumber: BigInt!
+  die1: Int!
+  die2: Int!
+  total: Int!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  
+  # VRF data
+  vrfRequestId: BigInt
+  randomness: BigInt
+  
+  # Settlement results
+  betsSettled: BigInt!
+  totalPayout: BigDecimal!
+  settlements: [BetSettlement!]! @derivedFrom(field: "roll")
+}
+
+# ==============================================================================
+# BETTING ENTITIES
+# ==============================================================================
+
+type Bet @entity {
+  id: ID! # player-seriesId-betType
+  player: User!
+  series: GameSeries!
+  betType: BetType!
+  betTypeNumber: Int!
+  amount: BigDecimal!
+  point: Int # For Come/Don't Come bets
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  
+  # Status
+  isActive: Boolean!
+  isResolved: Boolean!
+  
+  # Settlement
+  settlement: BetSettlement
+  
+  # Relationships
+  vault: Vault
+  bot: Bot
+}
+
+enum BetType {
+  # Line Bets (0-3)
+  PASS_LINE
+  DONT_PASS_LINE
+  COME
+  DONT_COME
+  
+  # Field Bet (4)
+  FIELD
+  
+  # YES/NO Bets (5-24)
+  PLACE_4
+  PLACE_5
+  PLACE_6
+  PLACE_8
+  PLACE_9
+  PLACE_10
+  DONT_PLACE_4
+  DONT_PLACE_5
+  DONT_PLACE_6
+  DONT_PLACE_8
+  DONT_PLACE_9
+  DONT_PLACE_10
+  BUY_4
+  BUY_5
+  BUY_6
+  BUY_8
+  BUY_9
+  BUY_10
+  LAY_4
+  LAY_5
+  LAY_6
+  LAY_8
+  LAY_9
+  LAY_10
+  
+  # Hardways (25-28)
+  HARD_4
+  HARD_6
+  HARD_8
+  HARD_10
+  
+  # Odds Bets (29-32)
+  PASS_ODDS
+  DONT_PASS_ODDS
+  COME_ODDS
+  DONT_COME_ODDS
+  
+  # Bonus Bets (33-42)
+  FIRE
+  SMALL
+  TALL
+  ALL
+  ANY_CRAPS
+  ANY_SEVEN
+  ACE_DEUCE
+  ACES
+  BOXCARS
+  HORN
+  
+  # NEXT Bets (43-53)
+  NEXT_2
+  NEXT_3
+  NEXT_4
+  NEXT_5
+  NEXT_6
+  NEXT_7
+  NEXT_8
+  NEXT_9
+  NEXT_10
+  NEXT_11
+  NEXT_12
+  
+  # Repeater Bets (54-63)
+  REP_4
+  REP_5
+  REP_6
+  REP_8
+  REP_9
+  REP_10
+  REP_2
+  REP_3
+  REP_11
+  REP_12
+}
+
+type BetSettlement @entity {
+  id: ID! # betId-rollId
+  bet: Bet!
+  roll: DiceRoll!
+  won: Boolean!
+  payout: BigDecimal!
+  pushAmount: BigDecimal! # For pushed bets
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  
+  # Settlement details
+  houseEdge: BigDecimal!
+  payoutMultiplier: BigDecimal!
+}
+
+# ==============================================================================
+# BOT ENTITIES
+# ==============================================================================
+
+type Bot @entity {
+  id: ID! # botId
+  name: String!
+  personality: String!
+  bettingStrategy: String!
+  vault: Vault!
+  
+  # Performance stats
+  gamesPlayed: BigInt!
+  totalBetsPlaced: BigInt!
+  totalAmountWagered: BigDecimal!
+  totalWinnings: BigDecimal!
+  totalLosses: BigDecimal!
+  netPnL: BigDecimal!
+  winRate: BigDecimal!
+  currentBankroll: BigDecimal!
+  
+  # Strategy stats
+  avgBetSize: BigDecimal!
+  maxBetSize: BigDecimal!
+  riskLevel: BigDecimal!
+  
+  # Activity
+  isActive: Boolean!
+  lastActiveBlock: BigInt!
+  
+  # Relationships
+  bets: [Bet!]! @derivedFrom(field: "bot")
+  decisions: [BotDecision!]! @derivedFrom(field: "bot")
+  sessions: [BotSession!]! @derivedFrom(field: "bot")
+  escrowBets: [EscrowBet!]! @derivedFrom(field: "targetBot")
+}
+
+type BotDecision @entity {
+  id: ID! # txHash-logIndex
+  bot: Bot!
+  series: GameSeries!
+  decisionType: String!
+  betType: BetType
+  amount: BigDecimal!
+  reasoning: String
+  bankrollBefore: BigDecimal!
+  bankrollAfter: BigDecimal!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type BotSession @entity {
+  id: ID! # botId-sessionNumber
+  bot: Bot!
+  sessionNumber: BigInt!
+  startTime: BigInt!
+  endTime: BigInt
+  startingBankroll: BigDecimal!
+  endingBankroll: BigDecimal!
+  netPnL: BigDecimal!
+  betsPlaced: BigInt!
+  gamesPlayed: BigInt!
+  winRate: BigDecimal!
+  
+  # Relationships
+  bets: [Bet!]! @derivedFrom(field: "bot") # Filter by session timeframe
+}
+
+# ==============================================================================
+# VAULT/LP ENTITIES
+# ==============================================================================
+
+type Vault @entity {
+  id: ID! # vault address
+  bot: Bot
+  name: String!
+  totalAssets: BigDecimal!
+  totalShares: BigDecimal!
+  sharePrice: BigDecimal!
+  totalDeposits: BigDecimal!
+  totalWithdrawals: BigDecimal!
+  totalPerformanceFees: BigDecimal!
+  
+  # Performance metrics
+  totalPnL: BigDecimal!
+  allTimeHigh: BigDecimal!
+  allTimeLow: BigDecimal!
+  maxDrawdown: BigDecimal!
+  
+  # Activity
+  isActive: Boolean!
+  lpCount: BigInt!
+  
+  # Relationships
+  deposits: [VaultDeposit!]! @derivedFrom(field: "vault")
+  withdrawals: [VaultWithdrawal!]! @derivedFrom(field: "vault")
+  bets: [Bet!]! @derivedFrom(field: "vault")
+  lps: [VaultLP!]! @derivedFrom(field: "vault")
+}
+
+type VaultLP @entity {
+  id: ID! # vault-user
+  vault: Vault!
+  user: User!
+  shares: BigDecimal!
+  totalDeposited: BigDecimal!
+  totalWithdrawn: BigDecimal!
+  currentValue: BigDecimal!
+  realizedPnL: BigDecimal!
+  unrealizedPnL: BigDecimal!
+  firstDepositBlock: BigInt!
+  lastActionBlock: BigInt!
+}
+
+type VaultDeposit @entity {
+  id: ID! # txHash-logIndex
+  vault: Vault!
+  user: User!
+  assets: BigDecimal!
+  shares: BigDecimal!
+  sharePrice: BigDecimal!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type VaultWithdrawal @entity {
+  id: ID! # txHash-logIndex
+  vault: Vault!
+  user: User!
+  assets: BigDecimal!
+  shares: BigDecimal!
+  sharePrice: BigDecimal!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# ==============================================================================
+# STAKING ENTITIES
+# ==============================================================================
+
+type StakingPool @entity {
+  id: ID! # staking pool address
+  totalStaked: BigDecimal!
+  totalRewards: BigDecimal!
+  rewardRate: BigDecimal!
+  rewardsDuration: BigInt!
+  lastUpdateTime: BigInt!
+  currentEpoch: BigInt!
+  stakerCount: BigInt!
+  
+  # Relationships
+  positions: [StakingPosition!]! @derivedFrom(field: "pool")
+  rewards: [StakingReward!]! @derivedFrom(field: "pool")
+}
+
+type StakingPosition @entity {
+  id: ID! # pool-user
+  pool: StakingPool!
+  user: User!
+  stakedAmount: BigDecimal!
+  rewardsPaid: BigDecimal!
+  pendingRewards: BigDecimal!
+  firstStakeBlock: BigInt!
+  lastActionBlock: BigInt!
+  
+  # Relationships
+  stakes: [StakeEvent!]! @derivedFrom(field: "position")
+  rewards: [StakingReward!]! @derivedFrom(field: "position")
+}
+
+type StakeEvent @entity {
+  id: ID! # txHash-logIndex
+  position: StakingPosition!
+  type: StakeEventType!
+  amount: BigDecimal!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+enum StakeEventType {
+  STAKE
+  UNSTAKE
+}
+
+type StakingReward @entity {
+  id: ID! # txHash-logIndex
+  pool: StakingPool!
+  position: StakingPosition!
+  amount: BigDecimal!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# ==============================================================================
+# TREASURY ENTITIES
+# ==============================================================================
+
+type Treasury @entity {
+  id: ID! # treasury address
+  totalFeesCollected: BigDecimal!
+  totalDistributed: BigDecimal!
+  totalBuybacks: BigDecimal!
+  stakingAllocation: BigDecimal!
+  buybackAllocation: BigDecimal!
+  devAllocation: BigDecimal!
+  insuranceAllocation: BigDecimal!
+  
+  # Relationships
+  feeCollections: [FeeCollection!]! @derivedFrom(field: "treasury")
+  distributions: [FeeDistribution!]! @derivedFrom(field: "treasury")
+  buybacks: [Buyback!]! @derivedFrom(field: "treasury")
+}
+
+type FeeCollection @entity {
+  id: ID! # txHash-logIndex
+  treasury: Treasury!
+  source: String! # "vault", "hook"
+  token: Bytes!
+  amount: BigDecimal!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type FeeDistribution @entity {
+  id: ID! # txHash-logIndex
+  treasury: Treasury!
+  toStaking: BigDecimal!
+  toBuyback: BigDecimal!
+  toDev: BigDecimal!
+  toInsurance: BigDecimal!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type Buyback @entity {
+  id: ID! # txHash-logIndex
+  treasury: Treasury!
+  amountIn: BigDecimal!
+  botReceived: BigDecimal!
+  price: BigDecimal!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# ==============================================================================
+# NFT/GACHA ENTITIES
+# ==============================================================================
+
+type NFTMintPass @entity {
+  id: ID! # tokenId
+  owner: User!
+  seriesId: BigInt!
+  rarity: String!
+  isRedeemed: Boolean!
+  mintTimestamp: BigInt!
+  redeemTimestamp: BigInt
+  artSeed: BigInt!
+  metadataURI: String!
+  
+  # Relationships
+  raffle: GachaRaffle!
+}
+
+type GachaRaffle @entity {
+  id: ID! # seriesId
+  seriesId: BigInt!
+  entryCount: BigInt!
+  totalWeight: BigInt!
+  vrfRequestId: BigInt
+  winner: User
+  mintPass: NFTMintPass
+  startTime: BigInt!
+  endTime: BigInt
+  
+  # Relationships
+  entries: [RaffleEntry!]! @derivedFrom(field: "raffle")
+}
+
+type RaffleEntry @entity {
+  id: ID! # seriesId-player
+  raffle: GachaRaffle!
+  player: User!
+  weight: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# ==============================================================================
+# ESCROW/META-BETTING ENTITIES
+# ==============================================================================
+
+type EscrowRound @entity {
+  id: ID! # roundId
+  roundNumber: BigInt!
+  startTime: BigInt!
+  endTime: BigInt!
+  isActive: Boolean!
+  isSettled: Boolean!
+  winningBot: Bot
+  totalPot: BigDecimal!
+  houseFee: BigDecimal!
+  
+  # Relationships
+  bets: [EscrowBet!]! @derivedFrom(field: "round")
+}
+
+type EscrowBet @entity {
+  id: ID! # roundId-user-botId
+  round: EscrowRound!
+  user: User!
+  targetBot: Bot!
+  amount: BigDecimal!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  
+  # Settlement
+  isWinning: Boolean!
+  payout: BigDecimal!
+  isClaimed: Boolean!
+  claimTimestamp: BigInt
+}
+
+# ==============================================================================
+# UNISWAP HOOK ENTITIES
+# ==============================================================================
+
+type SwapFeeCollection @entity {
+  id: ID! # txHash-logIndex
+  poolId: Bytes!
+  token0: Bytes!
+  token1: Bytes!
+  fee0: BigDecimal!
+  fee1: BigDecimal!
+  totalFeeUSD: BigDecimal!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type PoolRegistration @entity {
+  id: ID! # poolId
+  poolId: Bytes!
+  token0: Bytes!
+  token1: Bytes!
+  isEnabled: Boolean!
+  registrationTime: BigInt!
+  registrationBlock: BigInt!
+}
+
+# ==============================================================================
+# TOKEN ENTITIES
+# ==============================================================================
+
+type BOTToken @entity {
+  id: ID! # token address
+  name: String!
+  symbol: String!
+  decimals: Int!
+  totalSupply: BigDecimal!
+  circulatingSupply: BigDecimal!
+  
+  # Allocations
+  treasuryAllocation: BigDecimal!
+  liquidityAllocation: BigDecimal!
+  stakingAllocation: BigDecimal!
+  teamAllocation: BigDecimal!
+  communityAllocation: BigDecimal!
+  
+  # Activity
+  totalTransfers: BigInt!
+  totalHolders: BigInt!
+  
+  # Relationships
+  allocations: [TokenAllocation!]! @derivedFrom(field: "token")
+}
+
+type TokenAllocation @entity {
+  id: ID! # txHash-logIndex
+  token: BOTToken!
+  recipient: Bytes!
+  amount: BigDecimal!
+  allocationType: String!
+  purpose: String!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# ==============================================================================
+# DAILY METRICS ENTITIES
+# ==============================================================================
+
+type DailyMetric @entity {
+  id: ID! # date (YYYY-MM-DD)
+  date: Int! # Unix timestamp (start of day)
+  
+  # Volume metrics
+  totalVolume: BigDecimal!
+  totalBets: BigInt!
+  uniquePlayers: BigInt!
+  
+  # Game metrics
+  totalGames: BigInt!
+  avgGameDuration: BigDecimal!
+  
+  # Vault metrics
+  totalVaultDeposits: BigDecimal!
+  totalVaultWithdrawals: BigDecimal!
+  netVaultFlow: BigDecimal!
+  
+  # Staking metrics
+  totalStaked: BigDecimal!
+  totalUnstaked: BigDecimal!
+  netStakeFlow: BigDecimal!
+  
+  # Bot metrics
+  topPerformingBot: Bot
+  avgBotPnL: BigDecimal!
+  
+  # Fee metrics
+  totalFees: BigDecimal!
+  protocolRevenue: BigDecimal!
+}
+
+type HourlyMetric @entity {
+  id: ID! # timestamp-hour
+  timestamp: BigInt!
+  hour: Int!
+  
+  # Activity metrics
+  activeUsers: BigInt!
+  totalBets: BigInt!
+  totalVolume: BigDecimal!
+  
+  # Game metrics
+  gamesStarted: BigInt!
+  gamesCompleted: BigInt!
+  avgGameLength: BigDecimal!
+  
+  # Bot metrics
+  activeBots: BigInt!
+  totalBotBets: BigInt!
+  totalBotVolume: BigDecimal!
+}
+
+# ==============================================================================
+# LEADERBOARD ENTITIES
+# ==============================================================================
+
+type PlayerLeaderboard @entity {
+  id: ID! # address
+  player: User!
+  rank: BigInt!
+  totalPnL: BigDecimal!
+  winRate: BigDecimal!
+  totalVolume: BigDecimal!
+  gamesPlayed: BigInt!
+  lastUpdated: BigInt!
+}
+
+type BotLeaderboard @entity {
+  id: ID! # botId
+  bot: Bot!
+  rank: BigInt!
+  totalPnL: BigDecimal!
+  winRate: BigDecimal!
+  totalVolume: BigDecimal!
+  gamesPlayed: BigInt!
+  lastUpdated: BigInt!
+}
+
+type VaultLeaderboard @entity {
+  id: ID! # vault address
+  vault: Vault!
+  rank: BigInt!
+  totalReturn: BigDecimal!
+  sharpeRatio: BigDecimal!
+  maxDrawdown: BigDecimal!
+  totalTVL: BigDecimal!
+  lpCount: BigInt!
+  lastUpdated: BigInt!
+}

@@ -1,0 +1,439 @@
+specVersion: 1.2.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  # ==============================================================================
+  # CORE GAME CONTRACTS
+  # ==============================================================================
+  - kind: ethereum
+    name: CrapsGame
+    network: {{network}}
+    source:
+      address: "{{CrapsGame.address}}"
+      abi: CrapsGame
+      startBlock: {{CrapsGame.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - GameSeries
+        - DiceRoll
+        - User
+        - Protocol
+        - DailyMetric
+        - HourlyMetric
+      abis:
+        - name: CrapsGame
+          file: ./abis/CrapsGame.json
+      eventHandlers:
+        - event: GameStarted(indexed address,uint256)
+          handler: handleGameStarted
+        - event: DiceRolled(indexed uint256,uint8,uint8,uint8)
+          handler: handleDiceRolled
+        - event: PointEstablished(indexed uint256,uint8)
+          handler: handlePointEstablished
+        - event: PointMade(indexed uint256,uint8)
+          handler: handlePointMade
+        - event: SevenOut(indexed uint256,address)
+          handler: handleSevenOut
+        - event: PhaseChanged(uint8,uint8)
+          handler: handlePhaseChanged
+        - event: RandomnessRequested(uint256)
+          handler: handleRandomnessRequested
+        - event: RandomnessFulfilled(uint256,uint256)
+          handler: handleRandomnessFulfilled
+      file: ./src/mappings/crapsGame.ts
+
+  - kind: ethereum
+    name: CrapsBets
+    network: {{network}}
+    source:
+      address: "{{CrapsBets.address}}"
+      abi: CrapsBets
+      startBlock: {{CrapsBets.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Bet
+        - User
+        - GameSeries
+        - Bot
+        - Vault
+        - DailyMetric
+        - HourlyMetric
+      abis:
+        - name: CrapsBets
+          file: ./abis/CrapsBets.json
+        - name: CrapsGame
+          file: ./abis/CrapsGame.json
+      eventHandlers:
+        - event: BetPlaced(indexed address,indexed uint256,uint8,uint256)
+          handler: handleBetPlaced
+        - event: BetResolved(indexed address,indexed uint256,uint8,uint256,uint256,bool)
+          handler: handleBetResolved
+        - event: OddsBetPlaced(indexed address,uint8,uint256,uint8)
+          handler: handleOddsBetPlaced
+        - event: BetRemoved(indexed address,uint8,uint256)
+          handler: handleBetRemoved
+        - event: BatchProcessed(uint256,uint256)
+          handler: handleBatchProcessed
+      file: ./src/mappings/crapsBets.ts
+
+  - kind: ethereum
+    name: CrapsSettlement
+    network: {{network}}
+    source:
+      address: "{{CrapsSettlement.address}}"
+      abi: CrapsSettlement
+      startBlock: {{CrapsSettlement.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - BetSettlement
+        - Bet
+        - DiceRoll
+        - User
+        - Protocol
+      abis:
+        - name: CrapsSettlement
+          file: ./abis/CrapsSettlement.json
+      eventHandlers:
+        - event: BetSettled(indexed address,indexed uint256,uint8,uint256,uint256,bool)
+          handler: handleBetSettled
+        - event: BetPushed(indexed address,indexed uint256,uint8,uint256)
+          handler: handleBetPushed
+        - event: BatchSettlement(indexed uint256,uint256,uint8,uint256)
+          handler: handleBatchSettlement
+        - event: FieldBetResolved(indexed address,uint8,uint256)
+          handler: handleFieldBetResolved
+        - event: HardwayResolved(indexed address,uint8,bool,uint256)
+          handler: handleHardwayResolved
+      file: ./src/mappings/crapsSettlement.ts
+
+  # ==============================================================================
+  # BOT MANAGEMENT
+  # ==============================================================================
+  - kind: ethereum
+    name: BotManager
+    network: {{network}}
+    source:
+      address: "{{BotManager.address}}"
+      abi: BotManager
+      startBlock: {{BotManager.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Bot
+        - BotDecision
+        - BotSession
+        - Vault
+      abis:
+        - name: BotManager
+          file: ./abis/BotManager.json
+      eventHandlers:
+        - event: BotDecisionMade(indexed uint256,uint8,uint256,string,uint256,uint256)
+          handler: handleBotDecisionMade
+        - event: BotBetPlaced(indexed uint256,indexed uint256,uint8,uint256)
+          handler: handleBotBetPlaced
+        - event: BotBetSettled(indexed uint256,indexed uint256,uint256,bool)
+          handler: handleBotBetSettled
+        - event: BotStrategyChanged(indexed uint256,string,string)
+          handler: handleBotStrategyChanged
+        - event: BotSessionStarted(indexed uint256,uint256)
+          handler: handleBotSessionStarted
+        - event: BotSessionEnded(indexed uint256,uint256,uint256,uint256,uint256)
+          handler: handleBotSessionEnded
+      file: ./src/mappings/botManager.ts
+
+  # ==============================================================================
+  # VAULT SYSTEM
+  # ==============================================================================
+  - kind: ethereum
+    name: VaultFactory
+    network: {{network}}
+    source:
+      address: "{{VaultFactory.address}}"
+      abi: VaultFactory
+      startBlock: {{VaultFactory.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Vault
+        - Bot
+      abis:
+        - name: VaultFactory
+          file: ./abis/VaultFactoryOptimized.json
+        - name: CrapsVault
+          file: ./abis/CrapsVault.json
+      eventHandlers:
+        - event: VaultCreated(indexed uint256,indexed address,string)
+          handler: handleVaultCreated
+        - event: VaultDeactivated(indexed uint256)
+          handler: handleVaultDeactivated
+        - event: VaultReactivated(indexed uint256)
+          handler: handleVaultReactivated
+        - event: BotConfigUpdated(indexed uint256)
+          handler: handleBotConfigUpdated
+      file: ./src/mappings/vaultFactory.ts
+
+  # ==============================================================================
+  # STAKING SYSTEM
+  # ==============================================================================
+  - kind: ethereum
+    name: StakingPool
+    network: {{network}}
+    source:
+      address: "{{StakingPool.address}}"
+      abi: StakingPool
+      startBlock: {{StakingPool.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - StakingPool
+        - StakingPosition
+        - StakeEvent
+        - StakingReward
+        - User
+      abis:
+        - name: StakingPool
+          file: ./abis/StakingPool.json
+      eventHandlers:
+        - event: Staked(indexed address,uint256)
+          handler: handleStaked
+        - event: Withdrawn(indexed address,uint256)
+          handler: handleWithdrawn
+        - event: RewardPaid(indexed address,uint256)
+          handler: handleRewardPaid
+        - event: RewardsAdded(uint256)
+          handler: handleRewardsAdded
+        - event: RewardsDurationUpdated(uint256)
+          handler: handleRewardsDurationUpdated
+      file: ./src/mappings/stakingPool.ts
+
+  # ==============================================================================
+  # TREASURY SYSTEM
+  # ==============================================================================
+  - kind: ethereum
+    name: Treasury
+    network: {{network}}
+    source:
+      address: "{{Treasury.address}}"
+      abi: Treasury
+      startBlock: {{Treasury.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Treasury
+        - FeeCollection
+        - FeeDistribution
+        - Buyback
+      abis:
+        - name: Treasury
+          file: ./abis/Treasury.json
+      eventHandlers:
+        - event: FeesReceived(indexed address,indexed address,uint256)
+          handler: handleFeesReceived
+        - event: FeesDistributed(uint256,uint256,uint256,uint256)
+          handler: handleFeesDistributed
+        - event: BuybackExecuted(uint256,uint256)
+          handler: handleBuybackExecuted
+        - event: StakingPoolUpdated(indexed address)
+          handler: handleStakingPoolUpdated
+        - event: RouterUpdated(indexed address)
+          handler: handleRouterUpdated
+        - event: WalletsUpdated(address,address)
+          handler: handleWalletsUpdated
+        - event: DistributionUpdated(uint256,uint256,uint256,uint256)
+          handler: handleDistributionUpdated
+      file: ./src/mappings/treasury.ts
+
+  # ==============================================================================
+  # NFT/GACHA SYSTEM
+  # ==============================================================================
+  - kind: ethereum
+    name: GachaMintPass
+    network: {{network}}
+    source:
+      address: "{{GachaMintPass.address}}"
+      abi: GachaMintPass
+      startBlock: {{GachaMintPass.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - NFTMintPass
+        - GachaRaffle
+        - RaffleEntry
+        - User
+      abis:
+        - name: GachaMintPass
+          file: ./abis/GachaMintPass.json
+      eventHandlers:
+        - event: RaffleStarted(indexed uint256,uint256)
+          handler: handleRaffleStarted
+        - event: RaffleEntryAdded(indexed uint256,indexed address,uint256)
+          handler: handleRaffleEntryAdded
+        - event: RaffleRequested(indexed uint256,uint256)
+          handler: handleRaffleRequested
+        - event: RaffleFulfilled(indexed uint256,indexed address,uint256)
+          handler: handleRaffleFulfilled
+        - event: MintPassRedeemed(indexed uint256,indexed address)
+          handler: handleMintPassRedeemed
+        - event: BaseURIUpdated(string)
+          handler: handleBaseURIUpdated
+      file: ./src/mappings/gachaMintPass.ts
+
+  # ==============================================================================
+  # META-BETTING ESCROW
+  # ==============================================================================
+  - kind: ethereum
+    name: BotBettingEscrow
+    network: {{network}}
+    source:
+      address: "{{BotBettingEscrow.address}}"
+      abi: BotBettingEscrow
+      startBlock: {{BotBettingEscrow.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - EscrowRound
+        - EscrowBet
+        - User
+        - Bot
+      abis:
+        - name: BotBettingEscrow
+          file: ./abis/BotBettingEscrow.json
+      eventHandlers:
+        - event: RoundStarted(indexed uint256,uint256,uint256)
+          handler: handleRoundStarted
+        - event: BetPlaced(indexed uint256,indexed address,indexed uint256,uint256)
+          handler: handleEscrowBetPlaced
+        - event: RoundSettled(indexed uint256,indexed uint256,uint256)
+          handler: handleRoundSettled
+        - event: WinningsClaimed(indexed address,uint256)
+          handler: handleWinningsClaimed
+        - event: BotPerformanceUpdated(indexed uint256,uint256,uint256)
+          handler: handleBotPerformanceUpdated
+      file: ./src/mappings/botBettingEscrow.ts
+
+  # ==============================================================================
+  # UNISWAP V4 HOOKS
+  # ==============================================================================
+  - kind: ethereum
+    name: BotSwapFeeHookV4
+    network: {{network}}
+    source:
+      address: "{{BotSwapFeeHookV4.address}}"
+      abi: BotSwapFeeHookV4
+      startBlock: {{BotSwapFeeHookV4.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - SwapFeeCollection
+        - PoolRegistration
+        - Treasury
+      abis:
+        - name: BotSwapFeeHookV4
+          file: ./abis/BotSwapFeeHookV4.json
+      eventHandlers:
+        - event: FeeCollected(indexed bytes32,address,address,uint256,uint256,uint256)
+          handler: handleFeeCollected
+        - event: TreasuryUpdated(indexed address)
+          handler: handleTreasuryUpdated
+        - event: PoolEnabled(indexed bytes32,bool)
+          handler: handlePoolEnabled
+        - event: PoolRegistered(indexed bytes32,address,address)
+          handler: handlePoolRegistered
+      file: ./src/mappings/botSwapFeeHookV4.ts
+
+  # ==============================================================================
+  # BOT TOKEN
+  # ==============================================================================
+  - kind: ethereum
+    name: BOTToken
+    network: {{network}}
+    source:
+      address: "{{BOTToken.address}}"
+      abi: BOTToken
+      startBlock: {{BOTToken.startBlock}}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - BOTToken
+        - TokenAllocation
+        - User
+      abis:
+        - name: BOTToken
+          file: ./abis/BOTToken.json
+      eventHandlers:
+        - event: TokensAllocated(indexed address,uint256,string)
+          handler: handleTokensAllocated
+        - event: RoleGrantedWithPurpose(indexed bytes32,indexed address,string)
+          handler: handleRoleGrantedWithPurpose
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/mappings/botToken.ts
+
+# ==============================================================================
+# VAULT TEMPLATES
+# ==============================================================================
+templates:
+  - kind: ethereum
+    name: CrapsVault
+    network: {{network}}
+    source:
+      abi: CrapsVault
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Vault
+        - VaultDeposit
+        - VaultWithdrawal
+        - VaultLP
+        - User
+        - Bot
+      abis:
+        - name: CrapsVault
+          file: ./abis/CrapsVault.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleVaultDeposit
+        - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleVaultWithdraw
+        - event: BetPlaced(indexed uint256,uint256,uint256)
+          handler: handleVaultBetPlaced
+        - event: BetSettled(indexed uint256,uint256,bool)
+          handler: handleVaultBetSettled
+        - event: PerformanceFeeExtracted(uint256,uint256)
+          handler: handlePerformanceFeeExtracted
+        - event: BotManagerUpdated(indexed address)
+          handler: handleBotManagerUpdated
+        - event: LPAdded(indexed address,uint256)
+          handler: handleLPAdded
+        - event: LPRemoved(indexed address)
+          handler: handleLPRemoved
+      file: ./src/mappings/crapsVault.ts
