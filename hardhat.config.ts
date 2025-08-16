@@ -33,6 +33,36 @@ export default {
       url: configVariable("SEPOLIA_RPC_URL"),
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
     },
+    baseSepolia: {
+      type: "http",
+      chainType: "op",
+      url: "https://sepolia.base.org",
+      accounts: [configVariable("BASE_SEPOLIA_PRIVATE_KEY")],
+      chainId: 84532,
+    },
+    base: {
+      type: "http",
+      chainType: "op",
+      url: "https://mainnet.base.org",
+      accounts: [configVariable("BASE_MAINNET_PRIVATE_KEY")],
+      chainId: 8453,
+    },
+  },
+  etherscan: {
+    apiKey: {
+      baseSepolia: configVariable("BASESCAN_API_KEY"),
+      base: configVariable("BASESCAN_API_KEY"),
+    },
+    customChains: [
+      {
+        network: "baseSepolia",
+        chainId: 84532,
+        urls: {
+          apiURL: "https://api-sepolia.basescan.org/api",
+          browserURL: "https://sepolia.basescan.org",
+        },
+      },
+    ],
   },
   test: {
     solidity: {
