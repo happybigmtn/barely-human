@@ -3,8 +3,11 @@
 ## Quick Reference
 **Project**: DeFi Casino with AI Bot Gamblers
 **Stage**: Development Phase 1 - Core Infrastructure
-**Stack**: Solidity 0.8.31, Hardhat, ElizaOS, Chainlink VRF
+**Stack**: Solidity 0.8.28, Hardhat 3.0, Viem, ElizaOS, Chainlink VRF
 **Networks**: Base (8453), Base Sepolia (84532), Unichain (TBD)
+
+## Important: Testing Framework
+**Note**: We are using Hardhat 3.0 with Viem as the testing framework. Tests need to be written using Viem's test utilities, not the traditional Hardhat 2 ethers-based tests. The existing test files are from Hardhat 2 and need migration to work with Hardhat 3.
 
 ## Current Focus
 - [ ] Implement BOT token contract (ERC20 with roles)
@@ -23,7 +26,7 @@
 5. Update documentation if needed
 
 ### Code Standards
-- **Solidity**: Version 0.8.30 (standardized across all contracts), use OpenZeppelin contracts
+- **Solidity**: Version 0.8.28 (standardized across all contracts), use OpenZeppelin contracts v5.x
 - **Security**: ReentrancyGuard on fund transfers, AccessControl for roles
 - **Gas**: Optimize with storage packing, batch operations, inline functions
 - **Testing**: Minimum 90% coverage, test all 64 bet types
@@ -310,11 +313,13 @@ Servers installed globally via npm in: `/home/r/.local/share/mise/installs/node/
 - **GitHub repository created** and deployed: https://github.com/happybigmtn/barely-human
 
 ### Technical Decisions Made
+- **Solidity Version**: 0.8.28 for all contracts (downgraded from 0.8.30 for compatibility)
+- **Testing Framework**: Hardhat 3.0 with Viem (not traditional ethers-based tests)
 - **Modular architecture**: Separated game logic, bet management, settlement
 - **Interface-based design**: Flexible contract communication via ICrapsGame
 - **Gas optimization**: Bitmap tracking, batch processing, storage packing
 - **Security first**: ReentrancyGuard, AccessControl, Pausable patterns
-- **Standard compliance**: ERC4626 vaults, OpenZeppelin best practices
+- **Standard compliance**: ERC4626 vaults, OpenZeppelin v5.x best practices
 
 ### Files Created This Session
 ```
@@ -363,7 +368,9 @@ test/
 ## Session Completed: 2025-08-16
 
 ### Session Summary
-This session successfully implemented the BOT token contract and optimized all contracts for deployment. All contracts now compile cleanly with Solidity 0.8.30 and are within mainnet deployment size limits.
+This session successfully implemented the BOT token contract and optimized all contracts for deployment. All contracts now compile cleanly with Solidity 0.8.28 (downgraded from 0.8.30) and are within mainnet deployment size limits.
+
+**Important Update**: All contracts have been downgraded to Solidity 0.8.28 for better compatibility. The project uses Hardhat 3.0 with Viem as the testing framework, not the traditional Hardhat 2 ethers-based approach.
 
 ### Major Accomplishments
 
@@ -394,7 +401,7 @@ This session successfully implemented the BOT token contract and optimized all c
   - All contracts now deployable to mainnet
 
 #### 3. Code Quality Improvements ✅
-- Standardized all contracts to Solidity 0.8.30
+- Standardized all contracts to Solidity 0.8.28 (originally 0.8.30, then downgraded)
 - Fixed all unused parameter warnings
 - Added proper state mutability modifiers
 - All contracts compile without errors
@@ -424,12 +431,13 @@ test/
 4. Contract optimizations
 
 ### Technical Decisions
-- **Solidity Version**: 0.8.30 (latest stable available)
+- **Solidity Version**: 0.8.28 (downgraded from 0.8.30 for compatibility)
+- **Testing Framework**: Hardhat 3.0 with Viem (not ethers)
 - **Optimizer Settings**: 100 runs (balanced for size)
 - **Architecture**: Library pattern for code reuse
 - **Testing**: Viem-based test framework
 
-### Contract Deployment Readiness
+### Contract Deployment Readiness (Solidity 0.8.28)
 | Contract | Size (bytes) | Status |
 |----------|-------------|---------|
 | BOTToken | 3,841 | ✅ Ready |
@@ -468,7 +476,8 @@ Based on FULL_BLUEPRINT.md requirements:
    - Initial configuration
 
 ### Known Issues & TODOs
-- Test framework (Viem) integration needs fixing for proper test execution
+- Test framework: Tests are written for Hardhat 2 but we're using Hardhat 3 with Viem - migration needed
+- Tests need to be rewritten using Viem's testing utilities instead of ethers-based tests
 - VaultFactory (original) still exceeds size limit - use VaultFactoryOptimized
 - Some functions could be marked as view/pure (non-critical warnings)
 
@@ -478,6 +487,56 @@ Based on FULL_BLUEPRINT.md requirements:
 - BOT token is ready for deployment with proper role setup
 - Testing infrastructure exists but needs framework fixes
 - Repository properly initialized with git
+
+## Session Start: 2025-01-16
+
+### Session Context
+- **Time**: Starting new development session
+- **Branch**: master
+- **Status**: Uncommitted changes from Solidity 0.8.28 downgrade
+- **Ready for**: Next development phase
+
+### Session Goals (Pending)
+- Awaiting specific objectives from user
+- Previous session priorities:
+  1. Migrate test suite to Viem-based testing
+  2. Deploy contracts to Base Sepolia testnet
+  3. Implement frontend CLI interface
+  4. Integrate ElizaOS bot personalities
+
+## Session Update: 2025-08-16 (Solidity Downgrade)
+
+### Session Accomplishments
+- ✅ **Solidity Version Downgrade**: Successfully downgraded all contracts from 0.8.30 to 0.8.28
+- ✅ **Hardhat Configuration**: Updated hardhat.config.ts to use Solidity 0.8.28
+- ✅ **Contract Compatibility**: Fixed OpenZeppelin v5.x compatibility issues in NFT contracts
+- ✅ **Build Verification**: All contracts compile successfully with 0.8.28
+- ✅ **Documentation Update**: Updated CLAUDE.md to reflect framework and version changes
+
+### Technical Changes
+1. **All Contract Files**: Changed pragma from `0.8.30` to `0.8.28`
+2. **NFT Contract Fixes**:
+   - Removed ERC721URIStorage inheritance (compatibility issue)
+   - Implemented custom tokenURI mapping
+   - Updated _update and _increaseBalance overrides for OpenZeppelin v5
+3. **Hooks Contract**: Fixed naming conflicts in function parameters
+4. **Testing Framework**: Clarified Hardhat 3.0 with Viem usage (not ethers)
+
+### Files Modified (17 total)
+- All 15 Solidity contracts updated to 0.8.28
+- hardhat.config.ts: Solidity version changed
+- CLAUDE.md: Documentation updated
+
+### Known Issues
+- **VaultFactory**: Still exceeds 24KB limit (use VaultFactoryOptimized)
+- **Tests**: Need migration from Hardhat 2 (ethers) to Hardhat 3 (Viem) format
+- **Minor Warnings**: Some functions can be restricted to view/pure (non-critical)
+
+### Next Steps
+1. Migrate test suite to Viem-based testing
+2. Deploy contracts to Base Sepolia testnet
+3. Implement frontend CLI interface
+4. Integrate ElizaOS bot personalities
 
 ## Session Completed: 2025-08-16
 
