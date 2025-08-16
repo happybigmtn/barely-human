@@ -114,6 +114,7 @@ interface ICrapsBets {
     function placeBet(uint8 betType, uint256 amount) external;
     function placeOddsBet(uint8 baseBetType, uint256 oddsAmount) external;
     function removeBet(uint8 betType) external;
+    function clearBet(address player, uint8 betType) external;
     
     // View functions
     function getPlayerBets(address player) external view returns (PlayerBets memory);
@@ -190,4 +191,5 @@ interface ICrapsVault {
     
     function getPlayerBalance(address player) external view returns (uint256);
     function getTotalLiquidity() external view returns (uint256);
+    function getActiveBotVaults() external view returns (address[] memory);
 }
