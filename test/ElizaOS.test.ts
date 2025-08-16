@@ -1,7 +1,7 @@
 import { network } from "hardhat";
 import assert from "assert";
 import { readFileSync } from "fs";
-import { parse } from "yaml";
+import * as yaml from "js-yaml";
 
 // Import ElizaOS modules (with dynamic imports for ES modules)
 async function loadElizaModules() {
@@ -69,7 +69,7 @@ async function main() {
                     `./elizaos/characters/${botName}.yaml`,
                     'utf8'
                 );
-                const character = parse(characterFile);
+                const character = yaml.load(characterFile) as any;
                 
                 assert(character.name, "Character must have a name");
                 assert(character.description, "Character must have a description");

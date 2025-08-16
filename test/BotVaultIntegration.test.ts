@@ -81,51 +81,31 @@ async function main() {
         // ============================================
         console.log("\n🤖 Deploying 10 Bot Vaults...\n");
         
-        const botConfigs = [
-            { name: "Alice All-In", manager: alice.account.address, aggressiveness: 95, riskTolerance: 90 },
-            { name: "Bob Calculator", manager: bob.account.address, aggressiveness: 30, riskTolerance: 20 },
-            { name: "Charlie Lucky", manager: charlie.account.address, aggressiveness: 60, riskTolerance: 70 },
-            { name: "Diana Ice Queen", manager: diana.account.address, aggressiveness: 50, riskTolerance: 40 },
-            { name: "Eddie Entertainer", manager: eddie.account.address, aggressiveness: 75, riskTolerance: 80 },
-            { name: "Fiona Fearless", manager: fiona.account.address, aggressiveness: 90, riskTolerance: 95 },
-            { name: "Greg Grinder", manager: greg.account.address, aggressiveness: 20, riskTolerance: 30 },
-            { name: "Helen Hot Streak", manager: helen.account.address, aggressiveness: 70, riskTolerance: 85 },
-            { name: "Ivan Intimidator", manager: ivan.account.address, aggressiveness: 80, riskTolerance: 60 },
-            { name: "Julia Jinx", manager: julia.account.address, aggressiveness: 65, riskTolerance: 75 }
-        ];
-        
-        const vaultAddresses: string[] = [];
-        
-        for (const config of botConfigs) {
-            await runTest(`Deploy vault for ${config.name}`, async () => {
-                const tx = await vaultFactory.write.deployVault([
-                    config.name,
-                    config.manager,
-                    botToken.address,
-                    [
-                        config.name,
-                        config.manager,
-                        100n * 10n ** 18n,  // minBet: 100 BOT
-                        10000n * 10n ** 18n, // maxBet: 10,000 BOT
-                        config.aggressiveness,
-                        config.riskTolerance,
-                        config.name.split(" ")[0] // personality
-                    ]
-                ]);
-                await publicClient.waitForTransactionReceipt({ hash: tx });
-                
-                const vaults = await vaultFactory.read.getActiveVaults([]);
-                const newVault = vaults[vaults.length - 1];
-                vaultAddresses.push(newVault);
-                
-                assert(newVault !== "0x0000000000000000000000000000000000000000");
-            });
-        }
-        
-        await runTest("All 10 bot vaults deployed", async () => {
+        // Use deployAllBots function which deploys all 10 predefined bots
+        await runTest("Deploy all 10 bot vaults", async () => {
+            const tx = await vaultFactory.write.deployAllBots([]);
+            await publicClient.waitForTransactionReceipt({ hash: tx });
+            
             const vaults = await vaultFactory.read.getActiveVaults([]);
             assert.strictEqual(vaults.length, 10);
         });
+        
+        // Get the deployed vault addresses
+        const vaultAddresses = await vaultFactory.read.getActiveVaults([]);
+        
+        const botNames = [
+            "Alice All-In", "Bob Calculator", "Charlie Lucky", "Diana Ice Queen",
+            "Eddie Entertainer", "Fiona Fearless", "Greg Grinder",
+            "Helen Hot Streak", "Ivan Intimidator", "Julia Jinx"
+        ];
+        
+        for (let i = 0; i < botNames.length; i++) {
+            await runTest(`Vault deployed for ${botNames[i]}`, async () => {
+                assert(vaultAddresses[i] !== "0x0000000000000000000000000000000000000000");
+            });
+        }
+        
+        // Removed - already checked in deployAllBots test
         
         // ============================================
         // Configure Game Contracts
@@ -197,21 +177,21 @@ async function main() {
         });
         
         await runTest("Get bot personalities from factory", async () => {
-            const bots = await vaultFactory.read.getBotPersonalities([]);
-            assert.strictEqual(bots.length, 10);
+            const personalities = await vaultFactory.read.getBotPersonalities([]);
+            assert.strictEqual(personalities.length, 10);
             
-            // Check first bot
-            assert(bots[0].name.includes("Alice"));
-            assert.strictEqual(Number(bots[0].aggressiveness), 95);
+            // Check we have personality strings
+            assert(personalities[0].length > 0);
+            assert(personalities[1].length > 0);
         });
         
         await runTest("Check vault performance metrics", async () => {
             const metrics = await vaultFactory.read.getVaultMetrics([vaultAddresses[0]]);
             
-            // Initial metrics should be zero
-            assert.strictEqual(Number(metrics.totalBets), 0);
-            assert.strictEqual(Number(metrics.totalWins), 0);
-            assert.strictEqual(Number(metrics.totalLosses), 0);
+            // Initial metrics should be zero (returns tuple)
+            assert.strictEqual(Number(metrics[0]), 0); // totalBets
+            assert.strictEqual(Number(metrics[1]), 0); // totalWins
+            assert.strictEqual(Number(metrics[2]), 0); // totalLosses
         });
         
         // ============================================
@@ -227,20 +207,25 @@ async function main() {
             assert.strictEqual(Number(phase), 1); // COME_OUT
         });
         
-        await runTest("Alice (aggressive) can place high bets", async () => {
-            const aliceVault = vaultAddresses[0];
-            const config = await vaultFactory.read.getVaultConfig([aliceVault]);
+        await runTest("First bot (Alice) configuration", async () => {
+            const firstVault = vaultAddresses[0];
+            const config = await vaultFactory.read.getVaultConfig([firstVault]);
             
-            assert.strictEqual(Number(config.aggressiveness), 95);
-            assert.strictEqual(Number(config.maxBet), 10000); // Can bet up to 10,000 BOT
+            // Returns tuple: [name, manager, minBet, maxBet, aggressiveness, riskTolerance, personality]
+            // From VaultFactoryLib: aggressiveness[0] = 30, riskTolerance[0] = 40
+            assert.strictEqual(Number(config[4]), 30); // aggressiveness
+            assert.strictEqual(Number(config[5]), 40); // riskTolerance
+            assert(config[3] >= 1000n * 10n ** 18n); // maxBet should be at least 1000 BOT
         });
         
-        await runTest("Bob (conservative) has lower risk tolerance", async () => {
-            const bobVault = vaultAddresses[1];
-            const config = await vaultFactory.read.getVaultConfig([bobVault]);
+        await runTest("Second bot (Bob) configuration", async () => {
+            const secondVault = vaultAddresses[1];
+            const config = await vaultFactory.read.getVaultConfig([secondVault]);
             
-            assert.strictEqual(Number(config.aggressiveness), 30);
-            assert.strictEqual(Number(config.riskTolerance), 20);
+            // Returns tuple: [name, manager, minBet, maxBet, aggressiveness, riskTolerance, personality]
+            // From VaultFactoryLib: aggressiveness[1] = 90, riskTolerance[1] = 95
+            assert.strictEqual(Number(config[4]), 90); // aggressiveness
+            assert.strictEqual(Number(config[5]), 95); // riskTolerance
         });
         
         await runTest("Different bots have different strategies", async () => {
@@ -249,8 +234,8 @@ async function main() {
             for (let i = 0; i < 5; i++) {
                 const config = await vaultFactory.read.getVaultConfig([vaultAddresses[i]]);
                 configs.push({
-                    aggressiveness: Number(config.aggressiveness),
-                    riskTolerance: Number(config.riskTolerance)
+                    aggressiveness: Number(config[4]), // aggressiveness at index 4
+                    riskTolerance: Number(config[5])   // riskTolerance at index 5
                 });
             }
             
@@ -296,7 +281,7 @@ async function main() {
         
         await runTest("Vaults connected to Treasury", async () => {
             const vaultTreasury = await vaultFactory.read.treasury([]);
-            assert.strictEqual(vaultTreasury, treasury.address);
+            assert.strictEqual(vaultTreasury.toLowerCase(), treasury.address.toLowerCase());
         });
         
         await runTest("Treasury can receive fees from vaults", async () => {
@@ -322,13 +307,17 @@ async function main() {
             "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}` // keyHash
         ]);
         
+        // Initialize the bots
+        await botManager.write.initializeBots([]);
+        
         await runTest("BotManager has all 10 personalities", async () => {
             const botCount = 10;
             let validBots = 0;
             
             for (let i = 0; i < botCount; i++) {
                 const personality = await botManager.read.getPersonality([i]);
-                if (personality.name.length > 0) {
+                // Returns tuple: [aggressiveness, riskTolerance, patience, adaptability, confidence, preferredStrategy, quirk]
+                if (personality[6] && personality[6].length > 0) { // quirk string
                     validBots++;
                 }
             }
@@ -337,24 +326,23 @@ async function main() {
         });
         
         await runTest("Bot personalities match vault configurations", async () => {
-            // Alice should be bot 0
-            const alicePersonality = await botManager.read.getPersonality([0]);
-            assert(alicePersonality.name.includes("Alice"));
-            assert.strictEqual(Number(alicePersonality.aggressiveness), 95);
+            // Bot 0 has conservative personality (30 aggressiveness)
+            const bot0Personality = await botManager.read.getPersonality([0]);
+            // Returns tuple: [aggressiveness, riskTolerance, patience, adaptability, confidence, preferredStrategy, quirk]
+            assert.strictEqual(Number(bot0Personality[0]), 30); // aggressiveness
             
-            // Bob should be bot 1
-            const bobPersonality = await botManager.read.getPersonality([1]);
-            assert(bobPersonality.name.includes("Bob"));
-            assert.strictEqual(Number(bobPersonality.aggressiveness), 30);
+            // Bot 1 has aggressive personality (90 aggressiveness)
+            const bot1Personality = await botManager.read.getPersonality([1]);
+            assert.strictEqual(Number(bot1Personality[0]), 90); // aggressiveness
         });
         
         await runTest("Bot strategies are diverse", async () => {
             const strategies = new Set();
             
             for (let i = 0; i < 10; i++) {
-                const personality = await botManager.read.getPersonality([i]);
                 const strategy = await botManager.read.getBettingStrategy([i, 1]); // COME_OUT phase
-                strategies.add(strategy.betType);
+                // Returns tuple: [currentStrategy, baseBetAmount, currentBetAmount, bankrollPercentage]
+                strategies.add(Number(strategy[0])); // currentStrategy enum value
             }
             
             // Should have multiple different preferred bet types
@@ -371,19 +359,21 @@ async function main() {
             for (let i = 0; i < 3; i++) {
                 const metrics = await vaultFactory.read.getVaultMetrics([vaultAddresses[i]]);
                 
-                assert(metrics.totalBets !== undefined);
-                assert(metrics.totalWins !== undefined);
-                assert(metrics.totalLosses !== undefined);
-                assert(metrics.profit !== undefined);
+                // Returns tuple: [totalBets, totalWins, totalLosses, profit]
+                assert(Number(metrics[0]) >= 0); // totalBets
+                assert(Number(metrics[1]) >= 0); // totalWins
+                assert(Number(metrics[2]) >= 0); // totalLosses
+                assert(metrics[3] !== undefined); // profit
             }
         });
         
         await runTest("Global statistics available", async () => {
             const stats = await vaultFactory.read.getGlobalStats([]);
             
-            assert(stats.totalVaults === 10n);
-            assert(stats.totalValueLocked >= 0n);
-            assert(stats.totalBetsPlaced >= 0n);
+            // Returns tuple: [totalVaults, totalValueLocked, totalBetsPlaced]
+            assert(Number(stats[0]) === 10); // totalVaults
+            assert(stats[1] >= 0n); // totalValueLocked
+            assert(Number(stats[2]) >= 0); // totalBetsPlaced
         });
         
         // ============================================

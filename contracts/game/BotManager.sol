@@ -203,8 +203,8 @@ contract BotManager is VRFConsumerBaseV2, AccessControl, ReentrancyGuard, Pausab
             botId: botId,
             vault: vault,
             currentStrategy: strategy,
-            baseBetAmount: 0.01 ether,
-            currentBetAmount: 0.01 ether,
+            baseBetAmount: 100 * 10**18, // 100 BOT tokens base bet
+            currentBetAmount: 100 * 10**18, // 100 BOT tokens current bet
             consecutiveWins: 0,
             consecutiveLosses: 0,
             sessionProfit: 0,
@@ -726,5 +726,69 @@ contract BotManager is VRFConsumerBaseV2, AccessControl, ReentrancyGuard, Pausab
             currentStreak = bot.consecutiveLosses;
             isWinStreak = false;
         }
+    }
+    
+    /**
+     * @notice Get bot personality
+     */
+    function getPersonality(uint8 botId) external view returns (
+        uint8 aggressiveness,
+        uint8 riskTolerance,
+        uint8 patience,
+        uint8 adaptability,
+        uint8 confidence,
+        Strategy preferredStrategy,
+        string memory quirk
+    ) {
+        require(botId < 10, "Invalid bot ID");
+        BotPersonality storage personality = botPersonalities[botId];
+        return (
+            personality.aggressiveness,
+            personality.riskTolerance,
+            personality.patience,
+            personality.adaptability,
+            personality.confidence,
+            personality.preferredStrategy,
+            personality.quirk
+        );
+    }
+    
+    /**
+     * @notice Get bot betting strategy for a specific game phase
+     */
+    function getBettingStrategy(uint8 botId, uint8 gamePhase) external view returns (
+        Strategy currentStrategy,
+        uint256 baseBetAmount,
+        uint256 currentBetAmount,
+        uint256 bankrollPercentage
+    ) {
+        require(botId < 10, "Invalid bot ID");
+        BotState storage bot = botStates[botId];
+        BotPersonality storage personality = botPersonalities[botId];
+        
+        // Calculate bankroll percentage based on risk tolerance
+        uint256 bankrollPct = (personality.riskTolerance * MAX_BET_PERCENTAGE) / 100;
+        if (bankrollPct < MIN_BET_PERCENTAGE) {
+            bankrollPct = MIN_BET_PERCENTAGE;
+        }
+        
+        // Adjust strategy based on game phase
+        Strategy strategyForPhase = bot.currentStrategy;
+        if (gamePhase == 1) { // COME_OUT
+            if (personality.aggressiveness > 70) {
+                strategyForPhase = Strategy.AGGRESSIVE;
+            }
+        } else if (gamePhase == 2) { // POINT
+            if (personality.patience > 70) {
+                strategyForPhase = Strategy.CONSERVATIVE;
+            }
+        }
+        
+        return (
+            strategyForPhase,
+            bot.baseBetAmount,
+            bot.currentBetAmount,
+            bankrollPct
+        );
     }
 }

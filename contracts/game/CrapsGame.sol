@@ -52,8 +52,8 @@ contract CrapsGame is
     mapping(uint256 => uint256) public seriesTotalRolls;
     
     // Configuration
-    uint256 public minBetAmount = 0.001 ether;
-    uint256 public maxBetAmount = 10 ether;
+    uint256 public minBetAmount = 1 * 10**18; // 1 BOT tokens minimum
+    uint256 public maxBetAmount = 10000 * 10**18; // 10,000 BOT tokens maximum
     bool public autoRollEnabled = true;
     uint256 public rollCooldown = 10 seconds;
     uint256 public lastRollTimestamp;

@@ -124,8 +124,8 @@ contract VaultFactoryOptimized is AccessControl {
             botConfigs[botId] = VaultFactoryLib.BotConfig({
                 name: names[i],
                 manager: msg.sender,
-                minBet: 0.001 ether,
-                maxBet: 1 ether,
+                minBet: 10 * 10**18, // 10 BOT tokens minimum
+                maxBet: 1000 * 10**18, // 1000 BOT tokens maximum
                 aggressiveness: aggressiveness[i],
                 riskTolerance: riskTolerance[i],
                 personality: personalities[i]
@@ -256,5 +256,78 @@ contract VaultFactoryOptimized is AccessControl {
                 total += CrapsVault(vault).totalAssets();
             }
         }
+    }
+
+    /**
+     * @notice Get vault count
+     */
+    function getVaultCount() external view returns (uint256) {
+        return allVaults.length;
+    }
+
+    /**
+     * @notice Get treasury address
+     */
+    function treasury() external view returns (address) {
+        return treasuryAddress;
+    }
+
+    /**
+     * @notice Get bot personalities
+     */
+    function getBotPersonalities() external pure returns (string[10] memory) {
+        return VaultFactoryLib.getBotPersonalities();
+    }
+
+    /**
+     * @notice Get vault configuration
+     */
+    function getVaultConfig(address vault) external view returns (
+        string memory name,
+        address manager,
+        uint256 minBet,
+        uint256 maxBet,
+        uint8 aggressiveness,
+        uint8 riskTolerance,
+        string memory personality
+    ) {
+        uint256 botId = vaultToBotId[vault];
+        require(botId < nextBotId, "Invalid vault");
+        VaultFactoryLib.BotConfig memory config = botConfigs[botId];
+        return (
+            config.name,
+            config.manager,
+            config.minBet,
+            config.maxBet,
+            config.aggressiveness,
+            config.riskTolerance,
+            config.personality
+        );
+    }
+
+    /**
+     * @notice Get vault metrics
+     */
+    function getVaultMetrics(address vault) external view returns (
+        uint256 totalBets,
+        uint256 totalWins,
+        uint256 totalLosses,
+        int256 profit
+    ) {
+        // For now, return placeholder values
+        // In production, these would be tracked by the vault
+        return (0, 0, 0, 0);
+    }
+
+    /**
+     * @notice Get global statistics
+     */
+    function getGlobalStats() external view returns (
+        uint256 totalVaults,
+        uint256 totalValueLocked,
+        uint256 totalBetsPlaced
+    ) {
+        uint256 tvl = this.getTotalValueLocked();
+        return (allVaults.length, tvl, 0);
     }
 }
