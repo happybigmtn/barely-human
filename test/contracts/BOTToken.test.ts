@@ -60,7 +60,7 @@ describe('BOTToken Contract Tests', () => {
       const symbol = await botToken.read.symbol();
       const decimals = await botToken.read.decimals();
       
-      assert.equal(name, 'BOT Token');
+      assert.equal(name, 'Barely Human');
       assert.equal(symbol, 'BOT');
       assert.equal(decimals, 18);
     });

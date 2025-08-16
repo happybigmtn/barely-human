@@ -2,8 +2,8 @@
 pragma solidity 0.8.28;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -70,8 +70,8 @@ contract BotBettingEscrow is AccessControl, ReentrancyGuard, Pausable {
         botToken = IERC20(_botToken);
         treasury = _treasury;
         
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(OPERATOR_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(OPERATOR_ROLE, msg.sender);
         
         // Initialize 10 bots
         for (uint256 i = 0; i < 10; i++) {
@@ -202,7 +202,7 @@ contract BotBettingEscrow is AccessControl, ReentrancyGuard, Pausable {
      */
     function getBotStats(uint256 botId) external view returns (
         uint256 wins,
-        uint256 rounds,
+        uint256 totalRounds,
         uint256 earnings,
         uint256 streak,
         bool active,
@@ -210,11 +210,11 @@ contract BotBettingEscrow is AccessControl, ReentrancyGuard, Pausable {
     ) {
         BotStats memory stats = botStats[botId];
         wins = stats.totalWins;
-        rounds = stats.totalRounds;
+        totalRounds = stats.totalRounds;
         earnings = stats.totalEarnings;
         streak = stats.currentStreak;
         active = stats.isActive;
-        winRate = rounds > 0 ? (wins * 100) / rounds : 0;
+        winRate = totalRounds > 0 ? (wins * 100) / totalRounds : 0;
     }
     
     /**

@@ -162,7 +162,7 @@ contract BotManager is VRFConsumerBaseV2, AccessControl, ReentrancyGuard, Pausab
      */
     function initializeBots() external onlyRole(OPERATOR_ROLE) {
         // Initialize the 10 unique bot personalities
-        _initializeBot(0, 30, 40, 80, 60, Strategy.CONSERVATIVE, "Always bets on field");
+        _initializeBot(0, 30, 40, 80, 60, Strategy.CONSERVATIVE, "Conservative grandma");
         _initializeBot(1, 90, 95, 20, 40, Strategy.AGGRESSIVE, "Goes all-in on hot streaks");
         _initializeBot(2, 70, 80, 50, 70, Strategy.MARTINGALE, "Never gives up after a loss");
         _initializeBot(3, 40, 30, 90, 80, Strategy.FIBONACCI, "Follows mathematical patterns");
@@ -204,7 +204,7 @@ contract BotManager is VRFConsumerBaseV2, AccessControl, ReentrancyGuard, Pausab
             vault: vault,
             currentStrategy: strategy,
             baseBetAmount: 100 * 10**18, // 100 BOT tokens base bet
-            currentBetAmount: 100 * 10**18, // 100 BOT tokens current bet
+            currentBetAmount: 0, 
             consecutiveWins: 0,
             consecutiveLosses: 0,
             sessionProfit: 0,

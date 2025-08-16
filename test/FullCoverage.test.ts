@@ -78,24 +78,25 @@ async function main() {
         });
         
         await runTest("BOTToken: Initial distribution", async () => {
-            const treasuryBalance = await botToken.read.balanceOf([await botToken.read.treasuryAddress()]);
-            const liquidityBalance = await botToken.read.balanceOf([await botToken.read.liquidityAddress()]);
+            const treasuryBalance = await botToken.read.balanceOf([treasury]);
+            const liquidityBalance = await botToken.read.balanceOf([liquidity]);
             assert(treasuryBalance > 0n);
             assert(liquidityBalance > 0n);
         });
         
         await runTest("BOTToken: Transfer functionality", async () => {
             const amount = 1000n * 10n ** 18n;
-            await botToken.write.transfer([alice.account.address, amount], { account: deployer.account });
-            const balance = await botToken.read.balanceOf([alice.account.address]);
+            // Transfer from treasury address (which has tokens) to deployer
+            await botToken.write.transfer([deployer.account.address, amount], { account: alice.account });
+            const balance = await botToken.read.balanceOf([deployer.account.address]);
             assert(balance >= amount);
         });
         
         await runTest("BOTToken: Burn functionality", async () => {
             const burnAmount = 100n * 10n ** 18n;
-            const balanceBefore = await botToken.read.balanceOf([alice.account.address]);
-            await botToken.write.burn([burnAmount], { account: alice.account });
-            const balanceAfter = await botToken.read.balanceOf([alice.account.address]);
+            const balanceBefore = await botToken.read.balanceOf([deployer.account.address]);
+            await botToken.write.burn([burnAmount], { account: deployer.account });
+            const balanceAfter = await botToken.read.balanceOf([deployer.account.address]);
             assert.strictEqual(balanceBefore - balanceAfter, burnAmount);
         });
         
@@ -110,8 +111,8 @@ async function main() {
         // Deploy CrapsGame
         const crapsGame = await viem.deployContract("CrapsGame", [
             mockVRF.address,
-            "0x0000000000000000000000000000000000000000000000000000000000000001", // keyHash
-            1n // subscriptionId
+            1, // subscriptionId (uint64)
+            "0x9fe0eebf5e446e3c998ec9bb19951541aee00bb90ea201ae456421a2ded86805" // keyHash (bytes32)
         ]);
         
         await runTest("CrapsGame: Initial phase is IDLE", async () => {
@@ -186,14 +187,14 @@ async function main() {
         // ============================================
         console.log("\n4️⃣ Testing Vault Contracts...");
         
-        const treasury = await viem.deployContract("Treasury", [
+        const treasuryContract = await viem.deployContract("Treasury", [
             botToken.address,
             deployer.account.address
         ]);
         
         const vaultFactory = await viem.deployContract("VaultFactoryOptimized", [
             botToken.address,
-            treasury.address
+            treasuryContract.address
         ]);
         
         await runTest("VaultFactory: Deploy bot vault", async () => {
@@ -248,7 +249,7 @@ async function main() {
         
         const stakingPool = await viem.deployContract("StakingPool", [
             botToken.address,
-            treasury.address
+            treasuryContract.address
         ]);
         
         await runTest("StakingPool: Stake tokens", async () => {
@@ -266,9 +267,9 @@ async function main() {
         
         await runTest("Treasury: Distribute fees", async () => {
             const feeAmount = 1000n * 10n ** 18n;
-            await botToken.write.transfer([treasury.address, feeAmount]);
-            await treasury.write.distributeFees();
-            const stakingAllocation = await treasury.read.stakingAllocation();
+            await botToken.write.transfer([treasuryContract.address, feeAmount]);
+            await treasuryContract.write.distributeFees();
+            const stakingAllocation = await treasuryContract.read.stakingAllocation();
             assert(stakingAllocation > 0n);
         });
         
