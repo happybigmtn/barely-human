@@ -18,3 +18,13 @@
 
 # Hardhat coverage reports
 /coverage
+
+# EDR fork cache
+/edr-fork-cache
+
+# Environment files
+.env
+.env.local
+
+# Deployment outputs
+/deployments
