@@ -23,7 +23,7 @@
 5. Update documentation if needed
 
 ### Code Standards
-- **Solidity**: Strictly 0.8.31, use OpenZeppelin contracts
+- **Solidity**: Version 0.8.30 (standardized across all contracts), use OpenZeppelin contracts
 - **Security**: ReentrancyGuard on fund transfers, AccessControl for roles
 - **Gas**: Optimize with storage packing, batch operations, inline functions
 - **Testing**: Minimum 90% coverage, test all 64 bet types
