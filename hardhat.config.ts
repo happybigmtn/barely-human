@@ -1,7 +1,8 @@
 import { configVariable } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox-viem";
+import hardhatToolboxViem from "@nomicfoundation/hardhat-toolbox-viem";
 
 export default {
+  plugins: [hardhatToolboxViem],
   paths: {
     sources: "./contracts",
     tests: "./test",
