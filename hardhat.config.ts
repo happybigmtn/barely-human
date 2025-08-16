@@ -14,9 +14,9 @@ export default {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 100,  // Reduced for smaller bytecode
+        runs: 1,  // Minimum runs for smallest bytecode
       },
-      viaIR: true,
+      // viaIR: true,  // Disabled as it increases size
     },
   },
   networks: {

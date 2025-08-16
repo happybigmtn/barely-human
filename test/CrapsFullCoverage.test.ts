@@ -61,7 +61,7 @@ async function main() {
         ]);
         
         const crapsBets = await viem.deployContract("CrapsBets", []);
-        const crapsSettlement = await viem.deployContract("CrapsSettlementOptimized", []);
+        const crapsSettlement = await viem.deployContract("CrapsSettlement", []);
         
         // Deploy mock vault for testing
         const mockVault = await viem.deployContract("MockCrapsVault", [botToken.address]);
