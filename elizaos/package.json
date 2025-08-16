@@ -1,0 +1,32 @@
+{
+  "name": "barely-human-bots",
+  "version": "1.0.0",
+  "description": "ElizaOS AI bot personalities for Barely Human DeFi Casino",
+  "type": "module",
+  "main": "runtime/index.js",
+  "scripts": {
+    "start": "node runtime/index.js",
+    "dev": "nodemon runtime/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@ai16z/eliza": "^0.1.0",
+    "@ai16z/adapter-postgres": "^0.1.0",
+    "@ai16z/adapter-sqlite": "^0.1.0",
+    "@ai16z/adapter-supabase": "^0.1.0",
+    "@ai16z/client-discord": "^0.1.0",
+    "@ai16z/client-twitter": "^0.1.0",
+    "@ai16z/plugin-node": "^0.1.0",
+    "@ai16z/plugin-solana": "^0.1.0",
+    "ethers": "^6.9.0",
+    "viem": "^2.7.0",
+    "dotenv": "^16.3.1",
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "@types/node": "^20.10.0"
+  }
+}
