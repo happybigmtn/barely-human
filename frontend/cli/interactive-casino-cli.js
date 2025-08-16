@@ -11,7 +11,7 @@ import ora from 'ora';
 import Table from 'cli-table3';
 import figlet from 'figlet';
 import { createPublicClient, createWalletClient, http, formatEther, parseEther } from 'viem';
-import { localhost } from 'viem/chains';
+import { hardhatChain, contractCallWithRetry, logContractError } from '../../config/chains.js';
 import { privateKeyToAccount } from 'viem/accounts';
 import fs from 'fs';
 import path from 'path';
@@ -70,14 +70,14 @@ class InteractiveCasinoCLI {
             
             // Initialize blockchain clients
             this.publicClient = createPublicClient({
-                chain: localhost,
+                chain: hardhatChain,
                 transport: http('http://127.0.0.1:8545')
             });
             
             const account = privateKeyToAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
             this.walletClient = createWalletClient({
                 account,
-                chain: localhost,
+                chain: hardhatChain,
                 transport: http('http://127.0.0.1:8545')
             });
             

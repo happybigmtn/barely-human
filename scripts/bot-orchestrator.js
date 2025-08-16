@@ -7,12 +7,12 @@
 
 import chalk from 'chalk';
 import { createPublicClient, createWalletClient, http, formatEther, parseEther } from 'viem';
-import { localhost } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { hardhatChain, contractCallWithRetry, logContractError, validateDeployment } from '../config/chains.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -42,18 +42,37 @@ class BotOrchestrator {
         console.log(chalk.cyan('\n🤖 Initializing Bot Orchestrator\n'));
         console.log(chalk.gray('='.repeat(60)));
         
-        // Load deployments
+        // Load deployments with validation
         const deploymentPath = path.join(__dirname, '../deployments/localhost.json');
         if (!fs.existsSync(deploymentPath)) {
             throw new Error('No deployment found. Run deployment script first.');
         }
-        this.deployments = JSON.parse(fs.readFileSync(deploymentPath, 'utf8'));
         
-        // Create public client
+        try {
+            this.deployments = JSON.parse(fs.readFileSync(deploymentPath, 'utf8'));
+            validateDeployment(this.deployments);
+            console.log(chalk.gray(`📂 Loaded deployment from ${deploymentPath}`));
+            console.log(chalk.gray(`🔗 Chain ID: ${this.deployments.chainId}`));
+        } catch (error) {
+            throw new Error(`Failed to load deployment: ${error.message}`);
+        }
+        
+        // Create public client with correct chain
         this.publicClient = createPublicClient({
-            chain: localhost,
+            chain: hardhatChain,
             transport: http('http://127.0.0.1:8545')
         });
+        
+        // Verify chain connection
+        try {
+            const chainId = await this.publicClient.getChainId();
+            console.log(chalk.gray(`🌐 Connected to chain ID: ${chainId}`));
+            if (chainId !== 31337) {
+                console.warn(chalk.yellow(`⚠️  Warning: Expected chain ID 31337, got ${chainId}`));
+            }
+        } catch (error) {
+            throw new Error(`Failed to connect to chain: ${error.message}`);
+        }
         
         // Initialize bots with unique wallets
         for (let i = 0; i < BOT_PERSONALITIES.length; i++) {
@@ -61,7 +80,7 @@ class BotOrchestrator {
             const account = privateKeyToAccount(privateKey);
             const walletClient = createWalletClient({
                 account,
-                chain: localhost,
+                chain: hardhatChain,
                 transport: http('http://127.0.0.1:8545')
             });
             

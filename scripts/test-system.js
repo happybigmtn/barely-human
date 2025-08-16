@@ -6,7 +6,6 @@
  */
 
 import { createPublicClient, createWalletClient, http, formatEther, parseEther } from 'viem';
-import { localhost } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import fs from 'fs';
 import path from 'path';
@@ -14,13 +13,25 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
+import { hardhatChain, contractCallWithRetry, logContractError, validateDeployment } from '../config/chains.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load deployment info
+// Load deployment info with validation
 const deploymentPath = path.join(__dirname, '../deployments/localhost.json');
+if (!fs.existsSync(deploymentPath)) {
+    console.error('❌ No deployment found. Run deployment script first.');
+    process.exit(1);
+}
+
 const deployments = JSON.parse(fs.readFileSync(deploymentPath, 'utf8'));
+try {
+    validateDeployment(deployments);
+} catch (error) {
+    console.error('❌ Invalid deployment:', error.message);
+    process.exit(1);
+}
 
 // Load ABI helper
 const loadABI = (contractName) => {
@@ -51,16 +62,28 @@ async function testSystem() {
     console.log(chalk.cyan('\n🧪 Testing Barely Human DeFi Casino System\n'));
     console.log(chalk.gray('='.repeat(60)));
     
-    // Create clients
+    // Create clients with correct chain
     const publicClient = createPublicClient({
-        chain: localhost,
+        chain: hardhatChain,
         transport: http('http://127.0.0.1:8545')
     });
+    
+    // Verify connection
+    try {
+        const chainId = await publicClient.getChainId();
+        console.log(chalk.gray(`🌐 Connected to chain ID: ${chainId}`));
+        if (chainId !== 31337) {
+            console.warn(chalk.yellow(`⚠️ Warning: Expected chain ID 31337, got ${chainId}`));
+        }
+    } catch (error) {
+        console.error(chalk.red('❌ Failed to connect to chain:', error.message));
+        process.exit(1);
+    }
     
     const account = privateKeyToAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
     const walletClient = createWalletClient({
         account,
-        chain: localhost,
+        chain: hardhatChain,
         transport: http('http://127.0.0.1:8545')
     });
     

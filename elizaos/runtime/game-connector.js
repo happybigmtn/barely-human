@@ -1,5 +1,5 @@
 import { createPublicClient, createWalletClient, http, parseEther, formatEther } from 'viem';
-import { localhost } from 'viem/chains';
+import { hardhatChain, contractCallWithRetry, logContractError } from '../../config/chains.js';
 import { privateKeyToAccount } from 'viem/accounts';
 import fs from 'fs';
 import path from 'path';
@@ -71,7 +71,7 @@ export class GameConnector {
         
         // Create public client
         this.publicClient = createPublicClient({
-            chain: localhost,
+            chain: hardhatChain,
             transport: http('http://127.0.0.1:8545')
         });
         
@@ -114,7 +114,7 @@ export class GameConnector {
         
         const walletClient = createWalletClient({
             account,
-            chain: localhost,
+            chain: hardhatChain,
             transport: http('http://127.0.0.1:8545')
         });
         
@@ -161,37 +161,48 @@ export class GameConnector {
      * Get current game state
      */
     async getGameState() {
-        const phase = await this.publicClient.readContract({
-            address: this.contracts.crapsGame.address,
-            abi: this.contracts.crapsGame.abi,
-            functionName: 'getCurrentPhase'
-        });
-        
-        const shooter = await this.publicClient.readContract({
-            address: this.contracts.crapsGame.address,
-            abi: this.contracts.crapsGame.abi,
-            functionName: 'getCurrentShooter'
-        });
-        
-        const lastRoll = await this.publicClient.readContract({
-            address: this.contracts.crapsGame.address,
-            abi: this.contracts.crapsGame.abi,
-            functionName: 'getLastRoll'
-        });
-        
-        this.gameState = {
-            phase: ['IDLE', 'COME_OUT', 'POINT'][Number(phase)],
-            point: Number(shooter[1]), // point is at index 1
-            lastRoll: lastRoll ? {
-                die1: Number(lastRoll[0]),
-                die2: Number(lastRoll[1]),
-                total: Number(lastRoll[2])
-            } : null,
-            seriesId: Number(shooter[3]), // seriesId at index 3
-            activeBets: this.gameState.activeBets
-        };
-        
-        return this.gameState;
+        try {
+            const phase = await contractCallWithRetry(async () => {
+                return await this.publicClient.readContract({
+                    address: this.contracts.crapsGame.address,
+                    abi: this.contracts.crapsGame.abi,
+                    functionName: 'getCurrentPhase'
+                });
+            });
+            
+            const shooter = await contractCallWithRetry(async () => {
+                return await this.publicClient.readContract({
+                    address: this.contracts.crapsGame.address,
+                    abi: this.contracts.crapsGame.abi,
+                    functionName: 'getCurrentShooter'
+                });
+            });
+            
+            const lastRoll = await contractCallWithRetry(async () => {
+                return await this.publicClient.readContract({
+                    address: this.contracts.crapsGame.address,
+                    abi: this.contracts.crapsGame.abi,
+                    functionName: 'getLastRoll'
+                });
+            });
+            
+            this.gameState = {
+                phase: ['IDLE', 'COME_OUT', 'POINT'][Number(phase)],
+                point: Number(shooter[1]), // point is at index 1
+                lastRoll: lastRoll ? {
+                    die1: Number(lastRoll[0]),
+                    die2: Number(lastRoll[1]),
+                    total: Number(lastRoll[2])
+                } : null,
+                seriesId: Number(shooter[3]), // seriesId at index 3
+                activeBets: this.gameState.activeBets
+            };
+            
+            return this.gameState;
+        } catch (error) {
+            logContractError('CrapsGame', 'getGameState', error);
+            throw error;
+        }
     }
     
     /**
@@ -339,7 +350,7 @@ export class GameConnector {
         const { request } = await this.publicClient.simulateContract({
             address: this.contracts.crapsGame.address,
             abi: this.contracts.crapsGame.abi,
-            functionName: 'rollDice',
+            functionName: 'requestDiceRoll',
             account: bot.account
         });
         

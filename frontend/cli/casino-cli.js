@@ -6,7 +6,7 @@ import inquirer from 'inquirer';
 import ora from 'ora';
 import Table from 'cli-table3';
 import { createPublicClient, createWalletClient, http, formatEther, parseEther } from 'viem';
-import { localhost } from 'viem/chains';
+import { hardhatChain, contractCallWithRetry, logContractError } from '../../config/chains.js';
 import { privateKeyToAccount } from 'viem/accounts';
 import fs from 'fs';
 import path from 'path';
