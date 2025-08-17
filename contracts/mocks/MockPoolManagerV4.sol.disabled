@@ -295,23 +295,8 @@ contract MockPoolManagerV4 is IPoolManager {
         return 0;
     }
     
-    function getPosition(PoolId, address, int24, int24, bytes32) 
-        external 
-        pure 
-        override 
-        returns (Position memory) 
-    {
-        return Position({liquidity: 0, feeGrowthInside0LastX128: 0, feeGrowthInside1LastX128: 0});
-    }
-    
-    function getSlot0(PoolId) external pure override returns (Slot0 memory) {
-        return Slot0({
-            sqrtPriceX96: 0,
-            tick: 0,
-            protocolFee: 0,
-            lpFee: 0
-        });
-    }
+    // Note: getPosition and getSlot0 are not part of IPoolManager interface
+    // They are provided by StateLibrary for external access
     
     function currencyDelta(address, Currency) external pure override returns (int256) {
         return 0;

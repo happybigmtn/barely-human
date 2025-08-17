@@ -1,0 +1,24 @@
+{
+  "timestamp": "2025-08-17T02:50:48.800Z",
+  "success": false,
+  "totalDuration": 6589,
+  "results": [
+    {
+      "name": "Unit Tests",
+      "success": true,
+      "duration": 3320,
+      "critical": true
+    },
+    {
+      "name": "Integration Tests",
+      "success": false,
+      "duration": 3267,
+      "critical": true
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "passed": 1,
+    "failed": 1
+  }
+}

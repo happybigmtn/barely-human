@@ -4,125 +4,132 @@ pragma solidity 0.8.28;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./CrapsVault.sol";
+import "../libraries/VaultFactoryLib.sol";
 
 /**
  * @title VaultFactoryMinimal
- * @notice Minimal factory for deploying bot vaults - optimized for size
- * @dev Stripped down version to fit under 24KB limit
+ * @notice Minimal factory contract for deploying bot vaults (under 24KB limit)
  */
 contract VaultFactoryMinimal is AccessControl {
     bytes32 public constant DEPLOYER_ROLE = keccak256("DEPLOYER_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     
     uint256 public constant MAX_BOTS = 10;
     uint256 public nextBotId;
     
-    IERC20 public immutable defaultAsset;
-    address public immutable treasuryAddress;
-    address public gameAddress;
-    address public botManager;
+    mapping(uint256 => VaultFactoryLib.VaultInfo) public vaults;
+    mapping(address => uint256) public vaultToBotId;
+    mapping(uint256 => VaultFactoryLib.BotConfig) public botConfigs;
     
-    mapping(uint256 => address) public botVaults;
     address[] public allVaults;
     
-    event VaultDeployed(uint256 indexed botId, address indexed vault);
-    event BotManagerSet(address indexed botManager);
-    event GameAddressSet(address indexed gameAddress);
+    IERC20 public defaultAsset;
+    address public gameContract;
+    address public botManagerContract;
+    address public treasuryAddress;
+    
+    event VaultCreated(uint256 indexed botId, address indexed vault, string botName);
+    event VaultStatusChanged(uint256 indexed botId, bool active);
     
     constructor(IERC20 _defaultAsset, address _treasuryAddress) {
-        require(address(_defaultAsset) != address(0) && _treasuryAddress != address(0), "Invalid params");
-        
+        require(address(_defaultAsset) != address(0), "Invalid asset");
         defaultAsset = _defaultAsset;
         treasuryAddress = _treasuryAddress;
-        
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(DEPLOYER_ROLE, msg.sender);
-    }
-    
-    function setBotManager(address _botManager) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_botManager != address(0), "Invalid address");
-        botManager = _botManager;
-        emit BotManagerSet(_botManager);
-    }
-    
-    function setGameAddress(address _gameAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_gameAddress != address(0), "Invalid address");
-        gameAddress = _gameAddress;
-        emit GameAddressSet(_gameAddress);
-    }
-    
-    function deployVault(uint256 botId) public onlyRole(DEPLOYER_ROLE) returns (address) {
-        require(botId < MAX_BOTS, "Invalid bot ID");
-        require(botVaults[botId] == address(0), "Already deployed");
-        require(botManager != address(0), "Bot manager not set");
-        
-        string memory name = getBotName(botId);
-        
-        CrapsVault vault = new CrapsVault(
-            defaultAsset,
-            botId,
-            name,
-            botManager
-        );
-        
-        botVaults[botId] = address(vault);
-        allVaults.push(address(vault));
-        
-        if (botId >= nextBotId) {
-            nextBotId = botId + 1;
-        }
-        
-        emit VaultDeployed(botId, address(vault));
-        return address(vault);
+        _grantRole(MANAGER_ROLE, msg.sender);
     }
     
     function deployAllBots() external onlyRole(DEPLOYER_ROLE) {
-        for (uint256 i = 0; i < MAX_BOTS; i++) {
-            if (botVaults[i] == address(0)) {
-                deployVault(i);
+        require(nextBotId == 0, "Already deployed");
+        
+        string[10] memory names = VaultFactoryLib.getBotNames();
+        string[10] memory personalities = VaultFactoryLib.getBotPersonalities();
+        uint8[10] memory aggressiveness = VaultFactoryLib.getBotAggressiveness();
+        uint8[10] memory riskTolerance = VaultFactoryLib.getBotRiskTolerance();
+        
+        for (uint256 i = 0; i < 10; i++) {
+            uint256 botId = nextBotId++;
+            
+            CrapsVault vault = new CrapsVault(defaultAsset, botId, names[i], msg.sender);
+            address vaultAddr = address(vault);
+            
+            vaults[botId] = VaultFactoryLib.VaultInfo({
+                vaultAddress: vaultAddr,
+                asset: address(defaultAsset),
+                botId: botId,
+                botName: names[i],
+                deployedAt: block.timestamp,
+                isActive: true
+            });
+            
+            botConfigs[botId] = VaultFactoryLib.BotConfig({
+                name: names[i],
+                manager: msg.sender,
+                minBet: 10 * 10**18,
+                maxBet: 1000 * 10**18,
+                aggressiveness: aggressiveness[i],
+                riskTolerance: riskTolerance[i],
+                personality: personalities[i]
+            });
+            
+            vaultToBotId[vaultAddr] = botId;
+            allVaults.push(vaultAddr);
+            
+            VaultFactoryLib.grantVaultRoles(vaultAddr, gameContract, botManagerContract, treasuryAddress);
+            
+            emit VaultCreated(botId, vaultAddr, names[i]);
+        }
+    }
+    
+    function setGameContract(address _game) external onlyRole(MANAGER_ROLE) {
+        gameContract = _game;
+        _updateAllVaultRoles(1);
+    }
+    
+    function setBotManager(address _manager) external onlyRole(MANAGER_ROLE) {
+        botManagerContract = _manager;
+        _updateAllVaultRoles(2);
+    }
+    
+    function setTreasury(address _treasury) external onlyRole(MANAGER_ROLE) {
+        treasuryAddress = _treasury;
+        _updateAllVaultRoles(3);
+    }
+    
+    function toggleVaultStatus(uint256 botId) external onlyRole(MANAGER_ROLE) {
+        require(botId < nextBotId, "Invalid bot ID");
+        vaults[botId].isActive = !vaults[botId].isActive;
+        emit VaultStatusChanged(botId, vaults[botId].isActive);
+    }
+    
+    function _updateAllVaultRoles(uint8 roleType) private {
+        for (uint256 i = 0; i < nextBotId; i++) {
+            address vaultAddr = vaults[i].vaultAddress;
+            if (vaultAddr != address(0)) {
+                CrapsVault vault = CrapsVault(vaultAddr);
+                
+                if (roleType == 1 && gameContract != address(0)) {
+                    vault.grantRole(vault.GAME_ROLE(), gameContract);
+                } else if (roleType == 2 && botManagerContract != address(0)) {
+                    vault.grantRole(vault.MANAGER_ROLE(), botManagerContract);
+                } else if (roleType == 3 && treasuryAddress != address(0)) {
+                    vault.grantRole(vault.FEE_COLLECTOR_ROLE(), treasuryAddress);
+                }
             }
         }
     }
     
-    function getBotVault(uint8 botId) external view returns (address) {
-        return botVaults[botId];
-    }
-    
-    function getAllVaults() external view returns (address[] memory) {
-        return allVaults;
+    // Essential getters only
+    function getVault(uint256 botId) external view returns (address) {
+        return vaults[botId].vaultAddress;
     }
     
     function getVaultCount() external view returns (uint256) {
-        return allVaults.length;
+        return nextBotId;
     }
     
-    function getBotName(uint256 botId) internal pure returns (string memory) {
-        if (botId == 0) return "Alice";
-        if (botId == 1) return "Bob";
-        if (botId == 2) return "Charlie";
-        if (botId == 3) return "Diana";
-        if (botId == 4) return "Eddie";
-        if (botId == 5) return "Fiona";
-        if (botId == 6) return "Greg";
-        if (botId == 7) return "Helen";
-        if (botId == 8) return "Ivan";
-        if (botId == 9) return "Julia";
-        return "Unknown";
-    }
-    
-    function toString(uint256 value) internal pure returns (string memory) {
-        if (value == 0) return "0";
-        uint256 temp = value;
-        uint256 digits;
-        while (temp != 0) {
-            digits++;
-            temp /= 10;
-        }
-        bytes memory buffer = new bytes(digits);
-        while (value != 0) {
-            digits--;
-            buffer[digits] = bytes1(uint8(48 + value % 10));
-            value /= 10;
-        }
-        return string(buffer);
+    function treasury() external view returns (address) {
+        return treasuryAddress;
     }
 }

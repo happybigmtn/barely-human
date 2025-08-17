@@ -1,5 +1,6 @@
 import { network } from "hardhat";
 import { parseEther, keccak256, toBytes, Address } from "viem";
+import TestHelpers from "./helpers/TestHelpers.js";
 
 /**
  * Full System Integration Tests
@@ -28,7 +29,11 @@ async function main() {
   // Get public client
   const publicClient = await viem.getPublicClient();
   
-  console.log("🏗️ Deploying Full Casino System...");
+  console.log("🏗️ Deploying EXPANDED Full Casino System...");
+  
+  // Deploy comprehensive system using test utilities
+  const contracts = await TestHelpers.deployContracts();
+  console.log("✅ Core contracts deployed");
   
   // Deploy BOT Token
   console.log("🪙 Deploying BOT Token...");

@@ -1,0 +1,502 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.28;
+
+import "../game/ICrapsGame.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import "@uniswap/v4-core/src/types/PoolKey.sol";
+import "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
+import "@uniswap/v4-core/src/types/BalanceDelta.sol";
+import "@uniswap/v4-core/src/libraries/StateLibrary.sol";
+import "@uniswap/v4-core/src/libraries/Hooks.sol";
+
+/**
+ * @title TestVRFCoordinator
+ * @notice Test Chainlink VRF Coordinator for testing
+ */
+contract TestVRFCoordinator {
+    uint256 private nextRequestId = 1;
+    mapping(uint256 => address) public requestIdToConsumer;
+    
+    function requestRandomWords(
+        bytes32,
+        uint64,
+        uint16,
+        uint32,
+        uint32
+    ) external returns (uint256 requestId) {
+        requestId = nextRequestId++;
+        requestIdToConsumer[requestId] = msg.sender;
+        return requestId;
+    }
+    
+    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) external {
+        address consumer = requestIdToConsumer[requestId];
+        (bool success,) = consumer.call(
+            abi.encodeWithSignature("rawFulfillRandomWords(uint256,uint256[])", requestId, randomWords)
+        );
+        require(success, "Fulfillment failed");
+    }
+}
+
+/**
+ * @title MockCrapsVault
+ * @notice Mock vault for testing settlement
+ */
+contract MockCrapsVault is ICrapsVault {
+    IERC20 public asset;
+    mapping(address => uint256) public balances;
+    address[] public activeBotVaults;
+    
+    constructor(address _asset) {
+        asset = IERC20(_asset);
+        
+        // Initialize with 10 bot vault addresses
+        for (uint i = 0; i < 10; i++) {
+            activeBotVaults.push(address(uint160(0x1000000000000000000000000000000000000001) + uint160(i)));
+        }
+    }
+    
+    function processBet(address player, uint256 amount) external override returns (bool) {
+        // Mock implementation
+        balances[player] -= amount;
+        return true;
+    }
+    
+    function processPayout(address player, uint256 amount) external override returns (bool) {
+        // Mock implementation
+        balances[player] += amount;
+        return true;
+    }
+    
+    function getPlayerBalance(address player) external view override returns (uint256) {
+        return balances[player];
+    }
+    
+    function getTotalLiquidity() external view override returns (uint256) {
+        return asset.balanceOf(address(this));
+    }
+    
+    function getActiveBotVaults() external view override returns (address[] memory) {
+        return activeBotVaults;
+    }
+}
+
+/**
+ * @title MockCrapsBets
+ * @notice Mock bets contract for testing
+ */
+contract MockCrapsBets is ICrapsBets {
+    mapping(address => mapping(uint8 => Bet)) public bets;
+    mapping(address => PlayerBets) public playerBets;
+    
+    function placeBet(uint8 betType, uint256 amount) external override {
+        bets[msg.sender][betType] = Bet({
+            amount: amount,
+            betType: betType,
+            point: 0,
+            timestamp: block.timestamp,
+            isActive: true
+        });
+        
+        playerBets[msg.sender].totalAtRisk += amount;
+        playerBets[msg.sender].activeBetCount++;
+        playerBets[msg.sender].activeBetsBitmap |= uint64(1 << betType);
+    }
+    
+    function placeOddsBet(uint8 baseBetType, uint256 oddsAmount) external override {
+        // Mock implementation
+        bets[msg.sender][baseBetType + 29].amount = oddsAmount; // Odds bets start at 29
+    }
+    
+    function removeBet(uint8 betType) external override {
+        Bet memory bet = bets[msg.sender][betType];
+        if (bet.isActive) {
+            playerBets[msg.sender].totalAtRisk -= bet.amount;
+            playerBets[msg.sender].activeBetCount--;
+            playerBets[msg.sender].activeBetsBitmap &= ~uint64(1 << betType);
+            delete bets[msg.sender][betType];
+        }
+    }
+    
+    function clearBet(address player, uint8 betType) external override {
+        Bet memory bet = bets[player][betType];
+        if (bet.isActive) {
+            playerBets[player].totalAtRisk -= bet.amount;
+            playerBets[player].activeBetCount--;
+            playerBets[player].activeBetsBitmap &= ~uint64(1 << betType);
+            delete bets[player][betType];
+        }
+    }
+    
+    function getPlayerBets(address player) external view override returns (PlayerBets memory) {
+        return playerBets[player];
+    }
+    
+    function getBet(address player, uint8 betType) external view override returns (Bet memory) {
+        return bets[player][betType];
+    }
+    
+    function hasActiveBet(address player, uint8 betType) external view override returns (bool) {
+        return bets[player][betType].isActive;
+    }
+    
+    function getTotalAtRisk(address player) external view override returns (uint256) {
+        return playerBets[player].totalAtRisk;
+    }
+}
+
+/**
+ * @title MockVRFCoordinatorV2Plus
+ * @notice Enhanced Mock VRF Coordinator V2+ for comprehensive testing
+ */
+contract MockVRFCoordinatorV2Plus {
+    using VRFV2PlusClient for VRFV2PlusClient.RandomWordsRequest;
+    
+    uint256 private nextRequestId = 1;
+    mapping(uint256 => address) private requestIdToConsumer;
+    mapping(uint256 => VRFV2PlusClient.RandomWordsRequest) private requests;
+    mapping(uint256 => bool) private subscriptionExists;
+    mapping(uint256 => mapping(address => bool)) private subscriptionConsumers;
+    mapping(uint256 => uint256[]) private fulfillmentHistory;
+    
+    // Events
+    event RandomWordsRequested(
+        bytes32 indexed keyHash,
+        uint256 requestId,
+        uint256 indexed subId,
+        uint16 minimumRequestConfirmations,
+        uint32 callbackGasLimit,
+        uint32 numWords,
+        bytes extraArgs,
+        address indexed sender
+    );
+    
+    event RandomWordsFulfilled(
+        uint256 indexed requestId,
+        address indexed consumer,
+        uint256[] randomWords
+    );
+    
+    event SubscriptionCreated(uint256 indexed subId, address owner);
+    event ConsumerAdded(uint256 indexed subId, address consumer);
+    
+    constructor() {
+        // Create default subscription for testing
+        subscriptionExists[1] = true;
+    }
+    
+    function requestRandomWords(
+        VRFV2PlusClient.RandomWordsRequest calldata req
+    ) external returns (uint256 requestId) {
+        require(subscriptionExists[req.subId], "Subscription does not exist");
+        require(subscriptionConsumers[req.subId][msg.sender], "Consumer not authorized");
+        
+        requestId = nextRequestId++;
+        requestIdToConsumer[requestId] = msg.sender;
+        requests[requestId] = req;
+        
+        emit RandomWordsRequested(
+            req.keyHash,
+            requestId,
+            req.subId,
+            req.requestConfirmations,
+            req.callbackGasLimit,
+            req.numWords,
+            req.extraArgs,
+            msg.sender
+        );
+        
+        return requestId;
+    }
+    
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) external {
+        address consumer = requestIdToConsumer[requestId];
+        require(consumer != address(0), "Request not found");
+        require(randomWords.length == requests[requestId].numWords, "Wrong number of random words");
+        
+        // Store fulfillment history
+        fulfillmentHistory[requestId] = randomWords;
+        
+        (bool success, ) = consumer.call(
+            abi.encodeWithSignature(
+                "fulfillRandomWords(uint256,uint256[])",
+                requestId,
+                randomWords
+            )
+        );
+        require(success, "Failed to fulfill random words");
+        
+        emit RandomWordsFulfilled(requestId, consumer, randomWords);
+        
+        // Clean up
+        delete requestIdToConsumer[requestId];
+        delete requests[requestId];
+    }
+    
+    function createSubscription() external returns (uint256 subId) {
+        subId = nextRequestId++;
+        subscriptionExists[subId] = true;
+        emit SubscriptionCreated(subId, msg.sender);
+        return subId;
+    }
+    
+    function addConsumer(uint256 subId, address consumer) external {
+        require(subscriptionExists[subId], "Subscription does not exist");
+        subscriptionConsumers[subId][consumer] = true;
+        emit ConsumerAdded(subId, consumer);
+    }
+    
+    function fulfillSpecificDice(uint256 requestId, uint8 die1Value, uint8 die2Value) external {
+        require(die1Value >= 1 && die1Value <= 6, "Invalid die1 value");
+        require(die2Value >= 1 && die2Value <= 6, "Invalid die2 value");
+        
+        uint256[] memory randomWords = new uint256[](2);
+        randomWords[0] = die1Value - 1;
+        randomWords[1] = die2Value - 1;
+        
+        this.fulfillRandomWords(requestId, randomWords);
+    }
+    
+    function getRequestDetails(uint256 requestId) 
+        external 
+        view 
+        returns (address consumer, uint32 numWords) 
+    {
+        return (requestIdToConsumer[requestId], requests[requestId].numWords);
+    }
+    
+    function getFulfillmentHistory(uint256 requestId) external view returns (uint256[] memory) {
+        return fulfillmentHistory[requestId];
+    }
+}
+
+/**
+ * @title MockERC20
+ * @notice Enhanced Mock ERC20 for testing
+ */
+contract MockERC20 is ERC20 {
+    uint8 private _decimals;
+    
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        uint8 decimals_,
+        uint256 initialSupply
+    ) ERC20(name_, symbol_) {
+        _decimals = decimals_;
+        _mint(msg.sender, initialSupply);
+    }
+    
+    function decimals() public view virtual override returns (uint8) {
+        return _decimals;
+    }
+    
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+    
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+}
+
+/**
+ * @title MockPoolManagerV4
+ * @notice Mock Uniswap V4 Pool Manager for testing hooks
+ */
+contract MockPoolManagerV4 {
+    using StateLibrary for IPoolManager;
+    
+    struct MockPosition {
+        uint256 liquidity;
+        uint256 feeGrowthInside0LastX128;
+        uint256 feeGrowthInside1LastX128;
+        uint128 tokensOwed0;
+        uint128 tokensOwed1;
+    }
+    
+    mapping(bytes32 => bool) public isPoolInitialized;
+    mapping(bytes32 => uint160) public poolSqrtPriceX96;
+    mapping(bytes32 => int24) public poolTick;
+    mapping(bytes32 => uint128) public poolLiquidity;
+    mapping(bytes32 => uint256) public poolFeeGrowthGlobal0X128;
+    mapping(bytes32 => uint256) public poolFeeGrowthGlobal1X128;
+    mapping(bytes32 => MockPosition) public positions;
+    
+    // Track swap data for testing
+    struct SwapData {
+        address user;
+        PoolKey poolKey;
+        IPoolManager.SwapParams params;
+        uint256 timestamp;
+    }
+    
+    SwapData[] public swapHistory;
+    mapping(address => uint256) public swapCount;
+    
+    event Initialize(
+        PoolId indexed poolId,
+        Currency indexed currency0,
+        Currency indexed currency1,
+        uint24 fee,
+        int24 tickSpacing,
+        IHooks hooks
+    );
+    
+    event Swap(
+        PoolId indexed poolId,
+        address indexed sender,
+        int128 amount0,
+        int128 amount1,
+        uint160 sqrtPriceX96,
+        uint128 liquidity,
+        int24 tick
+    );
+    
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick) {
+        bytes32 poolId = keccak256(abi.encode(key));
+        require(!isPoolInitialized[poolId], "Pool already initialized");
+        
+        isPoolInitialized[poolId] = true;
+        poolSqrtPriceX96[poolId] = sqrtPriceX96;
+        poolTick[poolId] = 0; // Simplified tick calculation
+        
+        // Call hook's afterInitialize if it exists
+        if (address(key.hooks) != address(0)) {
+            try IHooks(address(key.hooks)).afterInitialize(msg.sender, key, sqrtPriceX96, 0, bytes("")) {
+                // Hook call succeeded
+            } catch {
+                // Hook call failed, continue
+            }
+        }
+        
+        emit Initialize(
+            PoolId.wrap(poolId),
+            key.currency0,
+            key.currency1,
+            key.fee,
+            key.tickSpacing,
+            key.hooks
+        );
+        
+        return 0;
+    }
+    
+    function swap(
+        PoolKey memory key,
+        IPoolManager.SwapParams memory params,
+        bytes calldata hookData
+    ) external returns (BalanceDelta delta) {
+        bytes32 poolId = keccak256(abi.encode(key));
+        require(isPoolInitialized[poolId], "Pool not initialized");
+        
+        // Store swap data for testing
+        swapHistory.push(SwapData({
+            user: msg.sender,
+            poolKey: key,
+            params: params,
+            timestamp: block.timestamp
+        }));
+        swapCount[msg.sender]++;
+        
+        // Call hook's beforeSwap if it exists
+        BeforeSwapDelta beforeSwapDelta;
+        if (address(key.hooks) != address(0)) {
+            try IHooks(address(key.hooks)).beforeSwap(msg.sender, key, params, hookData) returns (bytes4, BeforeSwapDelta _delta, uint24) {
+                beforeSwapDelta = _delta;
+            } catch {
+                // Hook call failed, continue with zero delta
+            }
+        }
+        
+        // Simulate swap calculation (simplified)
+        int128 amount0Delta = int128(params.amountSpecified / 2);
+        int128 amount1Delta = -int128(params.amountSpecified / 2);
+        
+        delta = BalanceDelta.wrap(bytes32(abi.encodePacked(amount0Delta, amount1Delta)));
+        
+        // Call hook's afterSwap if it exists
+        if (address(key.hooks) != address(0)) {
+            try IHooks(address(key.hooks)).afterSwap(msg.sender, key, params, delta, hookData) {
+                // Hook call succeeded
+            } catch {
+                // Hook call failed, continue
+            }
+        }
+        
+        emit Swap(
+            PoolId.wrap(poolId),
+            msg.sender,
+            amount0Delta,
+            amount1Delta,
+            poolSqrtPriceX96[poolId],
+            poolLiquidity[poolId],
+            poolTick[poolId]
+        );
+        
+        return delta;
+    }
+    
+    function getPool(PoolKey memory key) external view returns (
+        uint160 sqrtPriceX96,
+        int24 tick,
+        uint24 protocolFee,
+        uint24 lpFee
+    ) {
+        bytes32 poolId = keccak256(abi.encode(key));
+        sqrtPriceX96 = poolSqrtPriceX96[poolId];
+        tick = poolTick[poolId];
+        protocolFee = 0;
+        lpFee = key.fee;
+    }
+    
+    function getSwapHistory() external view returns (SwapData[] memory) {
+        return swapHistory;
+    }
+    
+    function getSwapCount(address user) external view returns (uint256) {
+        return swapCount[user];
+    }
+}
+
+/**
+ * @title MockTreasury
+ * @notice Mock Treasury for testing fee distribution
+ */
+contract MockTreasury {
+    IERC20 public botToken;
+    uint256 public totalFeesReceived;
+    uint256 public totalFeesDistributed;
+    
+    mapping(address => uint256) public stakingDistributions;
+    
+    event FeeReceived(uint256 amount);
+    event FeeDistributed(address recipient, uint256 amount);
+    
+    constructor(address _botToken) {
+        botToken = IERC20(_botToken);
+    }
+    
+    function receiveFees(uint256 amount) external {
+        require(botToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        totalFeesReceived += amount;
+        emit FeeReceived(amount);
+    }
+    
+    function distributeFees(address stakingPool, uint256 amount) external {
+        require(amount <= botToken.balanceOf(address(this)), "Insufficient balance");
+        require(botToken.transfer(stakingPool, amount), "Transfer failed");
+        
+        totalFeesDistributed += amount;
+        stakingDistributions[stakingPool] += amount;
+        emit FeeDistributed(stakingPool, amount);
+    }
+    
+    function getBalance() external view returns (uint256) {
+        return botToken.balanceOf(address(this));
+    }
+}

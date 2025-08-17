@@ -83,10 +83,10 @@ contract MockVRFCoordinatorV2Plus {
         require(consumer != address(0), "Request not found");
         require(randomWords.length == requests[requestId].numWords, "Wrong number of random words");
         
-        // Call the consumer's fulfillRandomWords function
+        // Call the consumer's rawFulfillRandomWords function (VRF 2.5 pattern)
         (bool success, ) = consumer.call(
             abi.encodeWithSignature(
-                "fulfillRandomWords(uint256,uint256[])",
+                "rawFulfillRandomWords(uint256,uint256[])",
                 requestId,
                 randomWords
             )
