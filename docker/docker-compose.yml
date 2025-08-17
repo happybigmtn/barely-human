@@ -1,0 +1,227 @@
+version: '3.8'
+
+services:
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: barely-human-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/ssl/certs:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - web
+      - api
+      - metadata
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+
+  # Web Application
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    container_name: barely-human-web
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://api.barelyhuman.xyz
+      - NEXT_PUBLIC_CHAIN_ID=8453
+      - NEXT_PUBLIC_RPC_URL=https://mainnet.base.org
+    volumes:
+      - web-data:/app/.next
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # API Services
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: barely-human-api
+    environment:
+      - NODE_ENV=production
+      - RPC_URL=https://mainnet.base.org
+      - PRIVATE_KEY_FILE=/run/secrets/private_key
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/barely_human
+    volumes:
+      - api-data:/app/data
+      - ./logs/api:/app/logs
+    secrets:
+      - private_key
+      - chainlink_vrf_key
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+
+  # OpenSea Metadata Server
+  metadata:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: barely-human-metadata
+    command: ["node", "art/opensea-metadata-server.js"]
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - RPC_URL=https://mainnet.base.org
+      - BASE_URL=https://api.barelyhuman.xyz
+      - FRONTEND_URL=https://barelyhuman.xyz
+    volumes:
+      - ./logs/metadata:/app/logs
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+
+  # NFT Generation Service
+  generator:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: barely-human-generator
+    command: ["node", "art/nft-generation-service.js"]
+    environment:
+      - NODE_ENV=production
+      - RPC_URL=https://mainnet.base.org
+      - PRIVATE_KEY_FILE=/run/secrets/private_key
+      - REDIS_URL=redis://redis:6379
+    secrets:
+      - private_key
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: barely-human-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+      - ./redis/redis.conf:/etc/redis/redis.conf:ro
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: barely-human-postgres
+    environment:
+      - POSTGRES_DB=barely_human
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    secrets:
+      - postgres_password
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: barely-human-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: barely-human-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD_FILE=/run/secrets/grafana_password
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    secrets:
+      - grafana_password
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+
+  # Log Aggregation - Loki
+  loki:
+    image: grafana/loki:latest
+    container_name: barely-human-loki
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./monitoring/loki/config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+
+  # Log Collection - Promtail
+  promtail:
+    image: grafana/promtail:latest
+    container_name: barely-human-promtail
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./monitoring/promtail/config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    restart: unless-stopped
+    networks:
+      - barely-human-network
+
+# Networks
+networks:
+  barely-human-network:
+    driver: bridge
+
+# Volumes
+volumes:
+  web-data:
+  api-data:
+  redis-data:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+  loki-data:
+
+# Secrets
+secrets:
+  private_key:
+    file: ./secrets/private_key.txt
+  chainlink_vrf_key:
+    file: ./secrets/chainlink_vrf_key.txt
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  grafana_password:
+    file: ./secrets/grafana_password.txt

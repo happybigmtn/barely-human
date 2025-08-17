@@ -1,0 +1,245 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    --color-primary: #007AFF;
+    --color-secondary: #5AC8FA;
+    --color-success: #34C759;
+    --color-warning: #FF9500;
+    --color-error: #FF3B30;
+    --color-text: #1D1D1F;
+    --color-text-secondary: #86868B;
+    --color-background: #FFFFFF;
+    --color-surface: #F2F2F7;
+    --color-border: #D1D1D6;
+  }
+  
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-white text-gray-900;
+    font-family: var(--font-system);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Minimal scrollbars */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+  
+  /* Firefox scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #D1D1D6 transparent;
+  }
+}
+
+@layer components {
+  /* Minimal button styles */
+  .btn-minimal {
+    @apply px-6 py-3 rounded-xl font-medium transition-all duration-200;
+    @apply hover:scale-[1.02] active:scale-[0.98];
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-900 hover:bg-gray-200;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent text-gray-600 hover:bg-gray-100;
+  }
+  
+  /* Clean text styles */
+  .text-minimal {
+    @apply font-medium tracking-tight;
+  }
+  
+  .text-subtle {
+    @apply text-gray-500 text-sm;
+  }
+  
+  /* Minimal cards */
+  .card-minimal {
+    @apply bg-white rounded-2xl border border-gray-200 p-6;
+    @apply shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .card-hover {
+    @apply hover:border-gray-300 cursor-pointer;
+  }
+  
+  /* Clean background */
+  .background-minimal {
+    @apply bg-gray-50;
+  }
+  
+  /* Subtle animations */
+  .animate-subtle {
+    @apply transition-transform duration-300 ease-out;
+  }
+  
+  .animate-subtle:hover {
+    @apply transform scale-105;
+  }
+  
+  /* Minimal loading */
+  .loading-minimal {
+    @apply w-4 h-4 border-2 border-gray-200 border-t-blue-600 rounded-full;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Subtle status indicators */
+  .status-active {
+    @apply text-green-600 bg-green-50 border-green-200;
+  }
+  
+  .status-warning {
+    @apply text-amber-600 bg-amber-50 border-amber-200;
+  }
+  
+  .status-error {
+    @apply text-red-600 bg-red-50 border-red-200;
+  }
+  
+  .status-neutral {
+    @apply text-gray-600 bg-gray-50 border-gray-200;
+  }
+  
+  /* Clean form inputs */
+  .input-minimal {
+    @apply bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-500;
+    @apply focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+    @apply transition-all duration-200;
+  }
+  
+  /* Progress bars */
+  .progress-bar {
+    @apply w-full bg-gray-700 rounded-full h-2;
+  }
+  
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+    background: linear-gradient(90deg, #39ff14, #00bfff);
+  }
+  
+  /* Chat bubbles */
+  .chat-bubble {
+    @apply max-w-xs lg:max-w-md px-4 py-2 rounded-2xl;
+  }
+  
+  .chat-bubble-user {
+    @apply bg-neon-blue text-white ml-auto;
+  }
+  
+  .chat-bubble-bot {
+    @apply glass-card mr-auto;
+  }
+  
+  /* Tables */
+  .table-neon {
+    @apply w-full border-collapse;
+  }
+  
+  .table-neon th {
+    @apply bg-casino-darker text-neon-blue font-display uppercase tracking-wider text-sm py-3 px-4 border-b border-gray-600;
+  }
+  
+  .table-neon td {
+    @apply py-3 px-4 border-b border-gray-800 text-gray-300;
+  }
+  
+  .table-neon tr:hover {
+    @apply bg-white/5;
+  }
+  
+  /* Notifications */
+  .notification {
+    @apply fixed top-4 right-4 z-50 max-w-sm;
+    @apply glass-card rounded-lg p-4 shadow-lg;
+    @apply transform transition-all duration-300 ease-in-out;
+  }
+  
+  .notification-enter {
+    @apply translate-x-full opacity-0;
+  }
+  
+  .notification-enter-active {
+    @apply translate-x-0 opacity-100;
+  }
+  
+  .notification-exit {
+    @apply translate-x-0 opacity-100;
+  }
+  
+  .notification-exit-active {
+    @apply translate-x-full opacity-0;
+  }
+  
+  /* Minimal bot status indicators */
+  .bot-status-active {
+    @apply w-2 h-2 bg-green-500 rounded-full;
+  }
+  
+  .bot-status-inactive {
+    @apply w-2 h-2 bg-gray-300 rounded-full;
+  }
+  
+  .bot-status-playing {
+    @apply w-2 h-2 bg-blue-500 rounded-full animate-pulse;
+  }
+  
+  /* Leaderboard animations */
+  .leaderboard-item {
+    @apply transition-all duration-500 ease-in-out;
+  }
+  
+  .leaderboard-item:hover {
+    @apply transform scale-105;
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .mobile-hidden {
+      @apply hidden;
+    }
+    
+    .mobile-stack {
+      @apply flex-col space-y-4 space-x-0;
+    }
+    
+    .mobile-full {
+      @apply w-full;
+    }
+  }
+}

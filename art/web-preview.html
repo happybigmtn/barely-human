@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barely Human - Generative Art Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ff6b9d, #f8b500, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+
+        .control-group select,
+        .control-group input {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .control-group select option {
+            background: #1a1a2e;
+            color: #ffffff;
+        }
+
+        .bot-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .bot-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .bot-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .bot-card.selected {
+            border-color: #ff6b9d;
+            background: rgba(255, 107, 157, 0.2);
+        }
+
+        .bot-card h3 {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .bot-card p {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b9d, #f8b500);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .preview-section {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .artwork-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .artwork-display {
+            width: 100%;
+            max-width: 500px;
+            height: 500px;
+            background: #000;
+            border-radius: 12px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .artwork-display svg {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+        }
+
+        .placeholder {
+            opacity: 0.5;
+            font-size: 18px;
+        }
+
+        .metadata-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metadata-panel h3 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #ff6b9d;
+        }
+
+        .trait-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .trait-item:last-child {
+            border-bottom: none;
+        }
+
+        .trait-label {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .trait-value {
+            color: #f8b500;
+            font-weight: 500;
+        }
+
+        .rarity-score {
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            background: linear-gradient(45deg, rgba(255, 107, 157, 0.2), rgba(248, 181, 0, 0.2));
+            border-radius: 12px;
+            border: 1px solid rgba(255, 107, 157, 0.3);
+        }
+
+        .rarity-score h4 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .rarity-score .score {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ff6b9d;
+        }
+
+        .generation-info {
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .generation-info h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .error {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .preview-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .bot-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Barely Human</h1>
+            <p>Authentic Substrate Algorithm - Direct Port from Original color.html with VRF Seeding</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-grid">
+                <div class="control-group">
+                    <label for="seed">VRF Seed (hex or number)</label>
+                    <input type="text" id="seed" placeholder="0x123456789abcdef..." value="">
+                </div>
+                <div class="control-group">
+                    <label for="seriesId">Series ID</label>
+                    <input type="number" id="seriesId" placeholder="1" value="1" min="1">
+                </div>
+                <div class="control-group">
+                    <label for="size">Preview Size</label>
+                    <select id="size">
+                        <option value="400">400px</option>
+                        <option value="600">600px</option>
+                        <option value="800">800px</option>
+                        <option value="1000">1000px</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Select Bot Personality</label>
+                <div class="bot-grid" id="botGrid">
+                    <!-- Bot cards will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="generateArt()">Generate Art</button>
+                <button class="btn btn-secondary" onclick="randomSeed()">Random Seed</button>
+                <button class="btn btn-secondary" onclick="downloadSVG()">Download SVG</button>
+            </div>
+        </div>
+
+        <div class="preview-section">
+            <div class="artwork-container">
+                <div class="artwork-display" id="artworkDisplay">
+                    <div class="placeholder">Select a bot and click "Generate Art" to preview</div>
+                </div>
+                <div class="generation-info" id="generationInfo" style="display: none;">
+                    <h4>Generation Details</h4>
+                    <p><strong>Algorithm:</strong> Authentic Substrate Crack Physics</p>
+                    <p><strong>Formation Types:</strong> 11 unique crack behaviors</p>
+                    <p><strong>Features:</strong> Sand painting, mountain generation, environmental systems</p>
+                    <p><strong>Deterministic:</strong> Yes (reproducible from VRF seed)</p>
+                    <p><strong>On-Chain Compatible:</strong> SVG format</p>
+                </div>
+            </div>
+
+            <div class="metadata-panel">
+                <h3>Artwork Metadata</h3>
+                
+                <div class="rarity-score" id="rarityScore" style="display: none;">
+                    <h4>Rarity Score</h4>
+                    <div class="score">--</div>
+                </div>
+
+                <div id="traits">
+                    <div class="trait-item">
+                        <span class="trait-label">Status</span>
+                        <span class="trait-value">Ready to generate</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./authentic-generator.js"></script>
+    <script>
+        // Bot personalities data
+        const BOT_DATA = [
+            { id: 0, name: "Alice All-In", theme: "Volcanic", style: "Explosive & Aggressive" },
+            { id: 1, name: "Bob Calculator", theme: "Klein Blue", style: "Mathematical & Precise" },
+            { id: 2, name: "Charlie Lucky", theme: "Aurora", style: "Mystical & Flowing" },
+            { id: 3, name: "Diana Ice Queen", theme: "Mist", style: "Cold & Crystalline" },
+            { id: 4, name: "Eddie Entertainer", theme: "Neon", style: "Theatrical & Vibrant" },
+            { id: 5, name: "Fiona Fearless", theme: "Storm", style: "Dynamic & Bold" },
+            { id: 6, name: "Greg Grinder", theme: "Zen", style: "Meditative & Steady" },
+            { id: 7, name: "Helen Hot Streak", theme: "Dawn", style: "Flowing & Energetic" },
+            { id: 8, name: "Ivan Intimidator", theme: "Void", style: "Dark & Menacing" },
+            { id: 9, name: "Julia Jinx", theme: "Cyber", style: "Chaotic & Unpredictable" }
+        ];
+
+        let selectedBotId = 0;
+        let currentArtwork = null;
+
+        // Initialize the interface
+        function init() {
+            populateBotGrid();
+            randomSeed();
+            selectBot(0);
+        }
+
+        // Populate bot selection grid
+        function populateBotGrid() {
+            const grid = document.getElementById('botGrid');
+            
+            BOT_DATA.forEach(bot => {
+                const card = document.createElement('div');
+                card.className = 'bot-card';
+                card.onclick = () => selectBot(bot.id);
+                card.innerHTML = `
+                    <h3>${bot.name}</h3>
+                    <p>${bot.theme}</p>
+                    <p style="font-size: 10px;">${bot.style}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Select a bot
+        function selectBot(botId) {
+            selectedBotId = botId;
+            
+            // Update UI
+            document.querySelectorAll('.bot-card').forEach((card, index) => {
+                card.classList.toggle('selected', index === botId);
+            });
+
+            // Update traits display
+            updateBotInfo(BOT_DATA[botId]);
+        }
+
+        // Update bot information in metadata panel
+        function updateBotInfo(bot) {
+            const traitsContainer = document.getElementById('traits');
+            traitsContainer.innerHTML = `
+                <div class="trait-item">
+                    <span class="trait-label">Bot</span>
+                    <span class="trait-value">${bot.name}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-label">Theme</span>
+                    <span class="trait-value">${bot.theme}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-label">Style</span>
+                    <span class="trait-value">${bot.style}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-label">Status</span>
+                    <span class="trait-value">Ready to generate</span>
+                </div>
+            `;
+        }
+
+        // Generate random seed
+        function randomSeed() {
+            const randomHex = '0x' + Math.floor(Math.random() * 0x1000000000000000).toString(16).padStart(16, '0');
+            document.getElementById('seed').value = randomHex;
+        }
+
+        // Generate artwork
+        async function generateArt() {
+            const seedInput = document.getElementById('seed').value;
+            const seriesId = parseInt(document.getElementById('seriesId').value) || 1;
+            const size = parseInt(document.getElementById('size').value) || 400;
+
+            if (!seedInput) {
+                alert('Please enter a seed value');
+                return;
+            }
+
+            // Convert seed to number
+            let seed;
+            try {
+                if (seedInput.startsWith('0x')) {
+                    seed = parseInt(seedInput.slice(2, 18), 16);
+                } else {
+                    seed = parseInt(seedInput);
+                }
+            } catch (error) {
+                alert('Invalid seed format');
+                return;
+            }
+
+            // Show loading state
+            const container = document.querySelector('.container');
+            const display = document.getElementById('artworkDisplay');
+            const rarityScore = document.getElementById('rarityScore');
+            const generationInfo = document.getElementById('generationInfo');
+            
+            container.classList.add('loading');
+            display.innerHTML = '<div class="placeholder">Generating artwork...</div>';
+
+            try {
+                // Use the authentic art generator
+                if (typeof AuthenticBarelyHumanGenerator === 'undefined') {
+                    throw new Error('Authentic art generator not loaded. Please ensure authentic-generator.js is loaded.');
+                }
+
+                const generator = new AuthenticBarelyHumanGenerator(seed, selectedBotId, seriesId);
+                const svg = generator.generateSVG();
+                
+                // Create basic metadata for display
+                const botData = BOT_DATA[selectedBotId];
+                const metadata = {
+                    attributes: [
+                        { trait_type: 'Bot ID', value: selectedBotId },
+                        { trait_type: 'Bot Name', value: botData.name },
+                        { trait_type: 'Theme', value: botData.theme },
+                        { trait_type: 'Style', value: botData.style },
+                        { trait_type: 'Series', value: seriesId },
+                        { trait_type: 'Algorithm', value: 'Authentic Substrate Physics' }
+                    ]
+                };
+                const traits = metadata.attributes;
+                const rarity = Math.floor(Math.random() * 100) + 1; // Simplified rarity calculation
+
+                currentArtwork = { svg, metadata, traits, rarity };
+
+                // Display artwork
+                const scaledSVG = svg
+                    .replace('width="1000"', `width="${size}"`)
+                    .replace('height="1000"', `height="${size}"`);
+                
+                display.innerHTML = scaledSVG;
+
+                // Update metadata
+                updateTraitsDisplay(metadata.attributes, traits);
+
+                // Show rarity score
+                rarityScore.style.display = 'block';
+                rarityScore.querySelector('.score').textContent = rarity;
+
+                // Show generation info
+                generationInfo.style.display = 'block';
+
+            } catch (error) {
+                console.error('Generation error:', error);
+                display.innerHTML = `<div class="error">Generation failed: ${error.message}</div>`;
+            } finally {
+                container.classList.remove('loading');
+            }
+        }
+
+        // Update traits display
+        function updateTraitsDisplay(attributes, traits) {
+            const traitsContainer = document.getElementById('traits');
+            
+            let html = '';
+            attributes.forEach(attr => {
+                html += `
+                    <div class="trait-item">
+                        <span class="trait-label">${attr.trait_type}</span>
+                        <span class="trait-value">${attr.value}</span>
+                    </div>
+                `;
+            });
+
+            traitsContainer.innerHTML = html;
+        }
+
+        // Download SVG
+        function downloadSVG() {
+            if (!currentArtwork) {
+                alert('Please generate artwork first');
+                return;
+            }
+
+            const blob = new Blob([currentArtwork.svg], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `barely-human-${selectedBotId}-${document.getElementById('seriesId').value}-${Date.now()}.svg`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

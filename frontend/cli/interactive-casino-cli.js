@@ -21,6 +21,9 @@ import { dirname } from 'path';
 // Import our modules
 import BotLLMManager from '../../elizaos/runtime/llm-connector.js';
 import GameConnector from '../../elizaos/runtime/game-connector.js';
+import { WalletManager } from './wallet-manager.js';
+import WalletFundingManager from '../../scripts/fund-accounts.ts';
+import EmergencyFundingManager from '../../scripts/emergency-fund-fix.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -48,6 +51,11 @@ class InteractiveCasinoCLI {
         this.deployments = null;
         this.publicClient = null;
         this.walletClient = null;
+        this.walletManager = new WalletManager();
+        this.fundingManager = null;
+        this.emergencyManager = null;
+        this.currentUser = null;
+        this.autoFundingEnabled = true;
         this.currentRound = 0;
         this.favoriteBot = null;
     }
@@ -74,33 +82,64 @@ class InteractiveCasinoCLI {
                 transport: http('http://127.0.0.1:8545')
             });
             
-            const account = privateKeyToAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
-            this.walletClient = createWalletClient({
-                account,
-                chain: hardhatChain,
-                transport: http('http://127.0.0.1:8545')
-            });
+            // Initialize wallet manager
+            spinner.text = 'Setting up wallet management...';
+            await this.walletManager.initialize();
+            
+            // Initialize funding systems
+            spinner.text = 'Initializing funding systems...';
+            this.fundingManager = new WalletFundingManager();
+            this.emergencyManager = new EmergencyFundingManager();
+            
+            // Check if emergency funding is needed
+            spinner.text = 'Checking bot funding status...';
+            await this.checkAndFixBotFunding();
+            
+            // Set up user wallet (interactive)
+            spinner.stop();
+            await this.setupUserWallet();
+            
+            spinner.start('Initializing game systems...');
             
             // Initialize game connector
             await this.gameConnector.initialize();
             
-            // Create bot instances
-            for (let i = 0; i < 10; i++) {
-                const privateKey = `0x${(i + 1).toString(16).padStart(64, '0')}`;
-                await this.gameConnector.createBot(i, privateKey);
-            }
+            // Create bot instances with proper wallet loading
+            await this.initializeBotWallets();
             
             spinner.succeed('Casino systems initialized!');
             
             // Check Ollama availability
             await this.checkLLMAvailability();
             
+            // Display user info
+            if (this.currentUser) {
+                console.log(chalk.blue(`👤 Welcome, ${this.currentUser.name || 'Player'}!`));
+                console.log(chalk.gray(`   Address: ${this.currentUser.address}`));
+                
+                const balances = await this.walletManager.checkBalances();
+                console.log(chalk.gray(`   Balance: ${balances.ethFormatted} ETH, ${balances.botTokenFormatted} BOT`));
+            }
+            
             console.log(chalk.green('\n✅ Ready to play!\n'));
             
         } catch (error) {
             spinner.fail('Initialization failed');
             console.error(chalk.red(error.message));
+            
+            // Check if it's a funding issue
+            if (error.message.includes('balance') || error.message.includes('insufficient') || error.message.includes('sender\'s balance is: 0')) {
+                console.log(chalk.yellow('\n🚨 This looks like a funding issue. Let me try to fix it...\n'));
+                try {
+                    await this.emergencyFundBots();
+                    console.log(chalk.green('✅ Emergency funding completed. Please restart the CLI.\n'));
+                } catch (fundingError) {
+                    console.error(chalk.red('❌ Emergency funding failed:'), fundingError.message);
+                }
+            }
+            
             console.log(chalk.yellow('\nTip: Make sure Hardhat node is running and contracts are deployed'));
+            console.log(chalk.yellow('Run: npm run deploy:local'));
             process.exit(1);
         }
     }
@@ -138,6 +177,7 @@ class InteractiveCasinoCLI {
                     '💰 Check My Bets',
                     '🏆 Leaderboard',
                     '🎲 Watch Bots Play',
+                    '💼 Wallet Management',
                     '📖 How to Play',
                     '🚪 Exit'
                 ]
@@ -165,6 +205,9 @@ class InteractiveCasinoCLI {
                 break;
             case '🎲 Watch Bots Play':
                 await this.watchBotsPlay();
+                break;
+            case '💼 Wallet Management':
+                await this.showWalletMenu();
                 break;
             case '📖 How to Play':
                 await this.showHelp();
@@ -592,6 +635,187 @@ class InteractiveCasinoCLI {
             console.log(`${bot.emoji} ${bot.name} - ${bot.strategy}`);
         }
         console.log(chalk.gray('...and 5 more unique personalities!'));
+    }
+    
+    /**
+     * Set up user wallet interactively
+     */
+    async setupUserWallet() {
+        console.log(chalk.cyan('\n🔐 Wallet Setup'));
+        console.log(chalk.gray('='.repeat(50)));
+        
+        try {
+            // Check if user has existing wallet or wants to create/import one
+            const currentWallet = await this.walletManager.setupWalletInteractive();
+            
+            if (currentWallet) {
+                this.currentUser = currentWallet;
+                
+                // Create wallet client for transactions
+                this.walletClient = createWalletClient({
+                    account: currentWallet.account,
+                    chain: hardhatChain,
+                    transport: http('http://127.0.0.1:8545')
+                });
+                
+                console.log(chalk.green('✅ Wallet setup complete!\n'));
+            } else {
+                throw new Error('Wallet setup was cancelled');
+            }
+            
+        } catch (error) {
+            console.error(chalk.red('❌ Wallet setup failed:'), error.message);
+            throw error;
+        }
+    }
+    
+    /**
+     * Check and fix bot funding issues
+     */
+    async checkAndFixBotFunding() {
+        try {
+            // Quick check if wallets.json exists
+            const walletPath = path.join(process.cwd(), 'wallets.json');
+            if (!fs.existsSync(walletPath)) {
+                console.log(chalk.yellow('⚠️  Bot wallets not found. Generating them...'));
+                await this.emergencyFundBots();
+                return;
+            }
+            
+            // Load existing wallet info
+            const walletInfo = JSON.parse(fs.readFileSync(walletPath, 'utf8'));
+            const botWallets = new Map(walletInfo.botWallets || []);
+            
+            if (botWallets.size === 0) {
+                console.log(chalk.yellow('⚠️  No bot wallets found. Creating them...'));
+                await this.emergencyFundBots();
+                return;
+            }
+            
+            // Quick balance check for first few bots
+            let needsFunding = false;
+            for (let i = 0; i < Math.min(3, botWallets.size); i++) {
+                const botWallet = botWallets.get(i);
+                if (botWallet) {
+                    const ethBalance = await this.publicClient.getBalance({ 
+                        address: botWallet.address 
+                    });
+                    if (ethBalance < parseEther('0.001')) { // Very low threshold
+                        needsFunding = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (needsFunding) {
+                console.log(chalk.yellow('⚠️  Bot funding is low. Running emergency funding...'));
+                await this.emergencyFundBots();
+            }
+            
+        } catch (error) {
+            console.log(chalk.yellow('⚠️  Could not check bot funding. Will attempt emergency funding...'));
+            await this.emergencyFundBots();
+        }
+    }
+    
+    /**
+     * Emergency fund all bots
+     */
+    async emergencyFundBots() {
+        try {
+            console.log(chalk.yellow('\n🚨 Running emergency bot funding...\n'));
+            
+            await this.emergencyManager.initialize();
+            const success = await this.emergencyManager.executeEmergencyFix();
+            await this.emergencyManager.cleanup();
+            
+            if (success) {
+                console.log(chalk.green('✅ Emergency funding completed successfully!\n'));
+            } else {
+                console.log(chalk.yellow('⚠️  Emergency funding partially completed\n'));
+            }
+            
+        } catch (error) {
+            console.error(chalk.red('❌ Emergency funding failed:'), error.message);
+            console.log(chalk.yellow('\nYou may need to:'));
+            console.log(chalk.yellow('• Restart the node: npm run node'));
+            console.log(chalk.yellow('• Redeploy: npm run deploy:local'));
+            console.log(chalk.yellow('• Run manual funding: npm run fund:emergency\n'));
+            throw error;
+        }
+    }
+    
+    /**
+     * Initialize bot wallets with proper private keys
+     */
+    async initializeBotWallets() {
+        const walletPath = path.join(process.cwd(), 'wallets.json');
+        
+        if (fs.existsSync(walletPath)) {
+            const walletInfo = JSON.parse(fs.readFileSync(walletPath, 'utf8'));
+            const botWallets = new Map(walletInfo.botWallets || []);
+            
+            // Create bot instances with actual wallet private keys
+            for (const [botId, botWallet] of botWallets) {
+                if (botId < 10) { // Only first 10 bots
+                    await this.gameConnector.createBot(botId, botWallet.privateKey);
+                }
+            }
+            
+            console.log(chalk.gray(`   ✅ Loaded ${Math.min(botWallets.size, 10)} bot wallets`));
+        } else {
+            // Fallback to generated keys
+            console.log(chalk.yellow('   ⚠️  Using fallback bot keys'));
+            for (let i = 0; i < 10; i++) {
+                const privateKey = `0x${(i + 1).toString(16).padStart(64, '0')}`;
+                await this.gameConnector.createBot(i, privateKey);
+            }
+        }
+    }
+    
+    /**
+     * Check user balance and offer funding if needed
+     */
+    async checkUserFunding() {
+        if (!this.currentUser) return;
+        
+        try {
+            const balances = await this.walletManager.checkBalances();
+            
+            // Check if user needs funding
+            const ethLow = parseFloat(balances.ethFormatted) < 0.01;
+            const botLow = parseFloat(balances.botTokenFormatted) < 100;
+            
+            if (ethLow || botLow) {
+                console.log(chalk.yellow('\n💰 Your balance is low:'));
+                console.log(chalk.gray(`   ETH: ${balances.ethFormatted}`));
+                console.log(chalk.gray(`   BOT: ${balances.botTokenFormatted}`));
+                
+                if (this.autoFundingEnabled) {
+                    const { fundNow } = await inquirer.prompt([
+                        {
+                            type: 'confirm',
+                            name: 'fundNow',
+                            message: 'Would you like to fund your wallet now?',
+                            default: true
+                        }
+                    ]);
+                    
+                    if (fundNow) {
+                        const spinner = ora('Funding your wallet...').start();
+                        try {
+                            await this.walletManager.requestFunding();
+                            spinner.succeed('Wallet funded successfully!');
+                        } catch (error) {
+                            spinner.fail('Funding failed: ' + error.message);
+                        }
+                    }
+                }
+            }
+            
+        } catch (error) {
+            console.error(chalk.gray('Could not check user funding:'), error.message);
+        }
     }
 }
 

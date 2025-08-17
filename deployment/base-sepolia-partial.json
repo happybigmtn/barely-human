@@ -1,0 +1,51 @@
+{
+  "network": "Base Sepolia",
+  "chainId": 84532,
+  "deployer": "0x61286F80b60E4dBa60E923a975dEe8B84f92d6CB",
+  "timestamp": "2025-08-16T23:45:00.000Z",
+  "vrfSubscriptionId": "22376417694825733668962562671731634456669048679979758256841549539628619732572",
+  "status": "PARTIAL - VaultFactory optimization needed",
+  "contracts": {
+    "BOTToken": "0xedbce0a53a24f9e5f4684937ed3ee64e936cd048",
+    "Treasury": "0xb46d347e7c99ade1eaa5d001a73b33ce7ab2588a",
+    "StakingPool": "0xc1ce44d9dc06d15ed1e1bd9d528aa3a7c8a51dc2",
+    "CrapsGame": "0x2b70c39fdcfa3a4a69ef10b9ae157020d451708a",
+    "CrapsBets": "0x7283196cb2aa54ebca3ec2198eb5a86215e627cb",
+    "CrapsSettlementSimple": "0xe156b261025e74a19b298c9d94260c744ae85d7f",
+    "VaultFactoryLib": "0xde72434108dcbd4ddd164e3f9f347478ddcf16b6"
+  },
+  "pendingContracts": [
+    "VaultFactory",
+    "BotManager",
+    "BotVault_0",
+    "BotVault_1",
+    "BotVault_2",
+    "BotVault_3",
+    "BotVault_4",
+    "BotVault_5",
+    "BotVault_6",
+    "BotVault_7",
+    "BotVault_8",
+    "BotVault_9",
+    "GachaMintPass",
+    "BarelyHumanArt",
+    "ArtRedemptionService",
+    "BotBettingEscrow",
+    "BotSwapFeeHookV4"
+  ],
+  "vrfConsumersToAdd": [
+    "0x2b70c39fdcfa3a4a69ef10b9ae157020d451708a"
+  ],
+  "notes": {
+    "vaultFactoryIssue": "Contract too large (>24KB). Needs further optimization",
+    "settlementSimplified": "Using minimal CrapsSettlementSimple instead of full version",
+    "vrfSubscription": "Need to add CrapsGame as consumer to VRF subscription",
+    "nextSteps": [
+      "Optimize VaultFactory to fit under 24KB limit",
+      "Deploy remaining contracts",
+      "Verify contracts on BaseScan",
+      "Fund vaults with BOT tokens",
+      "Set up game roles and permissions"
+    ]
+  }
+}

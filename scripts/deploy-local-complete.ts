@@ -199,36 +199,102 @@ async function main() {
         console.log("     ✅ Bot personalities initialized");
         
         // ============================================
-        // Fund Accounts
+        // Fund Accounts with Advanced Funding System
         // ============================================
-        console.log("\n💰 Funding Accounts...\n");
+        console.log("\n💰 Setting up Advanced Funding System...\n");
         
-        // Fund bot vaults with BOT tokens
-        console.log("  15. Funding bot vaults...");
-        const fundAmount = parseEther("10000"); // 10,000 BOT per vault
+        // Import and use the comprehensive funding manager
+        console.log("  15. Initializing Wallet Funding Manager...");
+        const { WalletFundingManager } = await import('./fund-accounts.ts');
+        const fundingManager = new WalletFundingManager({
+            // Custom config for deployment
+            botEthAmount: parseEther("0.1"),
+            botTokenAmount: parseEther("15000"),
+            userEthAmount: parseEther("0.05"),
+            userTokenAmount: parseEther("5000")
+        });
         
-        for (let i = 0; i < vaultAddresses.length; i++) {
-            const vault = vaultAddresses[i];
-            const tx = await botToken.write.transfer(
-                [vault, fundAmount],
-                { account: liquidity.account }
-            );
-            await publicClient.waitForTransactionReceipt({ hash: tx });
+        try {
+            await fundingManager.initialize();
+            
+            // Generate bot wallets for all 10 bots
+            console.log("  16. Generating bot wallets...");
+            const botWallets = fundingManager.generateBotWallets(10);
+            
+            // Map vault addresses to bot wallets
+            for (let i = 0; i < Math.min(botWallets.length, vaultAddresses.length); i++) {
+                const botWallet = fundingManager.getBotWallet(i);
+                if (botWallet) {
+                    botWallet.vaultAddress = vaultAddresses[i];
+                }
+            }
+            
+            // Fund all bot accounts with ETH and BOT tokens
+            console.log("  17. Funding all bot accounts...");
+            await fundingManager.fundBotAccounts(true); // Force fund all
+            
+            // Fund bot vaults with additional BOT tokens for trading
+            console.log("  18. Funding bot vaults for trading...");
+            const vaultFundAmount = parseEther("10000"); // 10,000 BOT per vault
+            
+            for (let i = 0; i < vaultAddresses.length; i++) {
+                const vault = vaultAddresses[i];
+                const tx = await botToken.write.transfer(
+                    [vault, vaultFundAmount],
+                    { account: liquidity.account }
+                );
+                await publicClient.waitForTransactionReceipt({ hash: tx });
+            }
+            console.log(`     ✅ Funded ${vaultAddresses.length} vaults with additional 10,000 BOT each`);
+            
+            // Create and fund sample user accounts
+            console.log("  19. Creating sample user accounts...");
+            const sampleUsers = ['demo-user', 'test-player', 'casino-guest'];
+            
+            for (const userId of sampleUsers) {
+                fundingManager.createUserWallet(userId, userId);
+                await fundingManager.fundUserAccount(userId, true);
+            }
+            
+            // Save wallet information for persistence
+            console.log("  20. Saving wallet configuration...");
+            fundingManager.saveWalletInfo();
+            
+            await fundingManager.cleanup();
+            
+            console.log(`     ✅ Advanced funding system deployed successfully`);
+            console.log(`     📊 Summary:`);
+            console.log(`       • ${botWallets.length} bot wallets created and funded`);
+            console.log(`       • ${vaultAddresses.length} vaults funded with trading capital`);
+            console.log(`       • ${sampleUsers.length} sample user accounts created`);
+            console.log(`       • Wallet info saved to wallets.json`);
+            
+        } catch (fundingError) {
+            console.error(`❌ Advanced funding failed: ${fundingError.message}`);
+            console.log(`🔄 Falling back to basic funding...`);
+            
+            // Fallback to basic funding
+            const fundAmount = parseEther("10000");
+            for (let i = 0; i < vaultAddresses.length; i++) {
+                const vault = vaultAddresses[i];
+                const tx = await botToken.write.transfer(
+                    [vault, fundAmount],
+                    { account: liquidity.account }
+                );
+                await publicClient.waitForTransactionReceipt({ hash: tx });
+            }
+            
+            const playerFundAmount = parseEther("1000");
+            for (let i = 0; i < Math.min(3, players.length); i++) {
+                const tx = await botToken.write.transfer(
+                    [players[i].account.address, playerFundAmount],
+                    { account: liquidity.account }
+                );
+                await publicClient.waitForTransactionReceipt({ hash: tx });
+            }
+            
+            console.log(`     ✅ Basic funding completed as fallback`);
         }
-        console.log(`     ✅ Funded ${vaultAddresses.length} vaults with 10,000 BOT each`);
-        
-        // Fund player accounts
-        console.log("  16. Funding player accounts...");
-        const playerFundAmount = parseEther("1000"); // 1,000 BOT per player
-        
-        for (let i = 0; i < Math.min(5, players.length); i++) {
-            const tx = await botToken.write.transfer(
-                [players[i].account.address, playerFundAmount],
-                { account: liquidity.account }
-            );
-            await publicClient.waitForTransactionReceipt({ hash: tx });
-        }
-        console.log(`     ✅ Funded ${Math.min(5, players.length)} player accounts with 1,000 BOT each`);
         
         // ============================================
         // Save Deployment Info
@@ -260,7 +326,16 @@ async function main() {
         console.log(`  • Bot Manager: ${botManager.address}`);
         console.log(`  • Bot Vaults: ${vaultAddresses.length} deployed`);
         console.log("\n🎮 Ready to play!");
-        console.log("  Run 'npm run cli' to start the game interface");
+        console.log("\n💰 Funding Management:");
+        console.log("  • Check balances: npm run balance:check");
+        console.log("  • Monitor continuously: npm run balance:monitor");
+        console.log("  • Emergency funding: npm run fund:emergency");
+        console.log("  • Fund specific bots: npm run fund:bots");
+        console.log("\n🎯 Game Interfaces:");
+        console.log("  • Interactive CLI: npm run cli:interactive");
+        console.log("  • Simple CLI: npm run cli:simple");
+        console.log("  • Watch bots play: npm run bots");
+        console.log("  • Full experience: npm run play");
         
         return deployments;
         

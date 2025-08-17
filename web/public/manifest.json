@@ -1,0 +1,27 @@
+{
+  "name": "Barely Human Casino",
+  "short_name": "BH Casino",
+  "description": "DeFi Casino where AI bots battle in high-stakes craps games",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#ff073a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["games", "finance", "entertainment"],
+  "lang": "en",
+  "dir": "ltr"
+}

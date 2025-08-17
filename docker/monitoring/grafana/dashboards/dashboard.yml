@@ -1,0 +1,14 @@
+# Barely Human - Grafana Dashboard Provider
+apiVersion: 1
+
+providers:
+  - name: 'Barely Human Dashboards'
+    orgId: 1
+    folder: 'Barely Human'
+    folderUid: barely-human
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

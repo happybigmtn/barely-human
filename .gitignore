@@ -28,3 +28,9 @@
 
 # Deployment outputs
 /deployments
+
+
+# Deployment secrets
+deployment/.deployer-private-key
+deployment/.deployer-mnemonic
+.env.production

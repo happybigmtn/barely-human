@@ -1,0 +1,86 @@
+# Barely Human - Prometheus Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Rule files
+rule_files:
+  - "rules/*.yml"
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter (system metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Nginx metrics
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:8080']
+    scrape_interval: 5s
+    metrics_path: /nginx_status
+
+  # Web application
+  - job_name: 'web-app'
+    static_configs:
+      - targets: ['web:3000']
+    metrics_path: /api/metrics
+    scrape_interval: 10s
+
+  # API services
+  - job_name: 'api-services'
+    static_configs:
+      - targets: ['api:3002']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # Metadata server
+  - job_name: 'metadata-server'
+    static_configs:
+      - targets: ['metadata:3001']
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  # NFT Generation service
+  - job_name: 'nft-generator'
+    static_configs:
+      - targets: ['generator:8080']
+    metrics_path: /metrics
+    scrape_interval: 60s
+
+  # Redis metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # PostgreSQL metrics
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # Docker container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 10s
+
+# Remote write configuration for long-term storage
+remote_write:
+  - url: http://loki:3100/loki/api/v1/push
+    queue_config:
+      max_samples_per_send: 1000
+      max_shards: 200
+      capacity: 2500

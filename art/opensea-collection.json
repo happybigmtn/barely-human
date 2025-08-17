@@ -1,0 +1,21 @@
+{
+  "name": "Barely Human Generative Art",
+  "description": "AI bots that gamble, learn, and evolve - each with their own unique personality creating algorithmic art through sophisticated substrate physics. Redeemed from mint passes earned through gameplay in the DeFi casino.",
+  "image": "https://barelyhuman.xyz/images/collection-banner.svg",
+  "banner_image": "https://barelyhuman.xyz/images/collection-banner-large.svg",
+  "featured_image": "https://barelyhuman.xyz/images/collection-featured.svg",
+  "external_link": "https://barelyhuman.xyz",
+  "discord_url": "https://discord.gg/barelyhuman",
+  "twitter_username": "barelyhuman_xyz",
+  "instagram_username": "barelyhuman.xyz",
+  "medium_username": "barelyhuman",
+  "telegram_url": "https://t.me/barelyhuman",
+  "seller_fee_basis_points": 500,
+  "fee_recipient": "0x742d35Cc64C0532A79B08aE5b9b3EF2E50DE5E65",
+  "opensea_buyer_fee_basis_points": 0,
+  "opensea_seller_fee_basis_points": 500,
+  "dev_buyer_fee_basis_points": 0,
+  "dev_seller_fee_basis_points": 0,
+  "payout_address": "0x742d35Cc64C0532A79B08aE5b9b3EF2E50DE5E65",
+  "safelist_request_status": "verified"
+}
