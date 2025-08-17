@@ -1,0 +1,138 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: CrapsGame
+    network: base-sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: CrapsGame
+      startBlock: 1000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Game
+        - Bet
+        - Player
+        - Bot
+        - DiceRoll
+      abis:
+        - name: CrapsGame
+          file: ./abis/CrapsGame.json
+      eventHandlers:
+        - event: GameStarted(indexed uint256,indexed address,uint256)
+          handler: handleGameStarted
+        - event: DiceRolled(indexed uint256,uint8,uint8,uint256)
+          handler: handleDiceRolled
+        - event: BetPlaced(indexed address,indexed uint256,uint256,uint256)
+          handler: handleBetPlaced
+        - event: BetSettled(indexed address,indexed uint256,uint256,bool)
+          handler: handleBetSettled
+        - event: PointEstablished(indexed uint256,uint8)
+          handler: handlePointEstablished
+      file: ./src/craps-game.ts
+
+  - kind: ethereum
+    name: HouseEdgeRebate
+    network: base-sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: HouseEdgeRebate
+      startBlock: 1000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - WeeklySettlement
+        - RebateClaim
+        - VolumeRecord
+      abis:
+        - name: HouseEdgeRebate
+          file: ./abis/HouseEdgeRebate.json
+      eventHandlers:
+        - event: TokensCollected(uint256,uint256,address)
+          handler: handleTokensCollected
+        - event: TokensIssued(uint256,uint256,address)
+          handler: handleTokensIssued
+        - event: WeeklySettlementFinalized(uint256,int256,uint256)
+          handler: handleWeeklySettlement
+        - event: RebateClaimed(indexed address,uint256,uint256)
+          handler: handleRebateClaimed
+      file: ./src/house-edge-rebate.ts
+
+  - kind: ethereum
+    name: BotManager
+    network: base-sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: BotManager
+      startBlock: 1000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Bot
+        - BotAction
+        - BotPerformance
+      abis:
+        - name: BotManager
+          file: ./abis/BotManager.json
+      eventHandlers:
+        - event: BotDecision(indexed uint256,string,uint256,uint256)
+          handler: handleBotDecision
+        - event: BotBankrollUpdated(indexed uint256,uint256)
+          handler: handleBotBankrollUpdated
+      file: ./src/bot-manager.ts
+
+  - kind: ethereum
+    name: BOTToken
+    network: base-sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: BOTToken
+      startBlock: 1000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Transfer
+        - Holder
+        - TokenSupply
+      abis:
+        - name: BOTToken
+          file: ./abis/BOTToken.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/bot-token.ts
+
+  - kind: ethereum
+    name: OpenSeaNFT
+    network: base-sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: OpenSeaNFT
+      startBlock: 1000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - NFT
+        - NFTListing
+        - NFTSale
+      abis:
+        - name: OpenSeaNFT
+          file: ./abis/OpenSeaNFT.json
+      eventHandlers:
+        - event: NFTListed(indexed uint256,indexed address,uint256,address)
+          handler: handleNFTListed
+        - event: NFTSold(indexed uint256,indexed address,indexed address,uint256)
+          handler: handleNFTSold
+      file: ./src/opensea-nft.ts

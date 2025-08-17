@@ -459,7 +459,7 @@ class UnifiedCasinoCLI {
   async depositToVaultNonInteractive(amount = '100') {
     const spinner = ora(`Depositing ${amount} BOT to vault...`).start();
     try {
-      // Since we only have VaultFactoryMinimal, we'll simulate vault operations
+      // Use BettingVault directly
       const depositAmount = ethers.parseEther(amount);
       
       // Check balance
@@ -468,8 +468,8 @@ class UnifiedCasinoCLI {
         throw new Error(`Insufficient balance. Have: ${ethers.formatEther(balance)} BOT, Need: ${amount} BOT`);
       }
       
-      // Mock vault deposit - approve tokens to vault factory
-      const tx = await this.contracts.BOTToken.approve(this.contractAddresses.VaultFactoryMinimal, depositAmount);
+      // Approve tokens to BettingVault
+      const tx = await this.contracts.BOTToken.approve(this.contractAddresses.BettingVault, depositAmount);
       await tx.wait();
       
       spinner.succeed(`Mock vault deposit: ${amount} BOT`);
