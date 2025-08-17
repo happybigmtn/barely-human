@@ -1,0 +1,24 @@
+# Barely Human Casino CLI - Sample Batch Test Commands
+# This file demonstrates CLI automation capabilities
+# Usage: npm run cli:batch
+
+# Test basic betting functionality
+--command bet --amount 10 --bet-type 0
+--command bet --amount 5 --bet-type 1
+
+# Test vault operations
+--command vault-deposit --amount 100
+--command vault-withdraw --amount 50
+
+# Test staking operations
+--command stake --amount 200
+--command unstake --amount 100
+--command claim-rewards
+
+# Test bot simulation
+--command bot-play --bot-id 0 --rounds 3
+--command bot-play --bot-id 5 --rounds 2
+
+# Test dice rolling
+--command roll
+--command roll

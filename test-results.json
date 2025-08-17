@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-08-17T04:33:37.370Z",
+  "timestamp": "2025-08-17T06:40:27.507Z",
   "statistics": {
-    "totalTests": 124,
-    "passed": 82,
-    "failed": 42,
-    "passRate": 66.1,
-    "duration": 19796
+    "totalTests": 147,
+    "passed": 86,
+    "failed": 61,
+    "passRate": 58.5,
+    "duration": 39178
   },
   "suites": [
     {
@@ -16,224 +16,409 @@
           "file": "test/BOTToken.working.test.ts",
           "passed": 29,
           "failed": 2,
-          "duration": 1265,
+          "duration": 1205,
           "errors": []
         },
         {
           "file": "test/StakingPool.working.test.ts",
           "passed": 24,
           "failed": 2,
-          "duration": 1246,
+          "duration": 1254,
           "errors": []
         }
       ]
     },
     {
       "name": "Unit Tests - Token System",
-      "files": 3,
+      "files": 5,
       "results": [
         {
           "file": "test/BOTToken.node.test.ts",
           "passed": 0,
           "failed": 1,
-          "duration": 653,
+          "duration": 676,
           "errors": [
             "Command failed: npx hardhat run test/BOTToken.node.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/BOTToken.node.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 1191,
+          "errors": [
+            "Command failed: npx hardhat run test/BOTToken.node.viem.test.ts 2>&1"
           ]
         },
         {
           "file": "test/BOTToken.test.ts",
           "passed": 0,
           "failed": 1,
-          "duration": 669,
+          "duration": 657,
           "errors": [
             "Command failed: npx hardhat run test/BOTToken.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/BOTToken.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 1207,
+          "errors": [
+            "Command failed: npx hardhat run test/BOTToken.viem.test.ts 2>&1"
           ]
         },
         {
           "file": "test/BOTToken.working.test.ts",
           "passed": 29,
           "failed": 2,
-          "duration": 1250,
+          "duration": 1197,
           "errors": []
         }
       ]
     },
     {
       "name": "Unit Tests - Game Logic",
-      "files": 4,
+      "files": 8,
       "results": [
         {
           "file": "test/CrapsBets.test.js",
           "passed": 0,
           "failed": 1,
-          "duration": 663,
+          "duration": 652,
           "errors": [
             "Command failed: npx hardhat run test/CrapsBets.test.js 2>&1"
+          ]
+        },
+        {
+          "file": "test/CrapsBets.viem.test.js",
+          "passed": 0,
+          "failed": 1,
+          "duration": 538,
+          "errors": [
+            "Command failed: npx hardhat run test/CrapsBets.viem.test.js 2>&1"
           ]
         },
         {
           "file": "test/CrapsGame.test.js",
           "passed": 0,
           "failed": 1,
-          "duration": 685,
+          "duration": 646,
           "errors": [
             "Command failed: npx hardhat run test/CrapsGame.test.js 2>&1"
+          ]
+        },
+        {
+          "file": "test/CrapsGame.viem.test.js",
+          "passed": 0,
+          "failed": 1,
+          "duration": 554,
+          "errors": [
+            "Command failed: npx hardhat run test/CrapsGame.viem.test.js 2>&1"
           ]
         },
         {
           "file": "test/CrapsSettlement.test.js",
           "passed": 0,
           "failed": 1,
-          "duration": 658,
+          "duration": 654,
           "errors": [
             "Command failed: npx hardhat run test/CrapsSettlement.test.js 2>&1"
+          ]
+        },
+        {
+          "file": "test/CrapsSettlement.viem.test.js",
+          "passed": 0,
+          "failed": 1,
+          "duration": 525,
+          "errors": [
+            "Command failed: npx hardhat run test/CrapsSettlement.viem.test.js 2>&1"
           ]
         },
         {
           "file": "test/CrapsVault.test.js",
           "passed": 0,
           "failed": 1,
-          "duration": 642,
+          "duration": 640,
           "errors": [
             "Command failed: npx hardhat run test/CrapsVault.test.js 2>&1"
+          ]
+        },
+        {
+          "file": "test/CrapsVault.viem.test.js",
+          "passed": 0,
+          "failed": 1,
+          "duration": 522,
+          "errors": [
+            "Command failed: npx hardhat run test/CrapsVault.viem.test.js 2>&1"
           ]
         }
       ]
     },
     {
       "name": "Unit Tests - Vault System",
-      "files": 5,
+      "files": 10,
       "results": [
         {
           "file": "test/BotVaultIntegration.test.ts",
           "passed": 0,
           "failed": 22,
-          "duration": 1245,
+          "duration": 1230,
           "errors": []
+        },
+        {
+          "file": "test/BotVaultIntegration.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 1240,
+          "errors": [
+            "Command failed: npx hardhat run test/BotVaultIntegration.viem.test.ts 2>&1"
+          ]
         },
         {
           "file": "test/CrapsVault.test.ts",
           "passed": 0,
           "failed": 1,
-          "duration": 1317,
+          "duration": 1235,
           "errors": [
             "Command failed: npx hardhat run test/CrapsVault.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/CrapsVault.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 1398,
+          "errors": [
+            "Command failed: npx hardhat run test/CrapsVault.viem.test.ts 2>&1"
           ]
         },
         {
           "file": "test/OmniVaultCoordinator.test.ts",
           "passed": 0,
           "failed": 1,
-          "duration": 796,
+          "duration": 765,
           "errors": [
             "Command failed: npx hardhat run test/OmniVaultCoordinator.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/OmniVaultCoordinator.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 1421,
+          "errors": [
+            "Command failed: npx hardhat run test/OmniVaultCoordinator.viem.test.ts 2>&1"
           ]
         },
         {
           "file": "test/VaultFactory.test.ts",
           "passed": 0,
           "failed": 1,
-          "duration": 1579,
+          "duration": 1409,
           "errors": [
             "Command failed: npx hardhat run test/VaultFactory.test.ts 2>&1"
           ]
         },
         {
+          "file": "test/VaultFactory.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 1412,
+          "errors": [
+            "Command failed: npx hardhat run test/VaultFactory.viem.test.ts 2>&1"
+          ]
+        },
+        {
           "file": "test/integration/CrossChainVault.integration.test.ts",
           "passed": 0,
           "failed": 0,
-          "duration": 817,
+          "duration": 779,
           "errors": []
-        }
-      ]
-    },
-    {
-      "name": "Integration Tests - User Journey",
-      "files": 1,
-      "results": [
+        },
         {
-          "file": "test/integration/UserJourney.integration.test.ts",
+          "file": "test/integration/CrossChainVault.integration.viem.test.ts",
           "passed": 0,
           "failed": 1,
-          "duration": 685,
+          "duration": 637,
           "errors": [
-            "Command failed: npx hardhat run test/integration/UserJourney.integration.test.ts 2>&1"
+            "Command failed: npx hardhat run test/integration/CrossChainVault.integration.viem.test.ts 2>&1"
           ]
         }
       ]
     },
     {
-      "name": "Integration Tests - Cross-Chain",
-      "files": 2,
+      "name": "Integration Tests - User Journey",
+      "files": 3,
       "results": [
         {
-          "file": "test/integration/CrossChainVault.integration.test.ts",
+          "file": "test/integration/UserJourney.integration.test.ts",
           "passed": 0,
-          "failed": 0,
-          "duration": 780,
-          "errors": []
+          "failed": 1,
+          "duration": 616,
+          "errors": [
+            "Command failed: npx hardhat run test/integration/UserJourney.integration.test.ts 2>&1"
+          ]
         },
         {
-          "file": "test/integration/MultiChainSync.test.ts",
+          "file": "test/integration/UserJourney.integration.viem.test.ts",
           "passed": 0,
+          "failed": 1,
+          "duration": 607,
+          "errors": [
+            "Command failed: npx hardhat run test/integration/UserJourney.integration.viem.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/integration/UserJourney.viem.test.ts",
+          "passed": 2,
           "failed": 0,
-          "duration": 796,
+          "duration": 1407,
           "errors": []
         }
       ]
     },
     {
+      "name": "Integration Tests - Cross-Chain",
+      "files": 5,
+      "results": [
+        {
+          "file": "test/integration/CrossChain.viem.test.ts",
+          "passed": 2,
+          "failed": 0,
+          "duration": 1411,
+          "errors": []
+        },
+        {
+          "file": "test/integration/CrossChainVault.integration.test.ts",
+          "passed": 0,
+          "failed": 0,
+          "duration": 756,
+          "errors": []
+        },
+        {
+          "file": "test/integration/CrossChainVault.integration.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 636,
+          "errors": [
+            "Command failed: npx hardhat run test/integration/CrossChainVault.integration.viem.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/integration/MultiChainSync.test.ts",
+          "passed": 0,
+          "failed": 0,
+          "duration": 775,
+          "errors": []
+        },
+        {
+          "file": "test/integration/MultiChainSync.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 1422,
+          "errors": [
+            "Command failed: npx hardhat run test/integration/MultiChainSync.viem.test.ts 2>&1"
+          ]
+        }
+      ]
+    },
+    {
       "name": "Integration Tests - Bot System",
-      "files": 1,
+      "files": 2,
       "results": [
         {
           "file": "test/integration/BotPersonality.integration.test.ts",
           "passed": 0,
           "failed": 1,
-          "duration": 806,
+          "duration": 747,
           "errors": [
             "Command failed: npx hardhat run test/integration/BotPersonality.integration.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/integration/BotPersonality.integration.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 654,
+          "errors": [
+            "Command failed: npx hardhat run test/integration/BotPersonality.integration.viem.test.ts 2>&1"
           ]
         }
       ]
     },
     {
       "name": "Performance Tests",
-      "files": 4,
+      "files": 8,
       "results": [
         {
           "file": "test/performance/BatchOperationsStress.test.ts",
           "passed": 0,
           "failed": 0,
-          "duration": 812,
+          "duration": 769,
           "errors": []
+        },
+        {
+          "file": "test/performance/BatchOperationsStress.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 1498,
+          "errors": [
+            "Command failed: npx hardhat run test/performance/BatchOperationsStress.viem.test.ts 2>&1"
+          ]
         },
         {
           "file": "test/performance/BotScalability.test.ts",
           "passed": 0,
           "failed": 1,
-          "duration": 821,
+          "duration": 808,
           "errors": [
             "Command failed: npx hardhat run test/performance/BotScalability.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/performance/BotScalability.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 650,
+          "errors": [
+            "Command failed: npx hardhat run test/performance/BotScalability.viem.test.ts 2>&1"
           ]
         },
         {
           "file": "test/performance/GasBenchmark.test.ts",
           "passed": 0,
           "failed": 1,
-          "duration": 805,
+          "duration": 752,
           "errors": [
             "Command failed: npx hardhat run test/performance/GasBenchmark.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/performance/GasBenchmark.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 624,
+          "errors": [
+            "Command failed: npx hardhat run test/performance/GasBenchmark.viem.test.ts 2>&1"
           ]
         },
         {
           "file": "test/performance/LoadTest.test.ts",
           "passed": 0,
           "failed": 1,
-          "duration": 806,
+          "duration": 761,
           "errors": [
             "Command failed: npx hardhat run test/performance/LoadTest.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/performance/LoadTest.viem.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 641,
+          "errors": [
+            "Command failed: npx hardhat run test/performance/LoadTest.viem.test.ts 2>&1"
           ]
         }
       ]
@@ -249,154 +434,325 @@
       "file": "test/BOTToken.working.test.ts",
       "passed": 29,
       "failed": 2,
-      "duration": 1265,
+      "duration": 1205,
       "errors": []
     },
     {
       "file": "test/StakingPool.working.test.ts",
       "passed": 24,
       "failed": 2,
-      "duration": 1246,
+      "duration": 1254,
       "errors": []
     },
     {
       "file": "test/BOTToken.node.test.ts",
       "passed": 0,
       "failed": 1,
-      "duration": 653,
+      "duration": 676,
       "errors": [
         "Command failed: npx hardhat run test/BOTToken.node.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/BOTToken.node.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 1191,
+      "errors": [
+        "Command failed: npx hardhat run test/BOTToken.node.viem.test.ts 2>&1"
       ]
     },
     {
       "file": "test/BOTToken.test.ts",
       "passed": 0,
       "failed": 1,
-      "duration": 669,
+      "duration": 657,
       "errors": [
         "Command failed: npx hardhat run test/BOTToken.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/BOTToken.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 1207,
+      "errors": [
+        "Command failed: npx hardhat run test/BOTToken.viem.test.ts 2>&1"
       ]
     },
     {
       "file": "test/BOTToken.working.test.ts",
       "passed": 29,
       "failed": 2,
-      "duration": 1250,
+      "duration": 1197,
       "errors": []
     },
     {
       "file": "test/CrapsBets.test.js",
       "passed": 0,
       "failed": 1,
-      "duration": 663,
+      "duration": 652,
       "errors": [
         "Command failed: npx hardhat run test/CrapsBets.test.js 2>&1"
+      ]
+    },
+    {
+      "file": "test/CrapsBets.viem.test.js",
+      "passed": 0,
+      "failed": 1,
+      "duration": 538,
+      "errors": [
+        "Command failed: npx hardhat run test/CrapsBets.viem.test.js 2>&1"
       ]
     },
     {
       "file": "test/CrapsGame.test.js",
       "passed": 0,
       "failed": 1,
-      "duration": 685,
+      "duration": 646,
       "errors": [
         "Command failed: npx hardhat run test/CrapsGame.test.js 2>&1"
+      ]
+    },
+    {
+      "file": "test/CrapsGame.viem.test.js",
+      "passed": 0,
+      "failed": 1,
+      "duration": 554,
+      "errors": [
+        "Command failed: npx hardhat run test/CrapsGame.viem.test.js 2>&1"
       ]
     },
     {
       "file": "test/CrapsSettlement.test.js",
       "passed": 0,
       "failed": 1,
-      "duration": 658,
+      "duration": 654,
       "errors": [
         "Command failed: npx hardhat run test/CrapsSettlement.test.js 2>&1"
+      ]
+    },
+    {
+      "file": "test/CrapsSettlement.viem.test.js",
+      "passed": 0,
+      "failed": 1,
+      "duration": 525,
+      "errors": [
+        "Command failed: npx hardhat run test/CrapsSettlement.viem.test.js 2>&1"
       ]
     },
     {
       "file": "test/CrapsVault.test.js",
       "passed": 0,
       "failed": 1,
-      "duration": 642,
+      "duration": 640,
       "errors": [
         "Command failed: npx hardhat run test/CrapsVault.test.js 2>&1"
+      ]
+    },
+    {
+      "file": "test/CrapsVault.viem.test.js",
+      "passed": 0,
+      "failed": 1,
+      "duration": 522,
+      "errors": [
+        "Command failed: npx hardhat run test/CrapsVault.viem.test.js 2>&1"
       ]
     },
     {
       "file": "test/BotVaultIntegration.test.ts",
       "passed": 0,
       "failed": 22,
-      "duration": 1245,
+      "duration": 1230,
       "errors": []
+    },
+    {
+      "file": "test/BotVaultIntegration.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 1240,
+      "errors": [
+        "Command failed: npx hardhat run test/BotVaultIntegration.viem.test.ts 2>&1"
+      ]
     },
     {
       "file": "test/CrapsVault.test.ts",
       "passed": 0,
       "failed": 1,
-      "duration": 1317,
+      "duration": 1235,
       "errors": [
         "Command failed: npx hardhat run test/CrapsVault.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/CrapsVault.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 1398,
+      "errors": [
+        "Command failed: npx hardhat run test/CrapsVault.viem.test.ts 2>&1"
       ]
     },
     {
       "file": "test/OmniVaultCoordinator.test.ts",
       "passed": 0,
       "failed": 1,
-      "duration": 796,
+      "duration": 765,
       "errors": [
         "Command failed: npx hardhat run test/OmniVaultCoordinator.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/OmniVaultCoordinator.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 1421,
+      "errors": [
+        "Command failed: npx hardhat run test/OmniVaultCoordinator.viem.test.ts 2>&1"
       ]
     },
     {
       "file": "test/VaultFactory.test.ts",
       "passed": 0,
       "failed": 1,
-      "duration": 1579,
+      "duration": 1409,
       "errors": [
         "Command failed: npx hardhat run test/VaultFactory.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/VaultFactory.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 1412,
+      "errors": [
+        "Command failed: npx hardhat run test/VaultFactory.viem.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/integration/CrossChainVault.integration.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 637,
+      "errors": [
+        "Command failed: npx hardhat run test/integration/CrossChainVault.integration.viem.test.ts 2>&1"
       ]
     },
     {
       "file": "test/integration/UserJourney.integration.test.ts",
       "passed": 0,
       "failed": 1,
-      "duration": 685,
+      "duration": 616,
       "errors": [
         "Command failed: npx hardhat run test/integration/UserJourney.integration.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/integration/UserJourney.integration.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 607,
+      "errors": [
+        "Command failed: npx hardhat run test/integration/UserJourney.integration.viem.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/integration/CrossChainVault.integration.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 636,
+      "errors": [
+        "Command failed: npx hardhat run test/integration/CrossChainVault.integration.viem.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/integration/MultiChainSync.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 1422,
+      "errors": [
+        "Command failed: npx hardhat run test/integration/MultiChainSync.viem.test.ts 2>&1"
       ]
     },
     {
       "file": "test/integration/BotPersonality.integration.test.ts",
       "passed": 0,
       "failed": 1,
-      "duration": 806,
+      "duration": 747,
       "errors": [
         "Command failed: npx hardhat run test/integration/BotPersonality.integration.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/integration/BotPersonality.integration.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 654,
+      "errors": [
+        "Command failed: npx hardhat run test/integration/BotPersonality.integration.viem.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/performance/BatchOperationsStress.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 1498,
+      "errors": [
+        "Command failed: npx hardhat run test/performance/BatchOperationsStress.viem.test.ts 2>&1"
       ]
     },
     {
       "file": "test/performance/BotScalability.test.ts",
       "passed": 0,
       "failed": 1,
-      "duration": 821,
+      "duration": 808,
       "errors": [
         "Command failed: npx hardhat run test/performance/BotScalability.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/performance/BotScalability.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 650,
+      "errors": [
+        "Command failed: npx hardhat run test/performance/BotScalability.viem.test.ts 2>&1"
       ]
     },
     {
       "file": "test/performance/GasBenchmark.test.ts",
       "passed": 0,
       "failed": 1,
-      "duration": 805,
+      "duration": 752,
       "errors": [
         "Command failed: npx hardhat run test/performance/GasBenchmark.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/performance/GasBenchmark.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 624,
+      "errors": [
+        "Command failed: npx hardhat run test/performance/GasBenchmark.viem.test.ts 2>&1"
       ]
     },
     {
       "file": "test/performance/LoadTest.test.ts",
       "passed": 0,
       "failed": 1,
-      "duration": 806,
+      "duration": 761,
       "errors": [
         "Command failed: npx hardhat run test/performance/LoadTest.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/performance/LoadTest.viem.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 641,
+      "errors": [
+        "Command failed: npx hardhat run test/performance/LoadTest.viem.test.ts 2>&1"
       ]
     }
   ],

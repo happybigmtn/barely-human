@@ -302,7 +302,7 @@
     <div class="container">
         <div class="header">
             <h1>Barely Human</h1>
-            <p>Authentic Substrate Algorithm - Direct Port from Original color.html with VRF Seeding</p>
+            <p>Deterministic Generative Art System - Bot Personality-Driven Visual Generation</p>
         </div>
 
         <div class="controls">
@@ -347,9 +347,9 @@
                 </div>
                 <div class="generation-info" id="generationInfo" style="display: none;">
                     <h4>Generation Details</h4>
-                    <p><strong>Algorithm:</strong> Authentic Substrate Crack Physics</p>
-                    <p><strong>Formation Types:</strong> 11 unique crack behaviors</p>
-                    <p><strong>Features:</strong> Sand painting, mountain generation, environmental systems</p>
+                    <p><strong>Algorithm:</strong> Deterministic Bot Personality Styling</p>
+                    <p><strong>Formation Types:</strong> 10 unique bot personalities with distinct visual traits</p>
+                    <p><strong>Features:</strong> Personality-driven colors, patterns, and risk visualization</p>
                     <p><strong>Deterministic:</strong> Yes (reproducible from VRF seed)</p>
                     <p><strong>On-Chain Compatible:</strong> SVG format</p>
                 </div>
@@ -373,7 +373,7 @@
         </div>
     </div>
 
-    <script src="./authentic-generator.js"></script>
+    <script src="./deterministic-generator.js"></script>
     <script>
         // Bot personalities data
         const BOT_DATA = [
@@ -492,12 +492,12 @@
             display.innerHTML = '<div class="placeholder">Generating artwork...</div>';
 
             try {
-                // Use the authentic art generator
-                if (typeof AuthenticBarelyHumanGenerator === 'undefined') {
-                    throw new Error('Authentic art generator not loaded. Please ensure authentic-generator.js is loaded.');
+                // Use the deterministic art generator
+                if (typeof DeterministicBarelyHumanGenerator === 'undefined') {
+                    throw new Error('Deterministic art generator not loaded. Please ensure deterministic-generator.js is loaded.');
                 }
 
-                const generator = new AuthenticBarelyHumanGenerator(seed, selectedBotId, seriesId);
+                const generator = new DeterministicBarelyHumanGenerator(seed, selectedBotId, seriesId);
                 const svg = generator.generateSVG();
                 
                 // Create basic metadata for display
@@ -509,7 +509,7 @@
                         { trait_type: 'Theme', value: botData.theme },
                         { trait_type: 'Style', value: botData.style },
                         { trait_type: 'Series', value: seriesId },
-                        { trait_type: 'Algorithm', value: 'Authentic Substrate Physics' }
+                        { trait_type: 'Algorithm', value: 'Deterministic Bot Personality Styling' }
                     ]
                 };
                 const traits = metadata.attributes;

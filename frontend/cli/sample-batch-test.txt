@@ -1,0 +1,29 @@
+# Sample Batch Test File for Barely Human Casino CLI
+# Each line represents a command to execute
+# Lines starting with # are comments and will be ignored
+
+# Basic betting operations
+--command bet --amount 10 --bet-type 0
+--command roll
+--command bet --amount 25 --bet-type 4
+--command roll
+
+# Vault operations
+--command vault-deposit --amount 100
+--command vault-withdraw --amount 50
+
+# Staking operations  
+--command stake --amount 200
+--command claim-rewards
+--command unstake --amount 100
+
+# Bot simulations
+--command bot-play --bot-id 0 --rounds 2
+--command bot-play --bot-id 1 --rounds 1
+--command bot-play --bot-id 2 --rounds 3
+
+# More betting variations
+--command bet --amount 50 --bet-type 25
+--command roll
+--command bet --amount 15 --bet-type 29
+--command roll
