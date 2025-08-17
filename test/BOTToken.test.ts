@@ -1,6 +1,4 @@
-import { expect } from "chai";
-import hre from "hardhat";
-import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
+import { network } from "hardhat";
 import { parseEther, keccak256, toBytes } from "viem";
 
 describe("BOTToken", function () {
