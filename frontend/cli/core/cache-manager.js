@@ -200,7 +200,7 @@ export class CacheManager {
     return async (...args) => {
       // Don't cache if method shouldn't be cached
       if (!this.shouldCache(contractName, methodName)) {
-        const result = await originalMethod.apply(contract, args);
+        const result = await originalMethod.call(contract, ...args);
         // Invalidate related cache entries after state changes
         this.invalidate(contractName);
         return result;
@@ -214,7 +214,7 @@ export class CacheManager {
 
       // Execute method and cache result
       try {
-        const result = await originalMethod.apply(contract, args);
+        const result = await originalMethod.call(contract, ...args);
         this.set(contractName, methodName, args, result);
         return result;
       } catch (error) {
@@ -228,20 +228,23 @@ export class CacheManager {
    * Wrap all methods of a contract with caching
    */
   wrapContract(contract, contractName) {
-    const wrappedContract = { ...contract };
-    
-    // Get all method names from the contract
-    const methodNames = Object.getOwnPropertyNames(contract)
-      .concat(Object.getOwnPropertyNames(Object.getPrototypeOf(contract)))
-      .filter(name => typeof contract[name] === 'function' && name !== 'constructor');
-
-    methodNames.forEach(methodName => {
-      if (contract[methodName] && typeof contract[methodName] === 'function') {
-        wrappedContract[methodName] = this.wrapContractMethod(contract, contractName, methodName);
+    // For ethers v6 contracts, we need to create a proxy that intercepts method calls
+    // since the contract methods are not enumerable properties
+    return new Proxy(contract, {
+      get: (target, prop, receiver) => {
+        const originalValue = Reflect.get(target, prop, receiver);
+        
+        // If it's a function and looks like a contract method, wrap it
+        if (typeof originalValue === 'function' && typeof prop === 'string') {
+          // Check if it's a contract interface method by looking at the contract's interface
+          if (target.interface && target.interface.hasFunction && target.interface.hasFunction(prop)) {
+            return this.wrapContractMethod(target, contractName, prop);
+          }
+        }
+        
+        return originalValue;
       }
     });
-
-    return wrappedContract;
   }
 
   /**

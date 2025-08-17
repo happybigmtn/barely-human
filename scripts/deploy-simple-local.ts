@@ -1,8 +1,9 @@
 import { network } from "hardhat";
 import { parseEther, formatEther } from "viem";
+import fs from 'fs';
 
 async function main() {
-    console.log("🎰 Deploying Barely Human locally...\n");
+    console.log("🎰 Simple Local Deployment for CLI Testing...\n");
     
     // Connect to local network using Hardhat 3.0 pattern
     const connection = await network.connect();
@@ -51,26 +52,8 @@ async function main() {
         ]);
         console.log("   ✅ StakingPool deployed at:", stakingPool.address);
         
-        // 5. Deploy CrapsGame with mock VRF (using V2Plus variant)
-        console.log("\n5. Deploying CrapsGameV2Plus...");
-        const crapsGame = await viem.deployContract("CrapsGameV2Plus", [
-            mockVRF.address,                    // VRF coordinator
-            1n,                                 // subscription ID
-            "0x0000000000000000000000000000000000000000000000000000000000000000" // key hash (mock)
-        ]);
-        console.log("   ✅ CrapsGameV2Plus deployed at:", crapsGame.address);
-        
-        // 6. Deploy BotManagerV2Plus  
-        console.log("\n6. Deploying BotManagerV2Plus...");
-        const botManager = await viem.deployContract("BotManagerV2Plus", [
-            mockVRF.address,                    // VRF coordinator
-            1n,                                 // subscription ID
-            "0x0000000000000000000000000000000000000000000000000000000000000000" // key hash (mock)
-        ]);
-        console.log("   ✅ BotManagerV2Plus deployed at:", botManager.address);
-        
-        // 7. Deploy CrapsVault Factory (using minimal variant first)
-        console.log("\n7. Deploying VaultFactoryMinimal...");
+        // 5. Deploy minimal vault factory
+        console.log("\n5. Deploying VaultFactoryMinimal...");
         const vaultFactory = await viem.deployContract("VaultFactoryMinimal", [
             botToken.address,
             treasuryContract.address
@@ -86,9 +69,9 @@ async function main() {
         const treasuryBalance = await botToken.read.balanceOf([treasury.account.address]);
         console.log("   Treasury balance:", formatEther(treasuryBalance), "BOT");
         
-        console.log("\n🎉 Local deployment complete!");
+        console.log("\n🎉 Simple deployment complete!");
         
-        // Save deployment addresses to file
+        // Save deployment addresses to file for CLI
         const deploymentData = {
             network: "localhost",
             timestamp: new Date().toISOString(),
@@ -97,8 +80,6 @@ async function main() {
                 MockVRFV2Plus: mockVRF.address,
                 Treasury: treasuryContract.address,
                 StakingPool: stakingPool.address,
-                CrapsGameV2Plus: crapsGame.address,
-                BotManagerV2Plus: botManager.address,
                 VaultFactoryMinimal: vaultFactory.address
             },
             deployer: deployer.account.address,
@@ -111,17 +92,20 @@ async function main() {
             }
         };
         
-        // Write to deployments directory
-        const fs = await import('fs/promises');
-        await fs.writeFile('deployments/localhost.json', JSON.stringify(deploymentData, null, 2));
-        console.log("   💾 Deployment addresses saved to deployments/localhost.json");
+        // Ensure deployments directory exists
+        if (!fs.existsSync('deployments')) {
+            fs.mkdirSync('deployments');
+        }
+        
+        fs.writeFileSync('deployments/localhost.json', JSON.stringify(deploymentData, null, 2));
+        console.log("   📄 Deployment data saved to deployments/localhost.json");
+        
+        await connection.close();
         
     } catch (error) {
-        console.error("\n❌ Deployment failed:", error);
-        process.exit(1);
-    } finally {
-        // Close connection
+        console.error("❌ Deployment failed:", error);
         await connection.close();
+        process.exit(1);
     }
 }
 

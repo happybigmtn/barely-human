@@ -1,0 +1,11 @@
+{
+  "defaultNetwork": "local",
+  "gasReporting": true,
+  "verboseOutput": true,
+  "autoSave": true,
+  "theme": "dark",
+  "maxHistoryEntries": 1000,
+  "cacheEnabled": true,
+  "defaultBetAmount": "10",
+  "defaultVaultAmount": "100"
+}

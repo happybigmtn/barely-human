@@ -373,20 +373,20 @@
         </div>
     </div>
 
-    <script src="./deterministic-generator.js"></script>
+    <script src="./deterministic-generator-browser.js"></script>
     <script>
-        // Bot personalities data
+        // Bot personalities data - enhanced with formation info
         const BOT_DATA = [
-            { id: 0, name: "Alice All-In", theme: "Volcanic", style: "Explosive & Aggressive" },
-            { id: 1, name: "Bob Calculator", theme: "Klein Blue", style: "Mathematical & Precise" },
-            { id: 2, name: "Charlie Lucky", theme: "Aurora", style: "Mystical & Flowing" },
-            { id: 3, name: "Diana Ice Queen", theme: "Mist", style: "Cold & Crystalline" },
-            { id: 4, name: "Eddie Entertainer", theme: "Neon", style: "Theatrical & Vibrant" },
-            { id: 5, name: "Fiona Fearless", theme: "Storm", style: "Dynamic & Bold" },
-            { id: 6, name: "Greg Grinder", theme: "Zen", style: "Meditative & Steady" },
-            { id: 7, name: "Helen Hot Streak", theme: "Dawn", style: "Flowing & Energetic" },
-            { id: 8, name: "Ivan Intimidator", theme: "Void", style: "Dark & Menacing" },
-            { id: 9, name: "Julia Jinx", theme: "Cyber", style: "Chaotic & Unpredictable" }
+            { id: 0, name: "Alice All-In", theme: "Volcanic", formation: "Chaotic", style: "Explosive & Aggressive" },
+            { id: 1, name: "Bob Calculator", theme: "Klein Blue", formation: "Circuit", style: "Mathematical & Precise" },
+            { id: 2, name: "Charlie Lucky", theme: "Aurora", formation: "Spiral", style: "Mystical & Flowing" },
+            { id: 3, name: "Diana Ice Queen", theme: "Mist", formation: "Crystalline", style: "Cold & Crystalline" },
+            { id: 4, name: "Eddie Entertainer", theme: "Neon", formation: "Kaleidoscope", style: "Theatrical & Vibrant" },
+            { id: 5, name: "Fiona Fearless", theme: "Storm", formation: "Lightning", style: "Dynamic & Bold" },
+            { id: 6, name: "Greg Grinder", theme: "Zen", formation: "Zen Waves", style: "Meditative & Steady" },
+            { id: 7, name: "Helen Hot Streak", theme: "Dawn", formation: "Curved", style: "Flowing & Energetic" },
+            { id: 8, name: "Ivan Intimidator", theme: "Void", formation: "Branching", style: "Dark & Menacing" },
+            { id: 9, name: "Julia Jinx", theme: "Cyber", formation: "Organic", style: "Chaotic & Unpredictable" }
         ];
 
         let selectedBotId = 0;
@@ -410,7 +410,8 @@
                 card.innerHTML = `
                     <h3>${bot.name}</h3>
                     <p>${bot.theme}</p>
-                    <p style="font-size: 10px;">${bot.style}</p>
+                    <p style="font-size: 10px;">${bot.formation}</p>
+                    <p style="font-size: 9px; opacity: 0.7;">${bot.style}</p>
                 `;
                 grid.appendChild(card);
             });
@@ -442,6 +443,10 @@
                     <span class="trait-value">${bot.theme}</span>
                 </div>
                 <div class="trait-item">
+                    <span class="trait-label">Formation</span>
+                    <span class="trait-value">${bot.formation}</span>
+                </div>
+                <div class="trait-item">
                     <span class="trait-label">Style</span>
                     <span class="trait-value">${bot.style}</span>
                 </div>
@@ -469,19 +474,6 @@
                 return;
             }
 
-            // Convert seed to number
-            let seed;
-            try {
-                if (seedInput.startsWith('0x')) {
-                    seed = parseInt(seedInput.slice(2, 18), 16);
-                } else {
-                    seed = parseInt(seedInput);
-                }
-            } catch (error) {
-                alert('Invalid seed format');
-                return;
-            }
-
             // Show loading state
             const container = document.querySelector('.container');
             const display = document.getElementById('artworkDisplay');
@@ -492,28 +484,24 @@
             display.innerHTML = '<div class="placeholder">Generating artwork...</div>';
 
             try {
-                // Use the deterministic art generator
-                if (typeof DeterministicBarelyHumanGenerator === 'undefined') {
-                    throw new Error('Deterministic art generator not loaded. Please ensure deterministic-generator.js is loaded.');
+                // Use the enhanced deterministic art generator
+                if (typeof window.BarelyHumanArt === 'undefined') {
+                    throw new Error('Enhanced deterministic art generator not loaded. Please ensure deterministic-generator.js is loaded.');
                 }
 
-                const generator = new DeterministicBarelyHumanGenerator(seed, selectedBotId, seriesId);
-                const svg = generator.generateSVG();
+                // Format seed properly for VRF format
+                let formattedSeed = seedInput;
+                if (!seedInput.startsWith('0x')) {
+                    formattedSeed = '0x' + parseInt(seedInput).toString(16).padStart(16, '0');
+                }
+
+                // Use the ArtGeneratorUtils for proper generation
+                const result = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF(formattedSeed, selectedBotId, seriesId);
                 
-                // Create basic metadata for display
-                const botData = BOT_DATA[selectedBotId];
-                const metadata = {
-                    attributes: [
-                        { trait_type: 'Bot ID', value: selectedBotId },
-                        { trait_type: 'Bot Name', value: botData.name },
-                        { trait_type: 'Theme', value: botData.theme },
-                        { trait_type: 'Style', value: botData.style },
-                        { trait_type: 'Series', value: seriesId },
-                        { trait_type: 'Algorithm', value: 'Deterministic Bot Personality Styling' }
-                    ]
-                };
-                const traits = metadata.attributes;
-                const rarity = Math.floor(Math.random() * 100) + 1; // Simplified rarity calculation
+                const svg = result.svg;
+                const metadata = result.metadata;
+                const traits = result.traits;
+                const rarity = window.BarelyHumanArt.ArtGeneratorUtils.calculateRarityScore(traits);
 
                 currentArtwork = { svg, metadata, traits, rarity };
 
@@ -524,37 +512,73 @@
                 
                 display.innerHTML = scaledSVG;
 
-                // Update metadata
-                updateTraitsDisplay(metadata.attributes, traits);
+                // Update metadata with full trait information
+                updateTraitsDisplay(metadata.attributes, traits, rarity);
 
                 // Show rarity score
                 rarityScore.style.display = 'block';
                 rarityScore.querySelector('.score').textContent = rarity;
 
-                // Show generation info
+                // Show generation info with enhanced details
                 generationInfo.style.display = 'block';
+                const botPersonality = window.BarelyHumanArt.BOT_PERSONALITIES[selectedBotId];
+                generationInfo.innerHTML = `
+                    <h4>Generation Details</h4>
+                    <p><strong>Algorithm:</strong> Enhanced Substrate-Inspired Crack Formation</p>
+                    <p><strong>Formation:</strong> ${botPersonality.crackFormation} (${window.BarelyHumanArt.CRACK_FORMATIONS[botPersonality.crackFormation].description})</p>
+                    <p><strong>Theme:</strong> ${botPersonality.theme} with ${botPersonality.palette.length} unique colors</p>
+                    <p><strong>Personality Traits:</strong> ${Object.values(botPersonality.traits).join(', ')}</p>
+                    <p><strong>Deterministic:</strong> Yes (reproducible from VRF seed)</p>
+                    <p><strong>On-Chain Compatible:</strong> SVG format with metadata</p>
+                    <p><strong>Crack Count:</strong> Variable (formation-dependent)</p>
+                    <p><strong>Complexity:</strong> ${traits.complexity} density with ${traits.specialFeatures} features</p>
+                `;
 
             } catch (error) {
                 console.error('Generation error:', error);
-                display.innerHTML = `<div class="error">Generation failed: ${error.message}</div>`;
+                display.innerHTML = `<div class="error">Generation failed: ${error.message}<br><br>Make sure you're running this from a web server (not file://) for proper module loading.</div>`;
             } finally {
                 container.classList.remove('loading');
             }
         }
 
-        // Update traits display
-        function updateTraitsDisplay(attributes, traits) {
+        // Update traits display with enhanced information
+        function updateTraitsDisplay(attributes, traits, rarity) {
             const traitsContainer = document.getElementById('traits');
             
             let html = '';
+            
+            // Display main attributes
             attributes.forEach(attr => {
+                // Add rarity indicators for special traits
+                let rarityIndicator = '';
+                if (attr.trait_type === 'Density' && attr.value === 'Maximum') {
+                    rarityIndicator = ' 🔥';
+                } else if (attr.trait_type === 'Complexity' && attr.value === 'Legendary') {
+                    rarityIndicator = ' ⭐';
+                } else if (attr.trait_type === 'Special Features' && attr.value === 'Legendary') {
+                    rarityIndicator = ' 💎';
+                } else if (attr.trait_type === 'Color Variation' && attr.value === 'Rainbow') {
+                    rarityIndicator = ' 🌈';
+                }
+                
                 html += `
                     <div class="trait-item">
                         <span class="trait-label">${attr.trait_type}</span>
-                        <span class="trait-value">${attr.value}</span>
+                        <span class="trait-value">${attr.value}${rarityIndicator}</span>
                     </div>
                 `;
             });
+            
+            // Add additional trait details if available
+            if (traits && typeof traits === 'object') {
+                html += `
+                    <div class="trait-item">
+                        <span class="trait-label">Rarity Score</span>
+                        <span class="trait-value">${rarity}/100</span>
+                    </div>
+                `;
+            }
 
             traitsContainer.innerHTML = html;
         }

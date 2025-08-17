@@ -363,9 +363,15 @@ contract BotManager is VRFConsumerBaseV2, AccessControl, ReentrancyGuard, Pausab
             
         } else if (bot.currentStrategy == Strategy.MARTINGALE) {
             if (bot.consecutiveLosses > 0) {
-                betAmount = bot.currentBetAmount * 2;
-                if (betAmount > (vaultBalance * MAX_BET_PERCENTAGE) / 10000) {
-                    betAmount = bot.baseBetAmount; // Reset
+                uint256 maxAllowedBet = (vaultBalance * MAX_BET_PERCENTAGE) / 10000;
+                // SECURITY FIX: Check for overflow before doubling to prevent arithmetic overflow
+                if (bot.currentBetAmount > maxAllowedBet / 2) {
+                    betAmount = bot.baseBetAmount; // Reset to prevent overflow
+                } else {
+                    betAmount = bot.currentBetAmount * 2;
+                    if (betAmount > maxAllowedBet) {
+                        betAmount = bot.baseBetAmount; // Reset if exceeds max
+                    }
                 }
             }
             

@@ -29,6 +29,7 @@ contract CrapsVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
 
     // Vault state
     uint256 public totalLockedAmount;
+    uint256 public pendingBetAmount; // SECURITY FIX: Track pending but not yet locked bets
     uint256 public lastProfitSnapshot;
     uint256 public totalProfit;
     uint256 public totalFees;
@@ -61,6 +62,10 @@ contract CrapsVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     event BotManagerUpdated(address indexed newManager);
     event LPAdded(address indexed lp, uint256 shares);
     event LPRemoved(address indexed lp);
+    // SECURITY FIX: Events for pending bet management
+    event PendingBetReserved(uint256 amount, uint256 totalPending);
+    event PendingBetConfirmed(uint256 amount, uint256 remainingPending, uint256 totalLocked);
+    event PendingBetReleased(uint256 amount, uint256 remainingPending);
     
     /**
      * @notice Constructor
@@ -133,10 +138,11 @@ contract CrapsVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         address receiver,
         address owner
     ) public virtual override nonReentrant returns (uint256 shares) {
-        // Check if withdrawing would leave funds locked in active bets
+        // SECURITY FIX: Check if withdrawing would leave funds locked in active bets AND pending bets
+        uint256 reservedAmount = totalLockedAmount + pendingBetAmount;
         require(
-            totalAssets() - totalLockedAmount >= assets,
-            "Insufficient unlocked funds"
+            totalAssets() >= assets + reservedAmount,
+            "Insufficient available liquidity"
         );
         
         shares = super.withdraw(assets, receiver, owner);
@@ -159,10 +165,11 @@ contract CrapsVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     ) public virtual override nonReentrant returns (uint256 assets) {
         assets = previewRedeem(shares);
         
-        // Check if redeeming would leave funds locked in active bets
+        // SECURITY FIX: Check if redeeming would leave funds locked in active bets AND pending bets
+        uint256 reservedAmount = totalLockedAmount + pendingBetAmount;
         require(
-            totalAssets() - totalLockedAmount >= assets,
-            "Insufficient unlocked funds"
+            totalAssets() >= assets + reservedAmount,
+            "Insufficient available liquidity"
         );
         
         assets = super.redeem(shares, receiver, owner);
@@ -254,15 +261,69 @@ contract CrapsVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
             uint256 feeAmount = (profit * PERFORMANCE_FEE_BPS) / BPS_DIVISOR;
             
             if (feeAmount > 0 && hasRole(FEE_COLLECTOR_ROLE, msg.sender)) {
-                // Transfer fee to treasury
-                IERC20(asset()).safeTransfer(msg.sender, feeAmount);
+                // SECURITY FIX: Update state BEFORE external call to prevent reentrancy
+                lastProfitSnapshot = currentTotal - feeAmount;
                 totalFees += feeAmount;
                 
+                // Transfer fee to treasury after state updates
+                IERC20(asset()).safeTransfer(msg.sender, feeAmount);
                 emit PerformanceFeeExtracted(feeAmount, profit);
+            } else {
+                // Update snapshot even when no fee collected
+                lastProfitSnapshot = currentTotal;
             }
-            
-            lastProfitSnapshot = currentTotal - feeAmount;
         }
+    }
+    
+    /**
+     * @notice Reserve funds for a pending bet (before VRF request)
+     * @param amount The amount to reserve
+     */
+    function reservePendingBet(uint256 amount) 
+        external 
+        onlyRole(GAME_ROLE) 
+        whenNotPaused 
+    {
+        require(amount > 0, "Invalid amount");
+        uint256 reservedAmount = totalLockedAmount + pendingBetAmount + amount;
+        require(
+            totalAssets() >= reservedAmount,
+            "Insufficient liquidity for reservation"
+        );
+        
+        pendingBetAmount += amount;
+        emit PendingBetReserved(amount, pendingBetAmount);
+    }
+    
+    /**
+     * @notice Convert pending bet to locked when VRF confirms
+     * @param amount The amount to convert from pending to locked
+     */
+    function confirmPendingBet(uint256 amount) 
+        external 
+        onlyRole(GAME_ROLE) 
+        whenNotPaused 
+    {
+        require(amount > 0 && amount <= pendingBetAmount, "Invalid amount");
+        
+        pendingBetAmount -= amount;
+        totalLockedAmount += amount;
+        emit PendingBetConfirmed(amount, pendingBetAmount, totalLockedAmount);
+    }
+    
+    /**
+     * @notice Release pending bet if VRF request fails
+     * @param amount The amount to release
+     */
+    function releasePendingBet(uint256 amount) 
+        external 
+        onlyRole(GAME_ROLE) 
+        whenNotPaused 
+    {
+        require(amount > 0 && amount <= pendingBetAmount, "Invalid amount");
+        
+        pendingBetAmount -= amount;
+        emit PendingBetReleased(amount, pendingBetAmount);
     }
     
     /**

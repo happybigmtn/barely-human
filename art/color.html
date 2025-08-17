@@ -1,0 +1,3688 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Substrate Mountain - Enhanced</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        /* Prevent scroll bounce on iOS */
+        position: fixed;
+        width: 100%;
+        height: 100%;
+      }
+      canvas {
+        display: block;
+        /* Ensure canvas fills viewport */
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* Prevent mobile tap highlighting */
+        -webkit-tap-highlight-color: transparent;
+      }
+      /* Menu Toggle Button */
+      .menu-toggle {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: 40px;
+        height: 40px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+      }
+      .menu-toggle:hover {
+        background: rgba(0, 0, 0, 0.9);
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: scale(1.05);
+      }
+      .menu-toggle svg {
+        width: 20px;
+        height: 20px;
+        stroke: #ffffff;
+        fill: none;
+      }
+      
+      /* Controls Menu */
+      .controls {
+        position: fixed;
+        top: 70px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 320px;
+        max-height: 80vh;
+        overflow-y: auto;
+        opacity: 0;
+        transform: translateX(-20px);
+        pointer-events: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      }
+      .controls.show {
+        opacity: 1;
+        transform: translateX(0);
+        pointer-events: all;
+      }
+      
+      /* Scrollbar styling */
+      .controls::-webkit-scrollbar {
+        width: 6px;
+      }
+      .controls::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+      }
+      .controls::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+      }
+      .controls::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      
+      .control-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .section-label {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+      }
+      .button-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .button-grid.themes {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .button-grid.cracks {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      button {
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.9);
+        cursor: pointer;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+        /* Better touch targets for mobile */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      button:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: translateY(-1px);
+      }
+      button:active {
+        transform: translateY(0);
+        background: rgba(255, 255, 255, 0.3);
+      }
+      
+      /* Mobile-specific adjustments */
+      @media (max-width: 768px) {
+        .menu-toggle {
+          width: 36px;
+          height: 36px;
+        }
+        .controls {
+          max-width: 90%;
+          padding: 15px;
+          gap: 15px;
+        }
+        button {
+          padding: 7px 10px;
+          font-size: 11px;
+        }
+        .button-grid {
+          gap: 6px;
+        }
+      }
+      .info {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+        font-family: monospace;
+      }
+      .seed-display {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 11px;
+        backdrop-filter: blur(10px);
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .seed-display:hover {
+        background: rgba(0, 0, 0, 0.8);
+        transform: translateY(-1px);
+      }
+      .seed-input {
+        position: absolute;
+        bottom: 60px;
+        right: 20px;
+        display: none;
+        gap: 10px;
+        align-items: center;
+      }
+      .seed-input input {
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+        width: 150px;
+      }
+      .seed-input button {
+        padding: 8px 16px;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    
+    <!-- Menu Toggle Button -->
+    <div class="menu-toggle" id="menuToggle">
+      <svg viewBox="0 0 24 24">
+        <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    
+    <!-- Controls Menu -->
+    <div class="controls" id="controlsMenu">
+      <div class="control-section">
+        <span class="section-label">Themes</span>
+        <div class="button-grid themes">
+          <button onclick="generateNew('dawn')">Dawn</button>
+          <button onclick="generateNew('dusk')">Dusk</button>
+          <button onclick="generateNew('mist')">Mist</button>
+          <button onclick="generateNew('storm')">Storm</button>
+          <button onclick="generateNew('void')">Void</button>
+          <button onclick="generateNew('zen')">Zen</button>
+          <button onclick="generateNew('volcanic')">Volcanic</button>
+          <button onclick="generateNew('klein')">Klein</button>
+          <button onclick="generateNew('neon')">Neon</button>
+          <button onclick="generateNew('desert')">Desert</button>
+          <button onclick="generateNew('aurora')">Aurora</button>
+          <button onclick="generateNew('sakura')">Sakura</button>
+          <button onclick="generateNew('cyber')">Cyber</button>
+          <button onclick="generateNew('la')">LA</button>
+        </div>
+      </div>
+      
+      <div class="control-section">
+        <span class="section-label">Crack Patterns</span>
+        <div class="button-grid cracks">
+          <button onclick="setCrackFormation('straight')">Straight</button>
+          <button onclick="setCrackFormation('curved')">Curved</button>
+          <button onclick="setCrackFormation('chaotic')">Chaotic</button>
+          <button onclick="setCrackFormation('branching')">Branch</button>
+          <button onclick="setCrackFormation('spiral')">Spiral</button>
+          <button onclick="setCrackFormation('crystalline')">Crystal</button>
+          <button onclick="setCrackFormation('kaleidoscope')">Kaleido</button>
+          <button onclick="setCrackFormation('zen')">Zen</button>
+          <button onclick="setCrackFormation('lightning')">Lightning</button>
+          <button onclick="setCrackFormation('organic')">Organic</button>
+          <button onclick="setCrackFormation('circuit')">Circuit</button>
+        </div>
+      </div>
+    </div>
+    <div class="info">거산의 침묵 속에서 ...</div>
+    <div class="status" id="status">Generating...</div>
+    <div class="seed-display" id="seedDisplay" onclick="showSeedInput()">Seed: <span id="seedValue">-</span></div>
+    <div class="seed-input" id="seedInput">
+      <input type="text" id="seedInputField" placeholder="Enter seed..." />
+      <button onclick="setSeed()">Set</button>
+      <button onclick="hideSeedInput()">Cancel</button>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      
+      // Get device pixel ratio for sharp rendering on all devices
+      const dpr = window.devicePixelRatio || 1;
+      
+      // Store logical canvas dimensions (what we use for calculations)
+      let canvasWidth = window.innerWidth;
+      let canvasHeight = window.innerHeight;
+      
+      // Function to properly size canvas for any device
+      function resizeCanvas() {
+        // Get current window dimensions
+        canvasWidth = window.innerWidth;
+        canvasHeight = window.innerHeight;
+        
+        // Set actual canvas size accounting for device pixel ratio
+        canvas.width = canvasWidth * dpr;
+        canvas.height = canvasHeight * dpr;
+        
+        // Scale all drawing operations by the dpr
+        ctx.scale(dpr, dpr);
+        
+        // Set display size (css pixels)
+        canvas.style.width = canvasWidth + 'px';
+        canvas.style.height = canvasHeight + 'px';
+      }
+      
+      // Initial canvas setup
+      resizeCanvas();
+
+      // Menu Toggle Functionality
+      const menuToggle = document.getElementById('menuToggle');
+      const controlsMenu = document.getElementById('controlsMenu');
+      
+      menuToggle.addEventListener('click', () => {
+        controlsMenu.classList.toggle('show');
+      });
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!menuToggle.contains(e.target) && !controlsMenu.contains(e.target)) {
+          controlsMenu.classList.remove('show');
+        }
+      });
+
+      let cracks = [];
+      let grid = [];
+      let debug = false;
+      let mountainY = [];
+      let theme = "dawn";
+      let density = 0;
+      let maxDensity = 0.85 + Math.random() * 0.14; // Variable completion: 85-99%
+      let isComplete = false;
+      let mountainArea = 0;
+      let filledCells = 0;
+      let specialFeatures = [];
+      let crackFormation = null; // Will be randomly selected
+      let globalAge = 0; // Track overall generation age for transitions
+      let currentSeed = null;
+      let rng = null; // Seeded random number generator
+      let backgroundElements = []; // Store background elements
+      let environment = null; // Environment system for objects
+      let currentTraits = {}; // Track traits for export
+
+      // Crack formation variations
+      const crackFormations = {
+        straight: {
+          wobbleFreq: 0,
+          wobbleAmp: 0,
+          drift: 0,
+          angleVariation: 2,
+          description: "Clean straight lines",
+        },
+        curved: {
+          wobbleFreq: 0.3,
+          wobbleAmp: 5,
+          drift: 0.2,
+          angleVariation: 3,
+          curveAmount: 0.5,
+          description: "Smooth curves",
+        },
+        chaotic: {
+          wobbleFreq: 2 + random() * 3,
+          wobbleAmp: 5 + random() * 5,
+          drift: (random() - 0.5) * 2,
+          angleVariation: 10,
+          description: "Chaotic movement",
+        },
+        branching: {
+          wobbleFreq: 0.5 + random() * 0.5,
+          wobbleAmp: 2 + random() * 2,
+          drift: 0,
+          angleVariation: 1,
+          branchInterval: 20 + random() * 15,
+          branchAngle: 25 + random() * 20,
+          branchDecay: 0.7 + random() * 0.15,
+          curveFactor: 0.02 + random() * 0.02,
+          description: "Tree-like branching"
+        },
+        spiral: {
+          wobbleFreq: 0,
+          wobbleAmp: 0,
+          drift: 0,
+          angleVariation: 2,
+          spiralTightness: 0.02 + random() * 0.05,
+          spiralDirection: random() < 0.5 ? 1 : -1,
+          spiralExpansion: 0.5 + random() * 0.5,
+          description: "Expanding spiral patterns"
+        },
+        crystalline: {
+          wobbleFreq: 0.05,
+          wobbleAmp: 3,
+          drift: 0.1,
+          angleVariation: 5,
+          angleOptions: [0, 30, 45, 60, 90, 120, 135, 150],
+          segmentLength: 10 + random() * 20,
+          growthRate: 0.95,
+          facetProbability: 0.15,
+          shatterProbability: 0.05,
+          resonanceFreq: 0.02,
+          description: "Dynamic crystalline growth"
+        },
+        kaleidoscope: {
+          wobbleFreq: 0,
+          wobbleAmp: 0,
+          drift: 0,
+          angleVariation: 0,
+          vortexSpeed: 0.02,
+          perspectiveDepth: 0,
+          symmetryFold: 6,
+          suckSpeed: 0.01,
+          rotationSpeed: 0.005,
+          segmentLength: 15,
+          description: "Tarbell-inspired kaleidoscope"
+        },
+        zen: {
+          wobbleFreq: 0,
+          wobbleAmp: 0,
+          drift: 0,
+          angleVariation: 8,
+          ringSpacing: 20,
+          waveAmplitude: 15,
+          waveFrequency: 0.03,
+          description: "Zen garden ripples"
+        },
+        lightning: {
+          wobbleFreq: 0,
+          wobbleAmp: 0,
+          drift: 0,
+          angleVariation: 45,
+          segmentLength: 30,
+          branchProbability: 0.15,
+          zigzagAngle: 45,
+          description: "Electric lightning bolts"
+        },
+        organic: {
+          wobbleFreq: 0.8,
+          wobbleAmp: 8,
+          drift: 0.3,
+          angleVariation: 15,
+          growthRate: 0.98,
+          branchProbability: 0.08,
+          curveSinFreq: 0.02,
+          description: "Organic plant growth"
+        },
+        circuit: {
+          wobbleFreq: 0,
+          wobbleAmp: 0,
+          drift: 0,
+          angleVariation: 0,
+          gridSize: 15,  // Smaller grid for denser pattern
+          turnProbability: 0.08,  // Very low for long straight lines
+          branchProbability: 0.4,  // High branching for dense coverage
+          description: "Circuit board patterns"
+        }
+      };
+
+      // Enhanced theme configurations
+      const themes = {
+        dawn: {
+          background: ['#2D1B3D', '#E94560', '#F39C6B'],
+          mountain: ['#1A0B2E', '#3D1E4E', '#693668'],
+          atmosphere: 'rgba(255, 200, 150, 0.03)',
+          special: 'warmGlow',
+        },
+        dusk: {
+          background: ['#1A1A2E', '#16213E', '#E94560'],
+          mountain: ['#0F3460', '#16213E', '#533483'],
+          atmosphere: 'rgba(150, 100, 200, 0.05)',
+          special: 'twilightGradient',
+        },
+        la: {
+          background: ['#1a1a2e', '#16213e', '#0f3460'],
+          mountain: ['#533483', '#C400C4', '#FF007F'],
+          atmosphere: 'rgba(196, 0, 196, 0.05)',
+          special: 'laGlow',
+        },
+        mist: {
+          background: ['#E8E8E8', '#D3D3D3', '#A8A8A8'],
+          mountain: ['#404040', '#505050', '#606060'],
+          atmosphere: 'rgba(255, 255, 255, 0.3)',
+          special: 'fogLayers',
+        },
+        storm: {
+          background: ['#0C0C0C', '#1C1C1C', '#3C3C3C'],
+          mountain: ['#2C2C2C', '#4C4C4C', '#6C6C6C'],
+          atmosphere: 'rgba(200, 200, 255, 0.05)',
+          special: 'lightning',
+        },
+        void: {
+          background: ['#000000', '#0A0A0A', '#1A1A1A'],
+          mountain: ['#FFFFFF', '#E0E0E0', '#C0C0C0'],
+          atmosphere: 'rgba(255, 255, 255, 0.02)',
+          special: 'voidParticles',
+        },
+        zen: {
+          background: ['#F5F5DC', '#D2B48C', '#DEB887'],
+          mountain: ['#8B7355', '#A0826D', '#BC9A6A'],
+          atmosphere: 'rgba(255, 248, 220, 0.1)',
+          special: 'enso',
+        },
+        volcanic: {
+          background: ['#1A0000', '#330000', '#660000'],
+          mountain: ['#FF4500', '#FF6347', '#FF7F50'],
+          atmosphere: 'rgba(255, 69, 0, 0.1)',
+          special: 'lavaFlow',
+        },
+        klein: {
+          background: ['#002FA7', '#0047AB', '#1E3A8A'],
+          mountain: ['#4169E1', '#6495ED', '#87CEEB'],
+          atmosphere: 'rgba(0, 47, 167, 0.1)',
+          special: 'kleinGlow'
+        },
+        neon: {
+          background: ['#0A0A0A', '#1A0F1A', '#2A1F2A'],
+          mountain: ['#FF1493', '#00FFFF', '#FF69B4'],
+          atmosphere: 'rgba(255, 20, 147, 0.05)',
+          special: 'neonPulse'
+        },
+        desert: {
+          background: ['#87CEEB', '#F4A460', '#FFE4B5'],
+          mountain: ['#D2691E', '#CD853F', '#DEB887'],
+          atmosphere: 'rgba(255, 220, 180, 0.08)',
+          special: 'heatWave'
+        },
+        aurora: {
+          background: ['#001122', '#002244', '#003366'],
+          mountain: ['#134E4A', '#14B8A6', '#5EEAD4'],
+          atmosphere: 'rgba(20, 184, 166, 0.05)',
+          special: 'northernLights'
+        },
+        sakura: {
+          background: ['#FFE4E1', '#FFC0CB', '#FFB6C1'],
+          mountain: ['#8B4513', '#A0522D', '#CD853F'],
+          atmosphere: 'rgba(255, 192, 203, 0.1)',
+          special: 'petals'
+        },
+        cyber: {
+          background: ['#0A0014', '#14001F', '#1F0029'],
+          mountain: ['#00FFFF', '#FF00FF', '#FFFF00'],
+          atmosphere: 'rgba(0, 255, 255, 0.03)',
+          special: 'dataStream'
+        }
+      };
+
+      // Mountain shape generators with more variation
+      const mountainShapes = {
+        jagged: (x, centerX, width, height) => {
+          const t = (x - centerX + width / 2) / width;
+          if (t < 0 || t > 1) return 0;
+
+          let h = Math.sin(t * Math.PI) * height;
+          h += Math.sin(t * 20) * height * 0.15;
+          h += Math.sin(t * 50) * height * 0.08;
+          h += Math.sin(t * 137) * height * 0.05; // More detail
+          // Add extra jaggedness
+          h += Math.sin(t * 200) * height * 0.03;
+          h += Math.sin(t * 317) * height * 0.02;
+          return h;
+        },
+
+        twin: (x, centerX, width, height) => {
+          const t = (x - centerX + width / 2) / width;
+          if (t < 0 || t > 1) return 0;
+
+          const peak1 = Math.exp(-Math.pow((t - 0.3) * 5, 2)) * height;
+          const peak2 = Math.exp(-Math.pow((t - 0.7) * 5, 2)) * height * 0.8;
+          // Add jaggedness to both peaks
+          const jaggedness = Math.sin(t * 80) * height * 0.06 + 
+                           Math.sin(t * 150) * height * 0.04 +
+                           Math.sin(t * 237) * height * 0.02;
+          
+          return Math.max(peak1, peak2) + jaggedness;
+        },
+
+        smooth: (x, centerX, width, height) => {
+          const t = (x - centerX + width / 2) / width;
+          if (t < 0 || t > 1) return 0;
+
+          const base = Math.pow(Math.sin(t * Math.PI), 0.7) * height;
+          // Make it not smooth anymore - add jaggedness
+          const jaggedness = Math.sin(t * 60) * height * 0.08 + 
+                           Math.sin(t * 120) * height * 0.05 +
+                           Math.sin(t * 200) * height * 0.03;
+          return base + jaggedness;
+        },
+
+        sharp: (x, centerX, width, height) => {
+          const t = (x - centerX + width / 2) / width;
+          if (t < 0 || t > 1) return 0;
+
+          let h;
+          if (t < 0.5) h = t * 2 * height;
+          else h = (1 - t) * 2 * height;
+
+          // Add more aggressive jaggedness
+          h += Math.sin(t * 100) * height * 0.06;
+          h += Math.sin(t * 180) * height * 0.04;
+          h += Math.sin(t * 280) * height * 0.02;
+          return h;
+        },
+
+        plateau: (x, centerX, width, height) => {
+          const t = (x - centerX + width / 2) / width;
+          if (t < 0 || t > 1) return 0;
+
+          let h;
+          if (t < 0.2) h = t * 5 * height;
+          else if (t > 0.8) h = (1 - t) * 5 * height;
+          else h = height * 0.9;
+          
+          // Add jaggedness across the entire profile
+          h += Math.sin(t * 70) * height * 0.07;
+          h += Math.sin(t * 140) * height * 0.04;
+          h += Math.sin(t * 211) * height * 0.03;
+          return h;
+        },
+
+        cascade: (x, centerX, width, height) => {
+          const t = (x - centerX + width / 2) / width;
+          if (t < 0 || t > 1) return 0;
+
+          // Multiple cascading peaks
+          let h = 0;
+          for (let i = 0; i < 4; i++) {
+            const peakT = (i + 1) / 5;
+            const peakHeight = height * (1 - i * 0.2);
+            h = Math.max(
+              h,
+              Math.exp(-Math.pow((t - peakT) * 8, 2)) * peakHeight
+            );
+          }
+          // Add jaggedness to all cascading peaks
+          h += Math.sin(t * 90) * height * 0.06;
+          h += Math.sin(t * 170) * height * 0.04;
+          h += Math.sin(t * 251) * height * 0.02;
+          return h;
+        },
+      };
+
+      // Special feature renderers
+      const specialRenderers = {
+        warmGlow: () => {
+          const glowGradient = ctx.createRadialGradient(
+            canvasWidth * 0.5,
+            canvasHeight * 0.3,
+            0,
+            canvasWidth * 0.5,
+            canvasHeight * 0.3,
+            canvasWidth * 0.5
+          );
+          glowGradient.addColorStop(0, "rgba(255, 204, 0, 0.1)");
+          glowGradient.addColorStop(1, "rgba(255, 204, 0, 0)");
+          ctx.fillStyle = glowGradient;
+          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        },
+
+        laGlow: () => {
+          // Multiple glowing orbs for dynamic LA sunset effect
+          const numGlows = 2 + Math.floor(random() * 2);
+          for (let i = 0; i < numGlows; i++) {
+            const glowX = canvasWidth * (0.2 + random() * 0.6);
+            const glowY = canvasHeight * (0.2 + random() * 0.3);
+            const glowSize = canvasWidth * (0.3 + random() * 0.3);
+            
+            const glowGradient = ctx.createRadialGradient(
+              glowX, glowY, 0,
+              glowX, glowY, glowSize
+            );
+            
+            // Vibrant LA colors
+            const colors = [
+              ["rgba(255, 107, 157, 0.3)", "rgba(255, 107, 157, 0)"],
+              ["rgba(255, 142, 83, 0.3)", "rgba(255, 142, 83, 0)"],
+              ["rgba(248, 181, 0, 0.3)", "rgba(248, 181, 0, 0)"],
+              ["rgba(196, 69, 105, 0.2)", "rgba(196, 69, 105, 0)"]
+            ];
+            const colorPair = colors[i % colors.length];
+            
+            glowGradient.addColorStop(0, colorPair[0]);
+            glowGradient.addColorStop(0.5, colorPair[0].replace("0.3", "0.1").replace("0.2", "0.1"));
+            glowGradient.addColorStop(1, colorPair[1]);
+            
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+          }
+          
+          // Add subtle light rays
+          ctx.save();
+          ctx.globalAlpha = 0.05;
+          const rayCount = 5 + Math.floor(random() * 5);
+          for (let i = 0; i < rayCount; i++) {
+            const rayX = canvasWidth * random();
+            const rayY = 0;
+            const rayEndX = rayX + (random() - 0.5) * canvasWidth * 0.5;
+            const rayEndY = canvasHeight;
+            
+            const rayGradient = ctx.createLinearGradient(rayX, rayY, rayEndX, rayEndY);
+            rayGradient.addColorStop(0, "#FF6B9D");
+            rayGradient.addColorStop(0.5, "#FF8E53");
+            rayGradient.addColorStop(1, "transparent");
+            
+            ctx.fillStyle = rayGradient;
+            ctx.beginPath();
+            ctx.moveTo(rayX - 20, rayY);
+            ctx.lineTo(rayX + 20, rayY);
+            ctx.lineTo(rayEndX + 40, rayEndY);
+            ctx.lineTo(rayEndX - 40, rayEndY);
+            ctx.closePath();
+            ctx.fill();
+          }
+          ctx.restore();
+        },
+
+        enso: () => {
+          // Minimal zen effect - no circle
+        },
+
+        lavaFlow: () => {
+          // Glowing lava streams
+          specialFeatures.push({
+            type: "lava",
+            paths: [],
+          });
+        },
+
+        voidParticles: () => {
+          // Floating void particles - only for void theme
+          if (theme !== 'void') return;
+          
+          for (let i = 0; i < 50; i++) {
+            const x = random() * canvasWidth;
+            const y = random() * canvasHeight;
+            const size = random() * 3;
+
+            ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        },
+
+        fogLayers: () => {
+          // Enhanced fog
+          for (let i = 0; i < 8; i++) {
+            const y = canvasHeight * (0.4 + i * 0.08);
+            const fogGradient = ctx.createLinearGradient(
+              0,
+              y - 100,
+              0,
+              y + 100
+            );
+            fogGradient.addColorStop(0, "rgba(255, 255, 255, 0)");
+            fogGradient.addColorStop(
+              0.5,
+              `rgba(255, 255, 255, ${0.2 + random() * 0.2})`
+            );
+            fogGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+            ctx.fillStyle = fogGradient;
+            ctx.fillRect(0, y - 100, canvasWidth, 200);
+          }
+        },
+
+        twilightGradient: () => {
+          // Nothing extra needed
+        },
+
+        lightning: () => {
+          // Occasional lightning
+          if (random() < 0.1) {
+            specialFeatures.push({
+              type: "lightning",
+              x: random() * canvasWidth,
+              age: 0,
+            });
+          }
+        },
+        
+        kleinGlow: () => {
+          // Intense blue glow effect
+          const glowGradient = ctx.createRadialGradient(
+            canvasWidth * 0.5, canvasHeight * 0.5, 0,
+            canvasWidth * 0.5, canvasHeight * 0.5, canvasWidth * 0.7
+          );
+          glowGradient.addColorStop(0, 'rgba(0, 47, 167, 0.1)');
+          glowGradient.addColorStop(0.5, 'rgba(0, 47, 167, 0.05)');
+          glowGradient.addColorStop(1, 'rgba(0, 47, 167, 0)');
+          ctx.fillStyle = glowGradient;
+          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+      };
+
+      // Create gradient background
+      function drawBackground() {
+        let colors = themes[theme].background;
+        
+        
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+        colors.forEach((color, i) => {
+          gradient.addColorStop(i / (colors.length - 1), color);
+        });
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Apply special effects
+        const specialEffect = themes[theme].special;
+        if (specialRenderers[specialEffect]) {
+          specialRenderers[specialEffect]();
+        }
+      }
+      
+      // Static helper for background parsing
+      this.parseHexStatic = function(hex) {
+        return {
+          r: parseInt(hex.slice(1, 3), 16),
+          g: parseInt(hex.slice(3, 5), 16),
+          b: parseInt(hex.slice(5, 7), 16)
+        };
+      }
+
+      // Create mountain shape with depth and perspective
+      function createMountain() {
+        mountainY = [];
+        mountainArea = 0;
+
+        // Decide on perspective type
+        const perspectiveType = random();
+        const baseY = canvasHeight * 0.95;
+        
+        if (perspectiveType < 0.3) {
+          // Traditional view - single peak from base
+          const shapes = Object.keys(mountainShapes);
+          const shapeType = rng ? rng.choice(shapes) : shapes[Math.floor(Math.random() * shapes.length)];
+          const shapeFunc = mountainShapes[shapeType];
+
+          const centerX = canvasWidth * (0.3 + random() * 0.4);
+          const mountainWidth = canvasWidth * (0.5 + random() * 0.4);
+          const peakHeight = canvasHeight * (0.7 + random() * 0.2);
+
+          for (let x = 0; x < canvasWidth; x++) {
+            const height = shapeFunc(x, centerX, mountainWidth, peakHeight);
+            mountainY[x] = baseY - height;
+            if (height > 0) mountainArea += height;
+          }
+        } else if (perspectiveType < 0.6) {
+          // Descending from left - mountain ridge perspective
+          const startHeight = canvasHeight * (0.1 + random() * 0.3); // Start high on left
+          const endHeight = canvasHeight * (0.6 + random() * 0.3); // End lower on right
+          
+          // Create multiple overlapping peaks for depth
+          const numPeaks = 3 + Math.floor(random() * 3);
+          
+          for (let x = 0; x < canvasWidth; x++) {
+            mountainY[x] = baseY; // Start at base
+          }
+          
+          for (let p = 0; p < numPeaks; p++) {
+            const peakX = canvasWidth * (p / numPeaks + random() * 0.2);
+            const peakWidth = canvasWidth * (0.3 + random() * 0.3);
+            const peakTop = startHeight + (endHeight - startHeight) * (peakX / canvasWidth);
+            const peakHeight = baseY - peakTop;
+            
+            // Add this peak to the mountain
+            for (let x = 0; x < canvasWidth; x++) {
+              const localHeight = mountainShapes.jagged(x, peakX, peakWidth, peakHeight);
+              const y = baseY - localHeight;
+              if (y < mountainY[x]) {
+                mountainY[x] = y;
+                mountainArea += localHeight;
+              }
+            }
+          }
+        } else {
+          // Immersed in peaks - multiple layers of mountains
+          const layers = 2 + Math.floor(random() * 2);
+          
+          // Initialize with base
+          for (let x = 0; x < canvasWidth; x++) {
+            mountainY[x] = baseY;
+          }
+          
+          // Create layers from back to front
+          for (let layer = 0; layer < layers; layer++) {
+            const layerBase = baseY - layer * 50; // Each layer starts higher
+            const numPeaks = 2 + Math.floor(random() * 3);
+            
+            for (let p = 0; p < numPeaks; p++) {
+              const peakX = canvasWidth * random();
+              const peakWidth = canvasWidth * (0.2 + random() * 0.3);
+              const peakHeight = canvasHeight * (0.3 + random() * 0.4) * (1 - layer * 0.2);
+              
+              // Use different shapes for variety
+              const shapes = ['jagged', 'sharp', 'twin'];
+              const shapeFunc = mountainShapes[shapes[Math.floor(random() * shapes.length)]];
+              
+              for (let x = 0; x < canvasWidth; x++) {
+                const localHeight = shapeFunc(x, peakX, peakWidth, peakHeight);
+                const y = layerBase - localHeight;
+                
+                // Only update if this peak is higher (closer to viewer)
+                if (y < mountainY[x]) {
+                  mountainY[x] = y;
+                  mountainArea += localHeight;
+                }
+              }
+            }
+          }
+          
+          // Add dramatic cutoffs for immersive feel
+          if (random() < 0.5) {
+            // Left side cutoff - as if viewing from within mountains
+            const cutoffWidth = canvasWidth * (0.1 + random() * 0.2);
+            const cutoffHeight = canvasHeight * (0.3 + random() * 0.3);
+            for (let x = 0; x < cutoffWidth; x++) {
+              const t = x / cutoffWidth;
+              const h = cutoffHeight * (1 - t * t); // Quadratic falloff
+              
+              // Add jaggedness to the ridge
+              const jaggedness = Math.sin(t * 50) * 15 + 
+                                Math.sin(t * 120) * 8 + 
+                                Math.sin(t * 200) * 5 +
+                                Math.sin(t * 350) * 3;
+              
+              mountainY[x] = Math.min(mountainY[x], cutoffHeight - h + jaggedness);
+            }
+          }
+          
+          if (random() < 0.5) {
+            // Right side cutoff
+            const cutoffStart = canvasWidth * (0.7 + random() * 0.2);
+            const cutoffHeight = canvasHeight * (0.3 + random() * 0.3);
+            for (let x = cutoffStart; x < canvasWidth; x++) {
+              const t = (x - cutoffStart) / (canvasWidth - cutoffStart);
+              const h = cutoffHeight * (1 - t * t);
+              mountainY[x] = Math.min(mountainY[x], cutoffHeight - h);
+            }
+          }
+          
+          // Add foreground peaks descending from top (20% chance)
+          if (random() < 0.2) {
+            const foregroundPeaks = 1 + Math.floor(random() * 2);
+            for (let fp = 0; fp < foregroundPeaks; fp++) {
+              const peakX = canvasWidth * random();
+              const peakWidth = canvasWidth * (0.1 + random() * 0.2);
+              const fromTop = random() < 0.5;
+              
+              for (let x = Math.max(0, peakX - peakWidth); x < Math.min(canvasWidth, peakX + peakWidth); x++) {
+                const localT = Math.abs(x - peakX) / peakWidth;
+                if (localT <= 1) {
+                  const peakShape = Math.pow(1 - localT, 2); // Smooth peak shape
+                  if (fromTop) {
+                    // Peak descending from top
+                    const depth = canvasHeight * (0.2 + random() * 0.3) * peakShape;
+                    mountainY[x] = Math.min(mountainY[x], depth);
+                  } else {
+                    // Peak rising from bottom
+                    const rise = baseY - canvasHeight * (0.3 + random() * 0.3) * peakShape;
+                    mountainY[x] = Math.min(mountainY[x], rise);
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        // Recalculate mountain area properly
+        mountainArea = 0;
+        for (let x = 0; x < canvasWidth; x++) {
+          const height = baseY - mountainY[x];
+          if (height > 0) {
+            mountainArea += height;
+          }
+        }
+        
+        // Ensure minimum mountain area to prevent division issues
+        if (mountainArea < canvasWidth * 50) {
+          mountainArea = canvasWidth * 50;
+        }
+      }
+
+      // Check if point is inside mountain
+      function insideMountain(x, y) {
+        x = Math.floor(x);
+        if (x < 0 || x >= canvasWidth) return false;
+        return y > mountainY[x] && y < canvasHeight * 0.95;
+      }
+
+      // Initialize
+      function init() {
+        // Update seed display
+        document.getElementById('seedValue').textContent = currentSeed || '-';
+        
+        // Variable completion density
+        maxDensity = 0.6 + random() * 0.35;
+
+        // Create mountain shape first
+        createMountain();
+        
+        // Initialize environment system
+        environment = new Environment();
+        environment.generateElements(theme, rng, { width: canvasWidth, height: canvasHeight, profile: mountainY });
+        
+        // Draw everything in correct order
+        drawBackground();  // Draw gradient background only
+
+        // Reset grid
+        grid = new Array(canvasWidth * canvasHeight);
+        for (let i = 0; i < grid.length; i++) {
+          grid[i] = -1;
+        }
+
+        // Reset system
+        cracks = [];
+        density = 0;
+        isComplete = false;
+        filledCells = 0;
+        specialFeatures = [];
+        globalAge = 0;
+
+        // Keep current crack formation or randomly select if not set
+        if (!crackFormation) {
+          const formations = Object.keys(crackFormations);
+          crackFormation = rng ? rng.choice(formations) : formations[Math.floor(Math.random() * formations.length)];
+        }
+        console.log(
+          "Crack formation:",
+          crackFormation,
+          "-",
+          crackFormations[crackFormation].description
+        );
+
+        // Create initial cracks - more seeds for better coverage
+        const baseSeeds = 8 + Math.floor(random() * 6);
+        for (let i = 0; i < baseSeeds; i++) {
+          const x =
+            canvasWidth * 0.05 + canvasWidth * 0.9 * (i / (baseSeeds - 1));
+          const y = canvasHeight * 0.9;
+
+          if (insideMountain(x, y)) {
+            cracks.push(
+              new Crack(x, y, -90 + (random() - 0.5) * 60, "base")
+            );
+          }
+        }
+
+        // Add contour seeds at multiple levels
+        const contourLevels = 3;
+        for (let level = 0; level < contourLevels; level++) {
+          const contourSeeds = 8 + Math.floor(random() * 4);
+          const levelOffset = 30 + level * 60;
+
+          for (let i = 0; i < contourSeeds; i++) {
+            const x =
+              canvasWidth * 0.15 +
+              canvasWidth * 0.7 * (i / (contourSeeds - 1));
+            const y = mountainY[Math.floor(x)] + levelOffset;
+
+            if (insideMountain(x, y)) {
+              const dx =
+                mountainY[Math.floor(x + 10)] - mountainY[Math.floor(x - 10)];
+              const contourAngle = (Math.atan2(dx, 20) * 180) / Math.PI;
+
+              cracks.push(
+                new Crack(
+                  x,
+                  y,
+                  contourAngle + (random() - 0.5) * 40,
+                  "contour"
+                )
+              );
+            }
+          }
+        }
+
+        // Add mid-level seeds for better coverage
+        const midSeeds = 6 + Math.floor(random() * 4);
+        for (let i = 0; i < midSeeds; i++) {
+          const x = canvasWidth * 0.2 + canvasWidth * 0.6 * random();
+          const y =
+            canvasHeight * 0.5 + (random() - 0.5) * canvasHeight * 0.2;
+
+          if (insideMountain(x, y)) {
+            cracks.push(new Crack(x, y, random() * 360, "spreader"));
+          }
+        }
+
+        // More special seeds for interesting patterns
+        const specialSeeds = 2 + Math.floor(random() * 3);
+        for (let i = 0; i < specialSeeds; i++) {
+          const specialX = canvasWidth * (0.3 + random() * 0.4);
+          const specialY = canvasHeight * (0.4 + random() * 0.3);
+          if (insideMountain(specialX, specialY)) {
+            cracks.push(
+              new Crack(
+                specialX,
+                specialY,
+                random() * 360,
+                random() < 0.5 ? "spiral" : "spreader"
+              )
+            );
+          }
+        }
+        
+        // Special handling for kaleidoscope formation - create vortex patterns
+        if (crackFormation === "kaleidoscope") {
+          // Clear for clean kaleidoscope effect
+          cracks = [];
+          
+          // Tarbell-style minimal initialization
+          const symmetry = 6;
+          
+          // Just 6 starting cracks in perfect symmetry
+          for (let s = 0; s < symmetry; s++) {
+            const angle = (s / symmetry) * 360;
+            const radius = 100;
+            const centerX = canvasWidth * 0.5 + Math.cos(angle * Math.PI / 180) * radius;
+            const centerY = canvasHeight * 0.5 + Math.sin(angle * Math.PI / 180) * radius;
+            
+            if (insideMountain(centerX, centerY)) {
+              // Create straight lines moving toward center
+              const toCenter = angle + 180;
+              
+              const crack = new Crack(centerX, centerY, toCenter, "normal", "kaleidoscope");
+              crack.symmetryIndex = s;
+              crack.depthLayer = 0;
+              crack.speed = 1;
+              
+              cracks.push(crack);
+            }
+          }
+        }
+        
+        // Special handling for circuit formation - dense grid-based initialization
+        if (crackFormation === "circuit") {
+          cracks = [];
+          const gridSize = 15; // Match the smaller grid size
+          
+          // Create a very dense grid covering the entire canvas
+          const spacing = gridSize * 2; // Tight spacing between starting points
+          
+          // Fill the entire area with a dense grid
+          for (let x = 0; x < canvasWidth; x += spacing) {
+            for (let y = 0; y < canvasHeight; y += spacing) {
+              const gridX = Math.round(x / gridSize) * gridSize;
+              const gridY = Math.round(y / gridSize) * gridSize;
+              
+              if (insideMountain(gridX, gridY)) {
+                // High probability of placing traces
+                if (random() < 0.7) {
+                  // Always create crossing traces for maximum density
+                  cracks.push(new Crack(gridX, gridY, 0, "spreader", "circuit"));   // Horizontal
+                  cracks.push(new Crack(gridX, gridY, 90, "spreader", "circuit"));  // Vertical
+                  
+                  // Sometimes add diagonals for variety
+                  if (random() < 0.2) {
+                    cracks.push(new Crack(gridX, gridY, 180, "spreader", "circuit"));
+                    cracks.push(new Crack(gridX, gridY, 270, "spreader", "circuit"));
+                  }
+                }
+              }
+            }
+          }
+          
+          // Add extra density along the mountain contours
+          for (let x = 0; x < canvasWidth; x += gridSize) {
+            const y = mountainY[x];
+            if (y) {
+              // Place traces just inside the mountain edge
+              for (let offset = gridSize; offset < gridSize * 6; offset += gridSize) {
+                const traceY = y + offset;
+                if (traceY < canvasHeight * 0.9) {
+                  const gridX = Math.round(x / gridSize) * gridSize;
+                  const gridY = Math.round(traceY / gridSize) * gridSize;
+                  
+                  // Horizontal traces following the mountain contour
+                  cracks.push(new Crack(gridX, gridY, 0, "spreader", "circuit"));
+                  cracks.push(new Crack(gridX, gridY, 180, "spreader", "circuit"));
+                }
+              }
+            }
+          }
+          
+          // Create vertical columns for better vertical coverage
+          for (let x = gridSize * 2; x < canvasWidth - gridSize * 2; x += gridSize * 3) {
+            // Find the mountain boundaries at this x position
+            let minY = canvasHeight;
+            let maxY = 0;
+            
+            for (let y = 0; y < canvasHeight; y += gridSize) {
+              if (insideMountain(x, y)) {
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+              }
+            }
+            
+            // Fill the column
+            if (maxY > minY) {
+              for (let y = minY; y <= maxY; y += gridSize * 2) {
+                const gridX = Math.round(x / gridSize) * gridSize;
+                const gridY = Math.round(y / gridSize) * gridSize;
+                cracks.push(new Crack(gridX, gridY, 90, "spreader", "circuit"));  // Up
+                cracks.push(new Crack(gridX, gridY, 270, "spreader", "circuit")); // Down
+              }
+            }
+          }
+          
+          // Set all circuit cracks to have fast speed for quick coverage
+          cracks.forEach(crack => {
+            crack.speed = 1.2 + random() * 0.8; // Faster speed (1.2-2.0)
+          });
+          
+          console.log(`Circuit formation initialized with ${cracks.length} traces`);
+        }
+        
+        // Special handling for zen formation - 16 sweeping waves with branching substrate
+        if (crackFormation === "zen") {
+          cracks = [];
+          window.zenWaveLines = []; // Store globally for boundary checking
+          
+          // Create sweeping wave lines - 8 from left, 8 from right
+          const waveLines = window.zenWaveLines;
+          
+          // 8 waves from the left - tighter spacing
+          for (let i = 0; i < 8; i++) {
+            const y = canvasHeight * (0.1 + i * 0.11);
+            waveLines.push({
+              startX: 0,
+              startY: y,
+              direction: 1, // Moving right
+              phase: i * 0.3,
+              amplitude: 30 + random() * 20,
+              frequency: 0.003 + random() * 0.002
+            });
+          }
+          
+          // 8 waves from the right - interleaved with left waves
+          for (let i = 0; i < 8; i++) {
+            const y = canvasHeight * (0.12 + i * 0.11);
+            waveLines.push({
+              startX: canvasWidth,
+              startY: y,
+              direction: -1, // Moving left
+              phase: Math.PI + i * 0.3,
+              amplitude: 30 + random() * 20,
+              frequency: 0.003 + random() * 0.002
+            });
+          }
+          
+          // Create wave cracks
+          for (let wave of waveLines) {
+            const numPoints = 200; // More points for denser coverage
+            
+            for (let p = 0; p < numPoints; p++) {
+              const progress = p / numPoints;
+              let x, y;
+              
+              if (wave.direction > 0) {
+                // Left to right
+                x = progress * canvasWidth;
+              } else {
+                // Right to left
+                x = (1 - progress) * canvasWidth;
+              }
+              
+              // Calculate wavy Y position
+              y = wave.startY + Math.sin(x * wave.frequency + wave.phase) * wave.amplitude;
+              
+              // Only create wave point if inside mountain
+              if (insideMountain(x, y)) {
+                // Check if previous point was outside mountain to avoid lines across boundaries
+                if (p > 0) {
+                  const prevX = wave.direction > 0 ? ((p-1) / numPoints) * canvasWidth : (1 - (p-1) / numPoints) * canvasWidth;
+                  const prevY = wave.startY + Math.sin(prevX * wave.frequency + wave.phase) * wave.amplitude;
+                  
+                  // Skip if previous point was outside mountain
+                  if (!insideMountain(prevX, prevY)) {
+                    continue;
+                  }
+                }
+                
+                // Calculate angle following the wave
+                const lookAhead = 10;
+                const nextX = x + lookAhead * wave.direction;
+                const nextY = wave.startY + Math.sin(nextX * wave.frequency + wave.phase) * wave.amplitude;
+                const angle = Math.atan2(nextY - y, nextX - x) * 180 / Math.PI;
+                
+                const crack = new Crack(x, y, angle, "wave", "zen");
+                crack.waveData = wave;
+                crack.progress = progress;
+                crack.speed = 1.2;
+                crack.isWave = true;
+                
+                cracks.push(crack);
+                
+                // More branches to fill gaps between waves
+                if (p % 4 === 0) { // More frequent branching
+                  const numBranches = 3 + Math.floor(random() * 3);
+                  
+                  for (let b = 0; b < numBranches; b++) {
+                    const side = random() < 0.5 ? 1 : -1;
+                    const branchAngle = angle + side * (85 + random() * 10) + (random() - 0.5) * 20;
+                    
+                    const branch = new Crack(x, y, branchAngle, "branch", "zen");
+                    branch.speed = 1.2 + random() * 0.3;
+                    branch.isBranch = true;
+                    
+                    cracks.push(branch);
+                  }
+                }
+              }
+            }
+          }
+          
+          // Add additional substrate seeds throughout the mountain for better coverage
+          const numExtraSeeds = 60 + Math.floor(random() * 30);
+          for (let i = 0; i < numExtraSeeds; i++) {
+            const angle = random() * Math.PI * 2;
+            const radius = random() * 0.9;
+            const x = canvasWidth * 0.5 + Math.cos(angle) * canvasWidth * radius * 0.45;
+            const y = canvasHeight * 0.5 + Math.sin(angle) * canvasHeight * radius * 0.4;
+            
+            if (insideMountain(x, y)) {
+              const crack = new Crack(x, y, random() * 360, "fill", "zen");
+              crack.speed = 1.0 + random() * 0.5;
+              crack.isFill = true;
+              cracks.push(crack);
+            }
+          }
+        }
+        
+        // Add environmental cracks to the crack system
+        environment.addToCrackSystem(cracks);
+        console.log("Total cracks (including environmental):", cracks.length);
+        console.log("Theme:", theme, "Formation:", crackFormation);
+        console.log("Mountain area:", mountainArea, "Max density:", maxDensity);
+        updateStatus();
+      }
+
+      // Enhanced Crack class
+      class Crack {
+        constructor(x, y, angle, type = "normal", formation = null) {
+          this.x = x;
+          this.y = y;
+          this.angle = angle;
+          this.type = type;
+          this.active = true;
+          this.age = 0;
+          this.branchCooldown = 0;
+          this.path = [{ x, y }]; // Store path for special effects
+          this.formation = formation || crackFormation; // Use passed formation or global
+
+          // Get color from theme
+          const colors = themes[theme].mountain;
+          this.baseColor = rng ? rng.choice(colors) : colors[Math.floor(Math.random() * colors.length)];
+          // Initialize crack color. Will be adjusted for specific themes below.
+          this.color = this.baseColor;
+          // Enhance visibility for dusk cracks by brightening the chosen color
+          if (theme === 'dusk') {
+            const brighten = (hex, amt) => {
+              const clamp = (v) => Math.max(0, Math.min(255, v));
+              const r = clamp(parseInt(hex.slice(1, 3), 16) + amt);
+              const g = clamp(parseInt(hex.slice(3, 5), 16) + amt);
+              const b = clamp(parseInt(hex.slice(5, 7), 16) + amt);
+              return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            };
+            this.color = brighten(this.baseColor, 60);
+          }
+          
+          // Adjust alpha based on theme for better visibility
+          if (theme === 'void') {
+            this.sandGain = 0.08 + random() * 0.12; // Higher alpha for void theme
+          } else if (theme === 'mist') {
+            this.sandGain = 0.06 + random() * 0.10; // Higher alpha for mist theme
+          } else {
+            this.sandGain = 0.02 + random() * 0.08; // Default alpha
+          }
+          this.birthTime = globalAge; // Remember when this crack was born
+          
+          // Special color handling for Klein Blue theme
+          if (theme === 'klein') {
+            // Use lighter, more contrasting colors for visibility
+            const kleinColors = ['#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF', '#FFFFFF'];
+            this.baseColor = kleinColors[Math.floor(random() * kleinColors.length)];
+            this.color = this.baseColor;
+          }
+
+          // Different speeds
+          this.speed =
+            type === "contour" ? 0.8 : type === "spreader" ? 1.0 : 0.5;
+
+          // Get crack formation parameters
+          const formationParams = crackFormations[this.formation];
+          this.wobbleFreq = formationParams.wobbleFreq || 0;
+          this.wobbleAmp = formationParams.wobbleAmp || 0;
+          this.drift = formationParams.drift || 0;
+          this.angleVariation = formationParams.angleVariation || 0;
+
+          // Special parameters for specific formations
+          if (this.formation === "branching") {
+            this.branchInterval = formationParams.branchInterval;
+            this.branchAngle = formationParams.branchAngle;
+            this.branchDecay = formationParams.branchDecay;
+            this.curveFactor = formationParams.curveFactor;
+            this.lastBranch = 0;
+            this.branchDepth = 0;
+            this.branchHistory = [];
+          } else if (this.formation === "spiral") {
+            this.spiralTightness = formationParams.spiralTightness;
+            this.spiralDirection = formationParams.spiralDirection;
+            this.spiralExpansion = formationParams.spiralExpansion;
+            this.spiralRadius = 1;
+          } else if (this.formation === "crystalline") {
+            this.angleOptions = formationParams.angleOptions;
+            this.segmentLength = formationParams.segmentLength;
+            this.segmentProgress = 0;
+            this.currentAngle = this.angle;
+            this.growthRate = formationParams.growthRate;
+            this.facetProbability = formationParams.facetProbability;
+            this.shatterProbability = formationParams.shatterProbability;
+            this.resonanceFreq = formationParams.resonanceFreq;
+            this.crystalSize = 1;
+            this.resonance = 0;
+            this.facetCount = 0;
+          } else if (this.formation === "kaleidoscope") {
+            this.vortexSpeed = formationParams.vortexSpeed;
+            this.perspectiveDepth = formationParams.perspectiveDepth;
+            this.symmetryFold = formationParams.symmetryFold;
+            this.suckSpeed = formationParams.suckSpeed;
+            this.rotationSpeed = formationParams.rotationSpeed;
+            this.segmentLength = formationParams.segmentLength;
+            this.symmetryIndex = this.symmetryIndex || 0;
+            this.depthLayer = this.depthLayer || 0;
+            this.perspectiveScale = 1;
+            this.rotationAngle = 0;
+            this.segmentProgress = 0;
+          } else if (this.formation === "zen") {
+            this.angleVariation = formationParams.angleVariation;
+            this.waveData = this.waveData || null;
+            this.progress = this.progress || 0;
+            this.isWave = this.isWave || false;
+            this.isBranch = this.isBranch || false;
+            this.isFill = this.isFill || false;
+          } else if (this.formation === "lightning") {
+            this.segmentLength = formationParams.segmentLength;
+            this.branchProbability = formationParams.branchProbability;
+            this.zigzagAngle = formationParams.zigzagAngle;
+            this.segmentProgress = 0;
+            this.lastTurnDirection = random() < 0.5 ? 1 : -1;
+          } else if (this.formation === "organic") {
+            this.growthRate = formationParams.growthRate;
+            this.branchProbability = formationParams.branchProbability;
+            this.curveSinFreq = formationParams.curveSinFreq;
+            this.growthPhase = random() * Math.PI * 2;
+          } else if (this.formation === "circuit") {
+            this.gridSize = formationParams.gridSize;
+            this.turnProbability = formationParams.turnProbability;
+            this.branchProbability = formationParams.branchProbability;
+            this.lastTurn = 0;
+            // Snap to grid on creation
+            this.x = Math.round(this.x / this.gridSize) * this.gridSize;
+            this.y = Math.round(this.y / this.gridSize) * this.gridSize;
+            // Snap angle to 90 degree increments
+            this.angle = Math.round(this.angle / 90) * 90;
+          }
+        }
+
+        update() {
+          if (!this.active || isComplete) return;
+
+          this.age++;
+          if (this.branchCooldown > 0) this.branchCooldown--;
+          
+          // Check if environmental crack has reached max length
+          if (this.environmentType && this.maxLength) {
+            const distanceTraveled = this.age * this.speed;
+            if (distanceTraveled >= this.maxLength) {
+              this.active = false;
+              return;
+            }
+          }
+
+          const oldX = this.x;
+          const oldY = this.y;
+
+          // Apply crack formation behavior
+          let wobble = 0;
+
+          if (this.formation === "curved") {
+            // Smooth curves
+            wobble =
+              Math.sin(this.age * 0.1 * this.wobbleFreq) * this.wobbleAmp;
+            this.angle += wobble * crackFormations.curved.curveAmount;
+          } else if (this.formation === "branching") {
+            // Tarbell-like behavior: curves only for first 5 seconds (150 frames), then straight
+            if (globalAge < 150) {
+              // Smooth continuous curve for early growth
+              wobble = Math.sin(this.age * 0.1 * this.wobbleFreq) * this.wobbleAmp;
+              this.angle += wobble + Math.sin(this.age * this.curveFactor) * 2;
+            } else {
+              // After 5 seconds, all new branches are perfectly straight (Tarbell-style)
+              wobble = 0;
+            }
+            
+            // Fractal branching
+            if (this.age - this.lastBranch > this.branchInterval) {
+              const branchProbability = 0.8 * Math.pow(this.branchDecay, this.branchDepth);
+              
+              if (random() < branchProbability && this.branchDepth < 5) {
+                // Create branches with decreasing angles for more natural look
+                const angleDecay = Math.pow(0.8, this.branchDepth);
+                const baseAngle = this.branchAngle * angleDecay;
+                
+                // Sometimes create just one branch, sometimes two
+                const numBranches = random() < 0.3 ? 1 : 2;
+                
+                if (numBranches === 1) {
+                  // Single branch in random direction
+                  const direction = random() < 0.5 ? -1 : 1;
+                  const branch = new Crack(this.x, this.y, this.angle + direction * baseAngle, this.type, 'branching');
+                  // Copy branching parameters to child
+                  branch.branchDepth = this.branchDepth + 1;
+                  branch.branchInterval = this.branchInterval * 1.2;
+                  branch.branchAngle = this.branchAngle;
+                  branch.branchDecay = this.branchDecay;
+                  branch.curveFactor = this.curveFactor * 1.1;
+                  // After 5 seconds, new branches have no wobble (Tarbell-style)
+                  branch.wobbleFreq = globalAge < 150 ? this.wobbleFreq : 0;
+                  branch.wobbleAmp = globalAge < 150 ? this.wobbleAmp * 0.8 : 0;
+                  branch.speed = this.speed * 0.9;
+                  branch.lastBranch = 0;
+                  branch.branchHistory = [];
+                  cracks.push(branch);
+                } else {
+                  // Asymmetric branches for more natural look
+                  const leftAngle = baseAngle * (0.7 + random() * 0.6);
+                  const rightAngle = baseAngle * (0.7 + random() * 0.6);
+                  
+                  const leftBranch = new Crack(this.x, this.y, this.angle - leftAngle, this.type, 'branching');
+                  const rightBranch = new Crack(this.x, this.y, this.angle + rightAngle, this.type, 'branching');
+                  
+                  // Copy branching parameters to children
+                  [leftBranch, rightBranch].forEach(branch => {
+                    branch.branchDepth = this.branchDepth + 1;
+                    branch.branchInterval = this.branchInterval * 1.2;
+                    branch.branchAngle = this.branchAngle;
+                    branch.branchDecay = this.branchDecay;
+                    branch.curveFactor = this.curveFactor * 1.1;
+                    // After 5 seconds, new branches have no wobble (Tarbell-style)
+                    branch.wobbleFreq = globalAge < 150 ? this.wobbleFreq : 0;
+                    branch.wobbleAmp = globalAge < 150 ? this.wobbleAmp * 0.8 : 0;
+                    branch.speed = this.speed * (0.8 + random() * 0.2);
+                    branch.lastBranch = 0;
+                    branch.branchHistory = [];
+                  });
+                  
+                  cracks.push(leftBranch, rightBranch);
+                }
+                
+                // Record branch point for potential future use
+                this.branchHistory.push({ x: this.x, y: this.y, age: this.age });
+              }
+              this.lastBranch = this.age;
+            }
+          } else if (this.formation === "spiral") {
+            // Expanding spiral growth
+            this.spiralRadius += this.spiralExpansion;
+            this.angle += this.spiralDirection * this.spiralTightness * 180;
+            
+            // Add some variation to prevent getting stuck
+            wobble = Math.sin(this.age * 0.05) * 2;
+            
+            // Occasionally spawn new spirals to fill space
+            if (this.age % 50 === 0 && random() < 0.3 && cracks.length < 2000) {
+              const newX = this.x + (random() - 0.5) * 100;
+              const newY = this.y + (random() - 0.5) * 100;
+              if (insideMountain(newX, newY)) {
+                const newSpiral = new Crack(newX, newY, random() * 360, 'spreader');
+                cracks.push(newSpiral);
+              }
+            }
+            
+            // Adjust speed based on radius for better coverage
+            this.speed = 0.5 + Math.min(this.spiralRadius * 0.1, 2);
+          } else if (this.formation === "crystalline") {
+            // Dynamic crystalline growth with emergent properties
+            this.crystalSize *= this.growthRate;
+            this.resonance += this.resonanceFreq;
+            
+            // Resonance creates subtle vibrations
+            wobble = Math.sin(this.resonance * Math.PI * 2) * this.wobbleAmp * (1 + this.crystalSize * 0.1);
+            
+            // Segment-based growth with variations
+            this.segmentProgress += this.speed * (1 + Math.sin(this.resonance) * 0.2);
+            
+            if (this.segmentProgress > this.segmentLength) {
+              // Choose angle based on crystal structure and some randomness
+              const preferredAngles = this.angleOptions.filter(a => 
+                Math.abs((this.angle % 360) - a) < 45 || 
+                Math.abs((this.angle % 360) - a) > 315
+              );
+              
+              const anglePool = preferredAngles.length > 0 ? preferredAngles : this.angleOptions;
+              const angleIndex = Math.floor(random() * anglePool.length);
+              let newAngle = anglePool[angleIndex];
+              
+              // Add slight imperfections
+              newAngle += (random() - 0.5) * this.angleVariation;
+              this.currentAngle = newAngle * (random() < 0.5 ? 1 : -1);
+              this.angle = this.currentAngle;
+              this.segmentProgress = 0;
+              
+              // Crystal faceting - spawn branches at crystalline angles
+              if (random() < this.facetProbability && cracks.length < 3000) {
+                this.facetCount++;
+                const facetAngles = [60, 90, 120]; // Common crystal angles
+                const numFacets = 1 + Math.floor(random() * 2);
+                
+                for (let f = 0; f < numFacets; f++) {
+                  const facetAngle = this.angle + facetAngles[Math.floor(random() * facetAngles.length)] * (random() < 0.5 ? 1 : -1);
+                  const facet = new Crack(this.x, this.y, facetAngle, this.type, "crystalline");
+                  facet.speed = this.speed * (0.7 + random() * 0.3);
+                  facet.segmentLength = this.segmentLength * (0.5 + random() * 0.5);
+                  facet.crystalSize = this.crystalSize * 0.8;
+                  facet.resonance = this.resonance + random() * Math.PI;
+                  cracks.push(facet);
+                }
+              }
+              
+              // Crystal shattering - explosive branching
+              if (random() < this.shatterProbability && this.crystalSize > 2 && cracks.length < 3000) {
+                const shards = 4 + Math.floor(random() * 4);
+                for (let s = 0; s < shards; s++) {
+                  const shardAngle = (s / shards) * 360 + random() * 30;
+                  const shard = new Crack(this.x, this.y, shardAngle, this.type, "crystalline");
+                  shard.speed = 1 + random() * 0.5;
+                  shard.segmentLength = 5 + random() * 10;
+                  shard.crystalSize = 1;
+                  shard.wobbleAmp = this.wobbleAmp * 2;
+                  cracks.push(shard);
+                }
+                this.active = false; // Original crack stops after shattering
+              }
+            }
+            
+            // Crystal growth can slow down over time
+            if (this.crystalSize > 5) {
+              this.speed *= 0.98;
+              if (this.speed < 0.1) this.active = false;
+            }
+            
+            // Interference patterns with nearby crystals
+            if (this.age % 20 === 0) {
+              for (let other of cracks) {
+                if (other !== this && other.formation === "crystalline" && other.active) {
+                  const dx = other.x - this.x;
+                  const dy = other.y - this.y;
+                  const dist = Math.sqrt(dx * dx + dy * dy);
+                  if (dist < 50 && dist > 5) {
+                    // Create interference pattern
+                    this.angle += (dx / dist) * 5;
+                    this.resonance += 0.1;
+                  }
+                }
+              }
+            }
+          } else if (this.formation === "kaleidoscope") {
+            // Tarbell-style straight segments with kaleidoscope symmetry
+            wobble = 0; // No wobble for clean lines
+            
+            // Update perspective depth slowly
+            this.perspectiveDepth += this.suckSpeed;
+            this.perspectiveScale = 1 / (1 + this.perspectiveDepth * 0.3);
+            this.rotationAngle += this.rotationSpeed;
+            
+            // Calculate position
+            const centerX = canvasWidth * 0.5;
+            const centerY = canvasHeight * 0.5;
+            const dx = this.x - centerX;
+            const dy = this.y - centerY;
+            const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+            
+            // Segment-based movement
+            this.segmentProgress += this.speed;
+            
+            if (this.segmentProgress > this.segmentLength) {
+              // Change direction at segment end
+              const angleToCenter = Math.atan2(centerY - this.y, centerX - this.x) * 180 / Math.PI;
+              
+              // Slight pull toward center with rotation
+              this.angle = angleToCenter + this.rotationAngle * 10;
+              this.segmentProgress = 0;
+              
+              // Spawn symmetric copies at segment joints
+              if (cracks.length < 500) { // Much lower limit
+                // Just one symmetric copy
+                const symIndex = (this.symmetryIndex + 3) % this.symmetryFold;
+                const symAngle = this.angle + (symIndex - this.symmetryIndex) * 60;
+                
+                const newCrack = new Crack(this.x, this.y, symAngle, this.type, "kaleidoscope");
+                newCrack.symmetryIndex = symIndex;
+                newCrack.perspectiveDepth = this.perspectiveDepth;
+                newCrack.speed = this.speed;
+                cracks.push(newCrack);
+              }
+            }
+            
+            // Simple speed adjustment
+            this.speed = 0.8 + this.perspectiveDepth * 0.05;
+            
+            // Stop at center
+            if (distFromCenter < 30) {
+              this.active = false;
+            }
+          } else if (this.formation === "zen") {
+            // Zen garden - waves and branches
+            
+            if (this.isWave && this.waveData) {
+              // Follow the sweeping wave path
+              this.progress += 0.003; // Slow progression along wave
+              
+              if (this.progress > 1) {
+                this.active = false;
+                return;
+              }
+              
+              let x;
+              if (this.waveData.direction > 0) {
+                x = this.progress * canvasWidth;
+              } else {
+                x = (1 - this.progress) * canvasWidth;
+              }
+              
+              // Calculate smooth wavy Y position
+              const y = this.waveData.startY + Math.sin(x * this.waveData.frequency + this.waveData.phase) * this.waveData.amplitude;
+              
+              // Smooth interpolation
+              this.x = this.x * 0.9 + x * 0.1;
+              this.y = this.y * 0.9 + y * 0.1;
+              
+              // Update angle to follow wave
+              const lookAhead = 20;
+              const nextX = x + lookAhead * this.waveData.direction;
+              const nextY = this.waveData.startY + Math.sin(nextX * this.waveData.frequency + this.waveData.phase) * this.waveData.amplitude;
+              this.angle = Math.atan2(nextY - this.y, nextX - this.x) * 180 / Math.PI;
+              
+              // Stop wave if next position would be outside mountain
+              if (!insideMountain(x, y)) {
+                this.active = false;
+                return;
+              }
+              
+              // Reduced branching frequency for performance
+              if (this.age > 20 && random() < 0.02 && cracks.length < 1500) {
+                const branchAngle = this.angle + (random() < 0.5 ? 90 : -90) + (random() - 0.5) * 30;
+                const branch = new Crack(this.x, this.y, branchAngle, "branch", "zen");
+                branch.speed = 1.0 + random() * 0.5;
+                branch.isBranch = true;
+                cracks.push(branch);
+              }
+              
+            } else if (this.isBranch) {
+              // Substrate-style branching movement
+              this.angle += (random() - 0.5) * this.angleVariation;
+              
+              // Add subtle drift
+              const drift = Math.sin(this.x * 0.005 + this.y * 0.003) * 2;
+              this.angle += drift;
+              
+              // Reduced sub-branching for performance
+              if (this.age > 30 && random() < 0.008 && cracks.length < 1500) {
+                const subBranchAngle = this.angle + (random() < 0.5 ? 70 : -70) + (random() - 0.5) * 20;
+                const subBranch = new Crack(this.x, this.y, subBranchAngle, "branch", "zen");
+                subBranch.speed = 0.8 + random() * 0.4;
+                subBranch.isBranch = true;
+                cracks.push(subBranch);
+              }
+              
+              // Check wave boundaries with optimized calculation
+              if (this.age > 10 && this.age % 8 === 0 && window.zenWaveLines) {
+                const tolerance = 10;
+                for (let wave of window.zenWaveLines) {
+                  // Quick distance check first
+                  const roughY = wave.startY + wave.amplitude; // Max possible Y
+                  if (Math.abs(this.y - roughY) > wave.amplitude * 2) continue;
+                  
+                  const waveY = wave.startY + Math.sin(this.x * wave.frequency + wave.phase) * wave.amplitude;
+                  if (Math.abs(this.y - waveY) < tolerance) {
+                    this.active = false;
+                    break;
+                  }
+                }
+              }
+              
+            } else if (this.isFill) {
+              // Standard substrate movement for fill cracks
+              this.angle += (random() - 0.5) * this.angleVariation;
+              
+              // Slight wave influence for cohesion
+              const waveInfluence = Math.sin(this.x * 0.004 + this.age * 0.02) * 3;
+              this.angle += waveInfluence;
+              
+              // Optimized wave boundary check
+              if (this.age > 10 && this.age % 8 === 0 && window.zenWaveLines) {
+                for (let wave of window.zenWaveLines) {
+                  if (Math.abs(this.y - wave.startY) > wave.amplitude * 2) continue;
+                  
+                  const waveY = wave.startY + Math.sin(this.x * wave.frequency + wave.phase) * wave.amplitude;
+                  if (Math.abs(this.y - waveY) < 10) {
+                    this.active = false;
+                    break;
+                  }
+                }
+              }
+            }
+            
+          } else if (this.formation === "lightning") {
+            // Lightning bolt movement
+            wobble = 0; // No smooth wobble
+            this.segmentProgress += this.speed;
+            
+            if (this.segmentProgress >= this.segmentLength) {
+              // Sharp zigzag turn
+              this.lastTurnDirection *= -1;
+              this.angle += this.zigzagAngle * this.lastTurnDirection + (random() - 0.5) * 20;
+              this.segmentProgress = 0;
+              
+              // Lightning branching
+              if (random() < this.branchProbability && cracks.length < 2000) {
+                const branchAngle = this.angle + (random() < 0.5 ? 45 : -45) + (random() - 0.5) * 30;
+                const branch = new Crack(this.x, this.y, branchAngle, this.type, "lightning");
+                branch.speed = this.speed * 1.2;
+                branch.segmentLength = this.segmentLength * 0.7;
+                cracks.push(branch);
+              }
+            }
+          } else if (this.formation === "organic") {
+            // Organic plant-like growth
+            const growthWave = Math.sin(this.age * this.curveSinFreq + this.growthPhase);
+            wobble = growthWave * this.wobbleAmp;
+            
+            // Organic drift
+            const driftWave = Math.sin(this.x * 0.01 + this.y * 0.01) * 3;
+            this.angle += driftWave + wobble;
+            
+            // Slow down over time for natural growth
+            this.speed *= this.growthRate;
+            
+            // Organic branching
+            if (this.age > 20 && random() < this.branchProbability && cracks.length < 2000) {
+              const numBranches = random() < 0.7 ? 1 : 2;
+              for (let i = 0; i < numBranches; i++) {
+                const branchAngle = this.angle + (random() - 0.5) * 60;
+                const branch = new Crack(this.x, this.y, branchAngle, this.type, "organic");
+                branch.speed = this.speed * (0.5 + random() * 0.5);
+                branch.growthPhase = this.growthPhase + random() * Math.PI;
+                cracks.push(branch);
+              }
+            }
+            
+            // Stop if growing too slowly
+            if (this.speed < 0.1) {
+              this.active = false;
+            }
+          } else if (this.formation === "circuit") {
+            // Circuit board patterns with 90-degree turns
+            wobble = 0; // No wobble for clean lines
+            
+            const gridX = Math.round(this.x / this.gridSize) * this.gridSize;
+            const gridY = Math.round(this.y / this.gridSize) * this.gridSize;
+            
+            // Snap to grid
+            if (Math.abs(this.x - gridX) < 2 && Math.abs(this.y - gridY) < 2) {
+              this.x = gridX;
+              this.y = gridY;
+              
+              // Very rare turns for maximum straight lines
+              if (random() < this.turnProbability && this.lastTurn > this.gridSize * 5) {
+                const turnDirection = random() < 0.5 ? 90 : -90;
+                this.angle = Math.round((this.angle + turnDirection) / 90) * 90;
+                this.lastTurn = 0;
+              }
+              
+              // Aggressive branching at every grid intersection
+              if (cracks.length < 6000) { // Increased limit
+                // Branch frequently
+                if (random() < this.branchProbability) {
+                  // Create T-junction or cross
+                  const crossPattern = random() < 0.5;
+                  
+                  if (crossPattern) {
+                    // Create a full cross intersection
+                    for (let dir = 0; dir < 360; dir += 90) {
+                      if (dir !== (this.angle + 180) % 360) { // Don't go backwards
+                        const branch = new Crack(gridX, gridY, dir, this.type, "circuit");
+                        branch.speed = 1.5 + random() * 0.5;
+                        cracks.push(branch);
+                      }
+                    }
+                  } else {
+                    // T-junction
+                    const leftBranch = new Crack(gridX, gridY, this.angle - 90, this.type, "circuit");
+                    const rightBranch = new Crack(gridX, gridY, this.angle + 90, this.type, "circuit");
+                    leftBranch.speed = 1.5 + random() * 0.5;
+                    rightBranch.speed = 1.5 + random() * 0.5;
+                    cracks.push(leftBranch, rightBranch);
+                  }
+                }
+              }
+            } else {
+              this.lastTurn += this.speed;
+            }
+            
+            // Extremely aggressive gap filling
+            if (this.age % 20 === 0 && cracks.length < 6000) {
+              // Create a grid of parallel traces
+              for (let i = 1; i <= 2; i++) {
+                const perpAngle = this.angle + 90;
+                const offsetDist = this.gridSize * i;
+                
+                // Both sides
+                for (let side = -1; side <= 1; side += 2) {
+                  const offsetX = Math.cos(perpAngle * Math.PI / 180) * offsetDist * side;
+                  const offsetY = Math.sin(perpAngle * Math.PI / 180) * offsetDist * side;
+                  
+                  const newX = Math.round((this.x + offsetX) / this.gridSize) * this.gridSize;
+                  const newY = Math.round((this.y + offsetY) / this.gridSize) * this.gridSize;
+                  
+                  if (insideMountain(newX, newY) && random() < 0.7) {
+                    const newCircuit = new Crack(newX, newY, this.angle, 'spreader', 'circuit');
+                    newCircuit.speed = 1.5 + random() * 0.5;
+                    cracks.push(newCircuit);
+                  }
+                }
+              }
+            }
+            
+            // Increase speed over time to ensure coverage
+            if (this.age > 100) {
+              this.speed = Math.min(this.speed * 1.01, 3.0);
+            }
+          } else {
+            // Standard wobble
+            wobble =
+              Math.sin(this.age * 0.1 * this.wobbleFreq) * this.wobbleAmp;
+          }
+
+          if (this.type === "spiral") {
+            // Spiral movement
+            this.angle += 2 + Math.sin(this.age * 0.05) * 2;
+          } else if (this.type === "base") {
+            this.angle += wobble + this.drift;
+            if (this.y > canvasHeight * 0.5) {
+              this.angle -= 1;
+            }
+          } else if (this.type === "contour") {
+            const x = Math.floor(this.x);
+            if (x > 10 && x < canvasWidth - 10) {
+              const slope = (mountainY[x + 5] - mountainY[x - 5]) / 10;
+              const targetAngle = (Math.atan2(slope, 1) * 180) / Math.PI;
+              this.angle = this.angle * 0.9 + targetAngle * 0.1;
+            }
+            this.angle += wobble * 0.5;
+          } else {
+            this.angle += wobble + (random() - 0.5) * this.angleVariation;
+          }
+
+          // Move with calculated angle
+          this.x += Math.cos((this.angle * Math.PI) / 180) * this.speed;
+          this.y += Math.sin((this.angle * Math.PI) / 180) * this.speed;
+
+          // Check boundary
+          if (!insideMountain(this.x, this.y)) {
+            this.x = oldX;
+            this.y = oldY;
+            this.angle += 180 + (random() - 0.5) * 90;
+            this.type = "normal";
+            return;
+          }
+
+          // Store path
+          this.path.push({ x: this.x, y: this.y });
+          if (this.path.length > 1000) {
+            this.path.shift(); // Limit memory usage
+          }
+
+          
+          // Draw crack with variable width
+          const lineWidth = 0.3 + Math.sin(this.age * 0.02) * 0.1;
+          
+          // Special rendering for environmental cracks
+          if (this.environmentType) {
+            switch (this.environmentType) {
+              case 'sun':
+                ctx.strokeStyle = hexToRgba('#FFD700', 0.9);
+                ctx.lineWidth = lineWidth * 2;
+                // Add glow effect
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#FFD700';
+                break;
+              case 'moon':
+                const glowOpacity = this.opacity || 0.8;
+                ctx.strokeStyle = hexToRgba('#E6E6FA', glowOpacity);
+                ctx.lineWidth = lineWidth * 1.5;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#E6E6FA';
+                break;
+              case 'bird':
+                ctx.strokeStyle = hexToRgba('#4A4A4A', 0.7);
+                ctx.lineWidth = lineWidth * 0.8;
+                break;
+              case 'star':
+                ctx.strokeStyle = hexToRgba('#FFFFFF', 0.9);
+                ctx.lineWidth = lineWidth * 0.5;
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = '#FFFFFF';
+                break;
+              case 'petal':
+                const petalColors = ['#FFB6C1', '#FF69B4', '#FF1493'];
+                const petalColor = petalColors[Math.floor(this.angle / 120) % 3];
+                ctx.strokeStyle = hexToRgba(petalColor, 0.6);
+                ctx.lineWidth = lineWidth * 1.2;
+                break;
+              case 'particle':
+                ctx.strokeStyle = hexToRgba('#00FFFF', this.opacity || 0.5);
+                ctx.lineWidth = lineWidth * 0.7;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = '#00FFFF';
+                break;
+              case 'aurora':
+                const auroraColors = ['#00FF00', '#00FFFF', '#FF00FF', '#FFFF00'];
+                const auroraColor = auroraColors[Math.floor(this.y / 50) % 4];
+                ctx.strokeStyle = hexToRgba(auroraColor, 0.3);
+                ctx.lineWidth = lineWidth * 3;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = auroraColor;
+                break;
+              case 'rocket':
+                ctx.strokeStyle = hexToRgba('#FF4500', 0.8);
+                ctx.lineWidth = lineWidth * 1.5;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#FF4500';
+                break;
+              default:
+                ctx.strokeStyle = hexToRgba(this.color, 0.85);
+                ctx.lineWidth = lineWidth;
+            }
+          } else {
+            ctx.strokeStyle = hexToRgba(this.color, 0.85);
+            ctx.lineWidth = lineWidth;
+          }
+          
+          // Enhance visibility in dusk theme
+          if (theme === 'dusk' && !this.environmentType) {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = hexToRgba(this.color, 0.8);
+            ctx.strokeStyle = hexToRgba(this.color, 1);
+          }
+          
+          ctx.beginPath();
+          ctx.moveTo(oldX, oldY);
+          ctx.lineTo(this.x, this.y);
+          ctx.stroke();
+          
+          // Reset shadow for non-glowing elements
+          ctx.shadowBlur = 0;
+
+          // Special effects for certain themes
+          if (
+            theme === "volcanic" &&
+            this.type === "base" &&
+            random() < 0.01
+          ) {
+            // Lava glow
+            ctx.fillStyle = "rgba(255, 69, 0, 0.5)";
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 5 + random() * 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Enhanced sand painting
+          this.sandPaint(oldX, oldY);
+
+          // Black strokes for volcanic theme
+          if (theme === "volcanic") {
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+            ctx.lineWidth = lineWidth * 1.5;
+            ctx.beginPath();
+            ctx.moveTo(oldX, oldY);
+            ctx.lineTo(this.x, this.y);
+            ctx.stroke();
+
+            // Restore original color
+            ctx.strokeStyle = hexToRgba(this.color, 0.85);
+          }
+
+          // Update grid
+          const gx = Math.floor(this.x);
+          const gy = Math.floor(this.y);
+          const idx = gy * canvasWidth + gx;
+
+          if (idx >= 0 && idx < grid.length) {
+            if (grid[idx] === -1) {
+              grid[idx] = Math.floor(this.angle);
+              filledCells++;
+
+              density = filledCells / mountainArea;
+              updateStatus();
+
+              if (density >= maxDensity) {
+                isComplete = true;
+                updateStatus();
+              }
+            } else if (
+              Math.abs(grid[idx] - this.angle) > 20 &&
+              Math.abs(grid[idx] - this.angle) < 340
+            ) {
+              // For zen formation branches/fills, use standard substrate collision
+              if (this.formation === "zen" && (this.isBranch || this.isFill)) {
+                // Stop when hitting another line at a different angle (standard substrate)
+                this.active = false;
+                
+                // Spawn new branches at collision point
+                if (cracks.length < 1500 && random() < 0.3) {
+                  const numBranches = 1 + Math.floor(random() * 2);
+                  for (let i = 0; i < numBranches; i++) {
+                    const branchAngle = this.angle + (random() < 0.5 ? 90 : -90) + (random() - 0.5) * 30;
+                    const newCrack = new Crack(this.x, this.y, branchAngle, "branch", "zen");
+                    newCrack.speed = 0.8 + random() * 0.4;
+                    newCrack.isBranch = true;
+                    cracks.push(newCrack);
+                  }
+                }
+              } else {
+                this.active = false;
+              }
+
+              // Enhanced branching - more aggressive
+              if (
+                cracks.length < 2000 &&
+                density < maxDensity * 0.98 &&
+                this.branchCooldown === 0
+              ) {
+                const numBranches =
+                  2 +
+                  (random() < 0.3 ? 1 : 0) +
+                  (random() < 0.1 ? 1 : 0);
+                for (let i = 0; i < numBranches; i++) {
+                  const branchAngle =
+                    this.angle +
+                    (i - numBranches / 2 + 0.5) * 75 +
+                    (random() - 0.5) * 40;
+                  const newCrack = new Crack(
+                    this.x,
+                    this.y,
+                    branchAngle,
+                    "normal"
+                  );
+                  newCrack.branchCooldown = 5;
+                  cracks.push(newCrack);
+                }
+              }
+            }
+          }
+
+          // Adaptive branching based on density - increased chance
+          let branchChance = (maxDensity - density) * 0.04; // More aggressive branching
+          
+          // Extra branching for spiral patterns to improve coverage
+          if (this.formation === "spiral") {
+            branchChance *= 2;
+          }
+
+          if (
+            random() < branchChance &&
+            cracks.length < 2000 &&
+            this.branchCooldown === 0 &&
+            this.age > 15
+          ) {
+            const branchAngle =
+              this.angle +
+              (random() < 0.5 ? -75 : 75) +
+              (random() - 0.5) * 40;
+            const newCrack = new Crack(this.x, this.y, branchAngle, "normal");
+            newCrack.branchCooldown = 15;
+            cracks.push(newCrack);
+            this.branchCooldown = 20;
+          }
+        }
+
+        sandPaint(ox, oy) {
+          const perpAngle = ((this.angle + 90) * Math.PI) / 180;
+          let distance = 0;
+          let rx = this.x;
+          let ry = this.y;
+
+          // Different sand painting for kaleidoscope - perspective-shifting vortex
+          if (this.formation === "kaleidoscope") {
+            // Distance changes with perspective depth
+            const baseDistance = 30 * this.perspectiveScale;
+            const vortexDistance = baseDistance + Math.sin(this.vortexPhase + globalAge * 0.03) * 20;
+            
+            // Search in a curve to create vortex effect
+            let searchAngle = perpAngle;
+            while (distance < vortexDistance && insideMountain(rx, ry)) {
+              searchAngle += 0.05 * this.perspectiveDepth;
+              rx += Math.cos(searchAngle) * 0.8;
+              ry += Math.sin(searchAngle) * 0.8;
+              distance++;
+
+              const idx = Math.floor(ry) * canvasWidth + Math.floor(rx);
+              if (idx >= 0 && idx < grid.length && grid[idx] !== -1) {
+                break;
+              }
+            }
+
+            // SIMPLE TARBELL-STYLE KALEIDOSCOPE
+            const grains = 30; // Much fewer for performance
+            const centerX = canvasWidth * 0.5;
+            const centerY = canvasHeight * 0.5;
+            
+            // Simple perspective scale
+            const scale = 1 / (1 + this.perspectiveDepth * 0.2);
+            
+            // Straight line sand painting
+            const maxDist = 40 * scale;
+            let dist = 0;
+            
+            while (dist < maxDist && insideMountain(rx, ry)) {
+              rx += Math.cos(perpAngle) * 1;
+              ry += Math.sin(perpAngle) * 1;
+              dist++;
+            }
+            
+            // Simple grains along the line
+            for (let i = 0; i < grains; i++) {
+              const t = i / grains;
+              const px = ox + (rx - ox) * t;
+              const py = oy + (ry - oy) * t;
+              
+              // Fixed alpha for Tarbell style
+              const alpha = 0.015 * (1 - t * 0.5);
+              ctx.globalAlpha = alpha;
+              ctx.fillStyle = this.color;
+              
+              // Draw symmetric copies
+              for (let s = 0; s < 6; s++) {
+                const angle = (s / 6) * Math.PI * 2;
+                const sx = centerX + (px - centerX) * Math.cos(angle) - (py - centerY) * Math.sin(angle);
+                const sy = centerY + (px - centerX) * Math.sin(angle) + (py - centerY) * Math.cos(angle);
+                
+                if (insideMountain(sx, sy)) {
+                  ctx.fillRect(sx, sy, 1, 1);
+                }
+              }
+            }
+            
+            ctx.globalAlpha = 1; // Reset alpha
+          } else if (this.formation === "zen") {
+            // Zen garden - classic substrate sand painting
+            
+            // Standard substrate sand painting distance
+            const maxDistance = 30 + Math.sin(this.age * 0.02) * 10;
+            
+            while (distance < maxDistance && insideMountain(rx, ry)) {
+              rx += Math.cos(perpAngle) * 0.8;
+              ry += Math.sin(perpAngle) * 0.8;
+              distance++;
+              
+              const idx = Math.floor(ry) * canvasWidth + Math.floor(rx);
+              if (idx >= 0 && idx < grid.length && grid[idx] !== -1) {
+                break;
+              }
+            }
+            
+            // Classic Tarbell sand grains
+            const grains = 64;
+            for (let i = 0; i < grains; i++) {
+              const t = i / grains;
+              const alpha =
+                0.016 * (1 - t); // Standard substrate alpha
+              
+              // Organic grain distribution
+              const w = t + (random() - 0.5) * 0.1;
+              const px = ox + (rx - ox) * w;
+              const py = oy + (ry - oy) * w;
+              
+              if (insideMountain(px, py)) {
+                ctx.fillStyle = hexToRgba(this.color, alpha);
+                ctx.fillRect(px, py, 1, 1);
+              }
+            }
+            
+            ctx.globalAlpha = 1; // Reset alpha
+          } else if (this.formation === "crystalline") {
+            // Crystalline sand painting - sharp, geometric patterns
+            const crystalDistance = 20 + this.crystalSize * 10;
+            
+            while (distance < crystalDistance && insideMountain(rx, ry)) {
+              rx += Math.cos(perpAngle) * 0.5;
+              ry += Math.sin(perpAngle) * 0.5;
+              distance++;
+
+              const idx = Math.floor(ry) * canvasWidth + Math.floor(rx);
+              if (idx >= 0 && idx < grid.length && grid[idx] !== -1) {
+                break;
+              }
+            }
+
+            // Create crystalline texture with sharp edges
+            const grains = 60;
+            for (let i = 0; i < grains; i++) {
+              const t = i / grains;
+              
+              // Crystalline alpha pattern - creates sharp bands
+              const band = Math.floor(t * 5) / 5;
+              const alpha = 0.02 * (1 - band) * (1 + Math.sin(this.resonance + band * Math.PI) * 0.3);
+              
+              // Geometric distribution with slight imperfections
+              const crystalNoise = Math.sin(this.resonance + t * Math.PI * 4) * 1;
+              const px = ox + (rx - ox) * t + crystalNoise;
+              const py = oy + (ry - oy) * t + Math.cos(this.resonance + t * Math.PI * 4) * 1;
+
+              if (insideMountain(px, py)) {
+                // Add shimmer effect based on crystal size
+                const shimmer = this.crystalSize > 2 ? (1 + Math.sin(this.age * 0.1 + t * 20) * 0.2) : 1;
+                ctx.fillStyle = hexToRgba(this.color, alpha * shimmer);
+                ctx.fillRect(px, py, 1, 1);
+              }
+            }
+          } else {
+            // Variable sand painting distance for other formations
+            const maxDistance = 50 + Math.sin(this.age * 0.05) * 30;
+
+            while (distance < maxDistance && insideMountain(rx, ry)) {
+              rx += Math.cos(perpAngle) * 0.8;
+              ry += Math.sin(perpAngle) * 0.8;
+              distance++;
+
+              const idx = Math.floor(ry) * canvasWidth + Math.floor(rx);
+              if (idx >= 0 && idx < grid.length && grid[idx] !== -1) {
+                break;
+              }
+            }
+
+            const grains = 64;
+            for (let i = 0; i < grains; i++) {
+              const t = i / grains;
+              const alpha =
+                0.03 * (1 - t) * (1 + Math.sin(this.age * 0.02) * 0.5);
+
+              // Organic grain distribution
+              const pos = Math.sin(t * Math.PI) + Math.sin(t * Math.PI * 3) * 0.1;
+              const px = ox + (rx - ox) * pos + (random() - 0.5) * 3;
+              const py = oy + (ry - oy) * pos + (random() - 0.5) * 3;
+
+              if (insideMountain(px, py)) {
+                ctx.fillStyle = hexToRgba(this.color, alpha);
+                ctx.fillRect(px, py, 1, 1);
+              }
+            }
+          }
+        }
+
+        
+        parseHex(hex) {
+          return {
+            r: parseInt(hex.slice(1, 3), 16),
+            g: parseInt(hex.slice(3, 5), 16),
+            b: parseInt(hex.slice(5, 7), 16)
+          };
+        }
+        
+        hexToRgba(hex, alpha) {
+          if (typeof hex !== 'string') return `rgba(0, 0, 0, ${alpha})`;
+          const r = parseInt(hex.slice(1, 3), 16) || 0;
+          const g = parseInt(hex.slice(3, 5), 16) || 0;
+          const b = parseInt(hex.slice(5, 7), 16) || 0;
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+      }
+
+      // =================================================================
+      // ENVIRONMENT & RARITY SYSTEM
+      // =================================================================
+      
+      // Environmental feature rarity configuration
+      const ENV_RARITY = {
+        rocket: { prob: 0.001, themes: ['void'] },                               // Ultra rare rocket ship
+        aurora: { prob: 0.60, themes: ['aurora'] },                             // Aurora borealis
+        sun: { prob: 0.10, themes: ['dawn', 'desert'] },                        // Rare sun
+        moon: { prob: 0.85, themes: ['dusk', 'void', 'mist'] },                 // Moon phases
+        birds: { prob: 0.15, themes: ['dawn', 'dusk', 'mist', 'zen'] },         // Bird formations
+        stars: { prob: 0.90, themes: ['dusk', 'void', 'storm', 'aurora'] },     // Starfield
+        petals: { prob: 0.80, themes: ['sakura'] },                             // Cherry blossom petals
+        floatingParticles: { prob: 0.25, themes: ['cyber','neon'] }             // Digital particles
+      };
+      
+      /**
+       * Manages environmental elements through crack-based emergence
+       */
+      class Environment {
+        constructor() {
+          this.envCracks = [];  // Special cracks that form environmental objects
+          this.features = {};   // Track which features are present
+        }
+        
+        generateElements(currentTheme, rng, mountain) {
+          this.envCracks = [];
+          this.features = {};
+          
+          // Generate environmental features based on rarity config
+          for (let feature in ENV_RARITY) {
+            const { prob, themes: allowedThemes } = ENV_RARITY[feature];
+            if (allowedThemes.includes(currentTheme) && Math.random() < prob) {
+              this.features[feature] = true;
+              switch(feature) {
+                case 'rocket':
+                  this._addRocketCracks(mountain);
+                  break;
+                case 'aurora':
+                  this._addAuroraCracks();
+                  break;
+                case 'sun':
+                  this._addSunCracks();
+                  break;
+                case 'moon':
+                  this._addMoonCracks();
+                  break;
+                case 'birds':
+                  this._addBirdCracks(mountain);
+                  break;
+                case 'stars':
+                  this._addStarCracks();
+                  break;
+                case 'petals':
+                  this._addPetalCracks();
+                  break;
+                case 'floatingParticles':
+                  this._addParticleCracks();
+                  break;
+              }
+            }
+          }
+        }
+        
+        // Add environmental cracks to main crack system
+        addToCrackSystem(cracks) {
+          for (let envCrack of this.envCracks) {
+            cracks.push(envCrack);
+          }
+        }
+        
+        _addRocketCracks(mountain) {
+          const x = canvasWidth * (0.2 + Math.random() * 0.6);
+          const groundY = mountainY[Math.floor(x)] || canvasHeight * 0.5;
+          const y = Math.min(groundY - 100, canvasHeight * 0.3);
+          
+          // Create special rocket formation cracks
+          const rocketCrack = new Crack(x, y, -90, "normal");
+          rocketCrack.formation = 'rocket';
+          rocketCrack.environmentType = 'rocket';
+          rocketCrack.speed = 0.3;
+          this.envCracks.push(rocketCrack);
+        }
+        
+        _addAuroraCracks() {
+          // Create flowing aurora cracks across the sky
+          const numWaves = 3 + Math.floor(Math.random() * 4);
+          for (let i = 0; i < numWaves; i++) {
+            const y = canvasHeight * 0.1 + i * 30;
+            for (let x = 0; x < canvasWidth; x += 50) {
+              const crack = new Crack(x, y, 0, "normal");
+              crack.formation = 'aurora';
+              crack.environmentType = 'aurora';
+              crack.speed = 0.2;
+              crack.wobble = 2.0;
+              this.envCracks.push(crack);
+            }
+          }
+        }
+        
+        _addSunCracks() {
+          // Smaller sun with radial cracks
+          const x = canvasWidth * (0.2 + Math.random() * 0.6);
+          const y = canvasHeight * (0.1 + Math.random() * 0.2);
+          const size = 20 + Math.random() * 15; // Smaller size
+          
+          // Create radial sun rays
+          const numRays = 8 + Math.floor(Math.random() * 8);
+          for (let i = 0; i < numRays; i++) {
+            const angle = (i / numRays) * 360;
+            const crack = new Crack(x, y, angle, "normal");
+            crack.formation = 'sun';
+            crack.environmentType = 'sun';
+            crack.speed = 0.4;
+            crack.maxLength = size * (1 + Math.random());
+            this.envCracks.push(crack);
+          }
+        }
+        
+        _addMoonCracks() {
+          // Moon with enhanced glow using circular cracks
+          const x = canvasWidth * (0.2 + Math.random() * 0.6);
+          const y = canvasHeight * (0.1 + Math.random() * 0.3);
+          const size = 25 + Math.random() * 15;
+          
+          // Create concentric circular cracks for glow
+          for (let r = 0; r < 5; r++) {
+            const radius = size + r * 10;
+            const numPoints = 20 + r * 10;
+            for (let i = 0; i < numPoints; i++) {
+              const angle = (i / numPoints) * Math.PI * 2;
+              const px = x + Math.cos(angle) * radius;
+              const py = y + Math.sin(angle) * radius;
+              const crack = new Crack(px, py, (angle * 180 / Math.PI) + 90, "normal");
+              crack.formation = 'moon';
+              crack.environmentType = 'moon';
+              crack.speed = 0.1;
+              crack.opacity = 0.8 - r * 0.15; // Enhanced glow
+              this.envCracks.push(crack);
+            }
+          }
+        }
+        
+        _addBirdCracks(mountain) {
+          const birdCount = 5 + Math.floor(Math.random() * 15);
+          const startX = canvasWidth * 0.1;
+          const startY = canvasHeight * (0.2 + Math.random() * 0.3);
+          
+          // Create V-formation bird cracks
+          for (let i = 0; i < birdCount; i++) {
+            const x = startX + i * 20;
+            const y = startY + Math.abs(i - birdCount/2) * 5;
+            
+            // Simple bird shape with two wing strokes
+            const leftWing = new Crack(x, y, -135, "normal");
+            leftWing.formation = 'bird';
+            leftWing.environmentType = 'bird';
+            leftWing.speed = 0.3;
+            leftWing.maxLength = 5;
+            
+            const rightWing = new Crack(x, y, -45, "normal");
+            rightWing.formation = 'bird';
+            rightWing.environmentType = 'bird';
+            rightWing.speed = 0.3;
+            rightWing.maxLength = 5;
+            
+            this.envCracks.push(leftWing, rightWing);
+          }
+        }
+        
+        _addStarCracks() {
+          const starCount = 20 + Math.floor(Math.random() * 80);
+          for (let i = 0; i < starCount; i++) {
+            const x = Math.random() * canvasWidth;
+            const y = Math.random() * canvasHeight * 0.6;
+            
+            // Create small cross-shaped star cracks
+            for (let angle = 0; angle < 360; angle += 90) {
+              const crack = new Crack(x, y, angle, "normal");
+              crack.formation = 'star';
+              crack.environmentType = 'star';
+              crack.speed = 0.1;
+              crack.maxLength = 2 + Math.random() * 3;
+              crack.opacity = 0.3 + Math.random() * 0.7;
+              this.envCracks.push(crack);
+            }
+          }
+        }
+        
+        _addPetalCracks() {
+          const petalCount = 10 + Math.floor(Math.random() * 20);
+          for (let i = 0; i < petalCount; i++) {
+            const x = Math.random() * canvasWidth;
+            const y = Math.random() * canvasHeight;
+            const rotation = Math.random() * 360;
+            
+            // Create petal-shaped cracks
+            const crack = new Crack(x, y, rotation, "normal");
+            crack.formation = 'petal';
+            crack.environmentType = 'petal';
+            crack.speed = 0.2;
+            crack.wobble = 1.5;
+            crack.drift = (Math.random() - 0.5) * 0.2;
+            this.envCracks.push(crack);
+          }
+        }
+        
+        _addParticleCracks() {
+          const particleCount = 15 + Math.floor(Math.random() * 25);
+          for (let i = 0; i < particleCount; i++) {
+            const x = Math.random() * canvasWidth;
+            const y = Math.random() * canvasHeight;
+            
+            // Create small particle cracks that pulse
+            const crack = new Crack(x, y, Math.random() * 360, "normal");
+            crack.formation = 'particle';
+            crack.environmentType = 'particle';
+            crack.speed = 0.05 + Math.random() * 0.1;
+            crack.pulse = Math.random() * Math.PI * 2;
+            this.envCracks.push(crack);
+          }
+        }
+      }
+      
+      // Helper function for hex to rgba conversion
+      function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+
+      // Update status display
+      function updateStatus() {
+        const status = document.getElementById("status");
+        const percent = (density * 100).toFixed(1);
+        const targetPercent = (maxDensity * 100).toFixed(0);
+        const state = isComplete ? "Complete" : "Growing";
+        const activeCracks = cracks.filter((c) => c.active).length;
+        const formationName = crackFormations[crackFormation].description;
+        status.textContent = `${state} | ${percent}% / ${targetPercent}% | Active: ${activeCracks} | ${formationName}`;
+      }
+
+      // Animation loop
+      function animate() {
+        globalAge++;
+        
+        if (!isComplete) {
+          // Optimize update loop - process fewer cracks per frame
+          const maxUpdatesPerFrame = 100; // Limit updates per frame
+          let updates = 0;
+          
+          for (let i = 0; i < cracks.length && updates < maxUpdatesPerFrame; i++) {
+            if (cracks[i].active) {
+              cracks[i].update();
+              updates++;
+            }
+          }
+
+          // Clean up - higher threshold
+          if (cracks.length > 1500) {
+            cracks = cracks.filter((c) => c.active || c.age < 100);
+          }
+
+          // Check if stuck and add more seeds if needed
+          const activeCracks = cracks.filter((c) => c.active).length;
+          if (activeCracks < 20 && !isComplete && density < maxDensity * 0.9) {
+            // For zen formation, add new waves and branches
+            if (crackFormation === "zen") {
+              // Add new wave segments in gaps
+              const gapY = canvasHeight * (0.2 + random() * 0.6);
+              const newWave = {
+                startX: random() < 0.5 ? 0 : canvasWidth,
+                startY: gapY,
+                direction: random() < 0.5 ? 1 : -1,
+                phase: random() * Math.PI * 2,
+                amplitude: 25 + random() * 20,
+                frequency: 0.003 + random() * 0.002
+              };
+              
+              // Create wave points
+              const numPoints = 50;
+              for (let p = 0; p < numPoints; p++) {
+                const progress = p / numPoints;
+                let x = newWave.direction > 0 ? progress * canvasWidth : (1 - progress) * canvasWidth;
+                let y = newWave.startY + Math.sin(x * newWave.frequency + newWave.phase) * newWave.amplitude;
+                
+                if (insideMountain(x, y)) {
+                  const angle = Math.atan2(newWave.amplitude * newWave.frequency * Math.cos(x * newWave.frequency + newWave.phase), 1) * 180 / Math.PI;
+                  const crack = new Crack(x, y, angle, "wave", "zen");
+                  crack.waveData = newWave;
+                  crack.progress = progress;
+                  crack.speed = 1.5;
+                  crack.isWave = true;
+                  cracks.push(crack);
+                  
+                  // Add branches
+                  if (p % 10 === 0) {
+                    for (let b = 0; b < 2; b++) {
+                      const branchAngle = angle + (random() < 0.5 ? 90 : -90) + (random() - 0.5) * 20;
+                      const branch = new Crack(x, y, branchAngle, "branch", "zen");
+                      branch.speed = 1.2;
+                      branch.isBranch = true;
+                      cracks.push(branch);
+                    }
+                  }
+                }
+              }
+              
+              // Also add some fill seeds
+              for (let i = 0; i < 10; i++) {
+                const angle = random() * Math.PI * 2;
+                const radius = random() * 0.7;
+                const seedX = canvasWidth * 0.5 + Math.cos(angle) * canvasWidth * radius * 0.4;
+                const seedY = canvasHeight * 0.5 + Math.sin(angle) * canvasHeight * radius * 0.35;
+                
+                if (insideMountain(seedX, seedY)) {
+                  const crack = new Crack(seedX, seedY, random() * 360, "fill", "zen");
+                  crack.speed = 1.2;
+                  crack.isFill = true;
+                  cracks.push(crack);
+                }
+              }
+            } else {
+              // Default behavior for other formations
+              const newSeeds = 3 + Math.floor(random() * 3);
+              for (let i = 0; i < newSeeds; i++) {
+                const angle = random() * Math.PI * 2;
+                const radius = random() * 0.3 + 0.2;
+                const seedX = canvasWidth * 0.5 + Math.cos(angle) * canvasWidth * radius;
+                const seedY = canvasHeight * 0.6 + Math.sin(angle) * canvasHeight * radius * 0.7;
+
+                if (insideMountain(seedX, seedY)) {
+                  cracks.push(new Crack(seedX, seedY, random() * 360, "spreader"));
+                }
+              }
+            }
+          } else if (activeCracks === 0) {
+            isComplete = true;
+            updateStatus();
+          }
+        }
+
+        // Special animations
+        if (theme === "storm" && random() < 0.01) {
+          // Lightning flash
+          ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+
+        // Debug overlay
+        if (debug) {
+          ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let x = 0; x < canvasWidth; x++) {
+            if (x === 0) ctx.moveTo(x, mountainY[x]);
+            else ctx.lineTo(x, mountainY[x]);
+          }
+          ctx.stroke();
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+
+      // Handle resize
+      window.addEventListener("resize", () => {
+        resizeCanvas();
+        init();
+      });
+
+      // Seeded random number generator
+      class SeededRandom {
+        constructor(seed) {
+          this.seed = seed;
+          this.current = seed;
+        }
+        
+        next() {
+          const x = Math.sin(this.current++) * 10000;
+          return x - Math.floor(x);
+        }
+        
+        nextFloat(min = 0, max = 1) {
+          return min + this.next() * (max - min);
+        }
+        
+        nextInt(min, max) {
+          return Math.floor(this.nextFloat(min, max));
+        }
+        
+        choice(array) {
+          return array[this.nextInt(0, array.length)];
+        }
+      }
+      
+      // Replace Math.random() with seeded random
+      function random() {
+        return rng ? rng.next() : Math.random();
+      }
+      
+      // Generate a random seed
+      function generateSeed() {
+        return Math.floor(Math.random() * 1000000);
+      }
+      
+      // Show/hide seed input
+      function showSeedInput() {
+        document.getElementById('seedInput').style.display = 'flex';
+        document.getElementById('seedInputField').value = currentSeed || '';
+        document.getElementById('seedInputField').select();
+      }
+      
+      function hideSeedInput() {
+        document.getElementById('seedInput').style.display = 'none';
+      }
+      
+      // Set custom seed
+      function setSeed() {
+        const input = document.getElementById('seedInputField').value;
+        const seed = parseInt(input);
+        
+        if (!isNaN(seed)) {
+          currentSeed = seed;
+          rng = new SeededRandom(seed);
+          init();
+          hideSeedInput();
+        }
+      }
+      
+      // Generate with random seed
+      function randomSeed() {
+        currentSeed = generateSeed();
+        rng = new SeededRandom(currentSeed);
+        init();
+      }
+      
+      // Handle enter key in seed input
+      document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('seedInputField').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') setSeed();
+          if (e.key === 'Escape') hideSeedInput();
+        });
+      });
+      
+      // Background element generators
+      function createBackgroundElements() {
+        backgroundElements = [];
+        
+        // Determine number of elements based on theme
+        const elementCounts = {
+          birds: theme === 'dawn' || theme === 'dusk' ? Math.floor(random() * 3 + 1) : 0,
+          lakes: random() < 0.3 ? 1 : 0,
+          sun: (theme === 'dawn' || theme === 'dusk') && random() < 0.25 ? 1 : 0,
+          moon: (theme === 'night' || theme === 'void') && random() < 0.2 ? 1 : 0,
+          rain: (theme === 'storm' || theme === 'mist') && random() < 0.25 ? 1 : 0,
+          clouds: (theme === 'dawn' || theme === 'dusk' || theme === 'mist' || theme === 'zen') ? Math.floor(random() * 5 + 2) : 0,
+          stars: (theme === 'night' || theme === 'void') ? Math.floor(random() * 30 + 10) : 0,
+          mist: theme === 'mist' || theme === 'storm' ? Math.floor(random() * 3 + 1) : 0,
+          birdFormation: (theme === 'dawn' || theme === 'dusk') && random() < 0.7 ? 1 : 0, // Increased probability
+          windEffect: (theme === 'storm' || random() < 0.2) ? 1 : 0,
+          rocket: (theme === 'night' || theme === 'void' || theme === 'volcanic' || theme === 'klein') && random() < 0.15 ? 1 : 0,
+          aurora: (theme === 'night' || theme === 'aurora' || theme === 'void') && random() < 0.5 ? 1 : 0,
+          floatingParticles: (theme === 'cyber' || theme === 'neon' || theme === 'void' || theme === 'volcanic') && random() < 0.6 ? 1 : 0
+        };
+        
+        
+        // Create birds
+        for (let i = 0; i < elementCounts.birds; i++) {
+          const x = random() * canvasWidth;
+          const y = random() * canvasHeight * 0.4;
+          const size = 3 + random() * 5;
+          const depth = random();
+          
+          backgroundElements.push({
+            type: 'bird',
+            x, y, size, depth,
+            angle: random() * Math.PI * 2,
+            flightPattern: Math.floor(random() * 3)
+          });
+        }
+        
+        // Create lakes - check center point
+        for (let i = 0; i < elementCounts.lakes; i++) {
+          let placed = false;
+          let attempts = 0;
+          
+          while (!placed && attempts < 30) {
+            const x = canvasWidth * (0.1 + random() * 0.8);
+            const y = canvasHeight * (0.7 + random() * 0.15);
+            const width = 150 + random() * 250;
+            const height = 40 + random() * 70;
+            
+            if (!insideMountain(x, y)) {
+              backgroundElements.push({
+                type: 'lake',
+                x, y, width, height,
+                depth: 0.2 + random() * 0.3
+              });
+              placed = true;
+            }
+            attempts++;
+          }
+        }
+        
+        // Create sun with natural glow
+        if (elementCounts.sun > 0) {
+          const x = canvasWidth * (0.7 + random() * 0.25);
+          const y = canvasHeight * (0.1 + random() * 0.2);
+          const size = 30 + random() * 20;
+          
+          backgroundElements.push({
+            type: 'sun',
+            x, y, size,
+            depth: 0.05
+          });
+        }
+        
+        // Create moon - double-check theme
+        if (elementCounts.moon > 0 && (theme === 'night' || theme === 'void')) {
+          const x = canvasWidth * (0.1 + random() * 0.8);
+          const y = canvasHeight * (0.05 + random() * 0.25);
+          const size = 40 + random() * 30;
+          const phase = random(); // 0 = new, 0.5 = full, 1 = new
+          
+          backgroundElements.push({
+            type: 'moon',
+            x, y, size,
+            depth: 0.15,
+            phase: phase
+          });
+        }
+        
+        // Create rain
+        if (elementCounts.rain > 0) {
+          backgroundElements.push({
+            type: 'rain',
+            depth: 0.9,
+            intensity: 0.3 + random() * 0.4,
+            angle: -10 + random() * 20,
+            dropCount: 50 + Math.floor(random() * 100)
+          });
+        }
+        
+        // Create clouds
+        for (let i = 0; i < elementCounts.clouds; i++) {
+          const x = random() * canvasWidth;
+          const y = random() * canvasHeight * 0.4;
+          const width = 80 + random() * 150;
+          const height = 30 + random() * 50;
+          
+          backgroundElements.push({
+            type: 'cloud',
+            x, y, width, height,
+            depth: random() * 0.3,
+            density: 0.3 + random() * 0.4
+          });
+        }
+        
+        // Create stars
+        for (let i = 0; i < elementCounts.stars; i++) {
+          const x = random() * canvasWidth;
+          const y = random() * canvasHeight * 0.6;
+          
+          backgroundElements.push({
+            type: 'star',
+            x, y,
+            size: 1 + random() * 3,
+            depth: random() * 0.2,
+            twinkle: random() < 0.3
+          });
+        }
+        
+        // Create mist patches
+        for (let i = 0; i < elementCounts.mist; i++) {
+          const x = random() * canvasWidth;
+          const y = canvasHeight * (0.4 + random() * 0.4);
+          const width = 200 + random() * 300;
+          const height = 80 + random() * 120;
+          
+          backgroundElements.push({
+            type: 'mist',
+            x, y, width, height,
+            depth: 0.5 + random() * 0.3,
+            opacity: 0.1 + random() * 0.2
+          });
+        }
+        
+        // Create bird formation - only curved patterns
+        if (elementCounts.birdFormation > 0) {
+          const formationType = random() < 0.5 ? 'wave' : 'circle';
+          const formationX = random() * canvasWidth;
+          const formationY = canvasHeight * (0.1 + random() * 0.3);
+          const formationAngle = -Math.PI/6 + random() * Math.PI/3;
+          const birdCount = 7 + Math.floor(random() * 8);
+          
+          backgroundElements.push({
+            type: 'birdFormation',
+            x: formationX,
+            y: formationY,
+            angle: formationAngle,
+            birdCount: birdCount,
+            formationType: formationType,
+            depth: 0.3 + random() * 0.2,
+            speed: 0.5 + random() * 0.5
+          });
+        }
+        
+        // Create wind effect
+        if (elementCounts.windEffect > 0) {
+          const windStrength = 0.3 + random() * 0.7;
+          const windDirection = random() < 0.5 ? -1 : 1;
+          
+          backgroundElements.push({
+            type: 'windEffect',
+            strength: windStrength,
+            direction: windDirection,
+            depth: 0.8
+          });
+        }
+        
+        // Create rocket - positioned above mountain
+        if (elementCounts.rocket > 0) {
+          const x = canvasWidth * (0.2 + random() * 0.6);
+          // Find mountain height at this x position and place rocket above it
+          const mountainHeight = mountainY[Math.floor(x)] || canvasHeight * 0.5;
+          const y = Math.min(mountainHeight - 100, canvasHeight * 0.3);
+          const angle = -Math.PI/2; // Always pointing straight up
+          const size = 15 + random() * 10;
+          
+          backgroundElements.push({
+            type: 'rocket',
+            x, y, size, angle,
+            depth: 0.4 + random() * 0.3,
+            trailLength: 30 + random() * 20
+          });
+        }
+        
+        // Create aurora lights
+        if (elementCounts.aurora > 0) {
+          backgroundElements.push({
+            type: 'aurora',
+            depth: 0.1,
+            waveCount: 3 + Math.floor(random() * 3),
+            intensity: 0.3 + random() * 0.4,
+            speed: 0.5 + random() * 0.5
+          });
+        }
+        
+        // Create floating particles
+        if (elementCounts.floatingParticles > 0) {
+          const particleCount = 20 + Math.floor(random() * 30);
+          for (let i = 0; i < particleCount; i++) {
+            backgroundElements.push({
+              type: 'floatingParticle',
+              x: random() * canvasWidth,
+              y: random() * canvasHeight,
+              size: 1 + random() * 3,
+              speed: 0.2 + random() * 0.8,
+              angle: random() * Math.PI * 2,
+              depth: 0.2 + random() * 0.6,
+              glowIntensity: 0.5 + random() * 0.5
+            });
+          }
+        }
+        
+        // Sort by depth (far to near)
+        backgroundElements.sort((a, b) => a.depth - b.depth);
+      }
+      
+      // Draw background elements
+      function drawBackgroundElements() {
+        backgroundElements.forEach(element => {
+          // Skip elements that shouldn't exist for current theme
+          if (element.type === 'moon' && theme !== 'night' && theme !== 'void') {
+            return;
+          }
+          if (element.type === 'star' && theme !== 'night' && theme !== 'void') {
+            return;
+          }
+          if (element.type === 'sun' && theme !== 'dawn' && theme !== 'dusk') {
+            return;
+          }
+          
+          ctx.save();
+          
+          // Calculate opacity based on depth - increased visibility
+          const baseOpacity = element.type === 'birdFormation' ? 0.8 : 0.4 + element.depth * 0.4; // Higher opacity for birds
+          const colors = themes[theme].mountain;
+          const color = colors[Math.floor(element.depth * colors.length)];
+          
+          switch (element.type) {
+            case 'bird':
+              drawBird(element, color, baseOpacity);
+              break;
+            case 'lake':
+              drawLake(element, color, baseOpacity);
+              break;
+            case 'sun':
+              drawSun(element, color, baseOpacity);
+              break;
+            case 'moon':
+              drawMoon(element, color, baseOpacity);
+              break;
+            case 'rain':
+              drawRain(element, color, baseOpacity);
+              break;
+            case 'cloud':
+              drawCloud(element, color, baseOpacity);
+              break;
+            case 'star':
+              drawStar(element, color, baseOpacity);
+              break;
+            case 'mist':
+              drawMist(element, color, baseOpacity);
+              break;
+            case 'birdFormation':
+              drawBirdFormation(element, color, baseOpacity);
+              break;
+            case 'windEffect':
+              drawWindEffect(element, color, baseOpacity);
+              break;
+            case 'rocket':
+              drawRocket(element, color, baseOpacity);
+              break;
+            case 'aurora':
+              drawAurora(element, color, baseOpacity);
+              break;
+            case 'floatingParticle':
+              drawFloatingParticle(element, color, baseOpacity);
+              break;
+          }
+          
+          ctx.restore();
+        });
+      }
+      
+      
+      // Draw bird with simple strokes
+      function drawBird(bird, color, opacity) {
+        const {x, y, size, angle, flightPattern} = bird;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        
+        ctx.strokeStyle = hexToRgba(color, opacity);
+        ctx.lineWidth = Math.max(0.5, size / 10);
+        
+        if (flightPattern === 0) {
+          // V-shape
+          ctx.beginPath();
+          ctx.moveTo(-size/2, 0);
+          ctx.lineTo(0, -size/4);
+          ctx.lineTo(size/2, 0);
+          ctx.stroke();
+        } else if (flightPattern === 1) {
+          // M-shape
+          ctx.beginPath();
+          ctx.moveTo(-size/2, 0);
+          ctx.lineTo(-size/4, -size/3);
+          ctx.lineTo(0, 0);
+          ctx.lineTo(size/4, -size/3);
+          ctx.lineTo(size/2, 0);
+          ctx.stroke();
+        } else {
+          // Curved wings
+          ctx.beginPath();
+          ctx.moveTo(-size/2, 0);
+          ctx.quadraticCurveTo(-size/4, -size/2, 0, -size/4);
+          ctx.quadraticCurveTo(size/4, -size/2, size/2, 0);
+          ctx.stroke();
+        }
+        
+        ctx.restore();
+      }
+      
+      // Draw lake with ripple strokes
+      function drawLake(lake, color, opacity) {
+        const {x, y, width, height} = lake;
+        const numRipples = 8 + Math.floor(width / 30);
+        
+        for (let i = 0; i < numRipples; i++) {
+          const t = i / numRipples;
+          const rippleY = y + height * t;
+          const rippleWidth = width * (0.8 + random() * 0.2);
+          const rippleX = x - rippleWidth/2 + (random() - 0.5) * 20;
+          
+          ctx.strokeStyle = hexToRgba(color, opacity * (0.2 + (1-t) * 0.3));
+          ctx.lineWidth = 0.5 + random();
+          ctx.beginPath();
+          
+          // Wavy line for ripple
+          const segments = 20;
+          for (let j = 0; j <= segments; j++) {
+            const sx = j / segments;
+            const px = rippleX + rippleWidth * sx;
+            const py = rippleY + Math.sin(sx * Math.PI * 4 + i) * 2;
+            
+            if (j === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          
+          ctx.stroke();
+        }
+      }
+      
+      // Draw sun with natural glow effect
+      function drawSun(sun, color, opacity) {
+        const {x, y, size} = sun;
+        
+        // Only draw sun for appropriate themes
+        if (theme !== 'dawn' && theme !== 'dusk') {
+          return;
+        }
+        
+        // Create multiple layers of glow
+        const glowLayers = 5;
+        for (let i = glowLayers; i >= 0; i--) {
+          const layerSize = size * (1 + i * 0.8);
+          const layerOpacity = opacity * 0.05 * (1 - i / glowLayers);
+          
+          // Use radial gradient for each layer
+          const gradient = ctx.createRadialGradient(x, y, 0, x, y, layerSize);
+          
+          if (theme === 'dawn') {
+            gradient.addColorStop(0, `rgba(255, 220, 120, ${layerOpacity})`);
+            gradient.addColorStop(0.5, `rgba(255, 200, 100, ${layerOpacity * 0.5})`);
+            gradient.addColorStop(1, `rgba(255, 180, 80, 0)`);
+          } else { // dusk
+            gradient.addColorStop(0, `rgba(255, 180, 120, ${layerOpacity})`);
+            gradient.addColorStop(0.5, `rgba(255, 140, 90, ${layerOpacity * 0.5})`);
+            gradient.addColorStop(1, `rgba(255, 100, 60, 0)`);
+          }
+          
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+        
+        // Draw subtle core
+        ctx.fillStyle = theme === 'dawn' ? 
+          `rgba(255, 250, 200, ${opacity * 0.3})` : 
+          `rgba(255, 200, 150, ${opacity * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Add very subtle stroke outline
+        ctx.strokeStyle = theme === 'dawn' ? 
+          `rgba(255, 240, 180, ${opacity * 0.2})` : 
+          `rgba(255, 180, 120, ${opacity * 0.2})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      
+      // Draw moon with stroke-based texture
+      function drawMoon(moon, color, opacity) {
+        const {x, y, size, phase} = moon;
+        
+        // Only draw moon for appropriate themes
+        if (theme !== 'night' && theme !== 'void') {
+          return;
+        }
+        
+        // Draw moon circle
+        ctx.strokeStyle = hexToRgba(color, opacity * 0.6);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, size/2, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Draw phase shadow with strokes
+        if (phase > 0.1 && phase < 0.9) {
+          const shadowX = x + (phase - 0.5) * size;
+          const numStrokes = 15;
+          
+          for (let i = 0; i < numStrokes; i++) {
+            const angle = (i / numStrokes) * Math.PI * 2;
+            const r = size * 0.5 * Math.sin(angle);
+            const startX = shadowX + Math.cos(angle) * r;
+            const startY = y + Math.sin(angle) * r;
+            const chord = Math.sqrt(Math.max(0, (size/2) * (size/2) - r * r));
+            const endX = x + Math.cos(angle) * chord;
+            const endY = y + Math.sin(angle) * chord;
+            
+            ctx.strokeStyle = hexToRgba('#000000', opacity * 0.3);
+            ctx.lineWidth = size / 15;
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+          }
+        }
+        
+        // No crater details - they look like ugly bubbles
+      }
+      
+      // Draw rain with diagonal strokes
+      function drawRain(rain, color, opacity) {
+        const {intensity, angle, dropCount} = rain;
+        const angleRad = angle * Math.PI / 180;
+        
+        for (let i = 0; i < dropCount * intensity; i++) {
+          const x = random() * canvasWidth * 1.2 - canvasWidth * 0.1;
+          const y = random() * canvasHeight;
+          const length = 10 + random() * 20;
+          const speed = 0.5 + random() * 0.5;
+          
+          const startX = x;
+          const startY = y;
+          const endX = x + Math.sin(angleRad) * length;
+          const endY = y + Math.cos(angleRad) * length;
+          
+          ctx.strokeStyle = hexToRgba(color, opacity * 0.2 * (1 - random() * 0.5));
+          ctx.lineWidth = 0.5 + random() * 0.5;
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+        }
+      }
+      
+      // Draw cloud with wispy strokes
+      function drawCloud(cloud, color, opacity) {
+        const {x, y, width, height, density} = cloud;
+        const numStrokes = Math.floor(width * density / 5);
+        
+        // Skip clouds on very dark backgrounds or use light color
+        const isDarkTheme = theme === 'void' || theme === 'night' || theme === 'storm' || theme === 'volcanic';
+        if (isDarkTheme) {
+          return; // Don't draw clouds on dark backgrounds
+        }
+        
+        for (let i = 0; i < numStrokes; i++) {
+          const t = i / numStrokes;
+          const cx = x - width/2 + width * t;
+          const cy = y + (random() - 0.5) * height;
+          const strokeWidth = 5 + random() * 15;
+          const strokeLength = 20 + random() * 40;
+          
+          ctx.strokeStyle = hexToRgba(color, opacity * 0.1);
+          ctx.lineWidth = strokeWidth;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          
+          // Horizontal wispy strokes
+          ctx.moveTo(cx - strokeLength/2, cy);
+          ctx.quadraticCurveTo(cx, cy + (random() - 0.5) * 10, cx + strokeLength/2, cy);
+          ctx.stroke();
+        }
+      }
+      
+      // Draw star with cross strokes
+      function drawStar(star, color, opacity) {
+        const {x, y, size, twinkle} = star;
+        
+        const actualOpacity = twinkle ? opacity * (0.5 + Math.sin(globalAge * 0.1) * 0.5) : opacity;
+        
+        // Cross pattern
+        ctx.strokeStyle = hexToRgba('#FFFFFF', actualOpacity);
+        ctx.lineWidth = size / 3;
+        
+        // Vertical stroke
+        ctx.beginPath();
+        ctx.moveTo(x, y - size);
+        ctx.lineTo(x, y + size);
+        ctx.stroke();
+        
+        // Horizontal stroke
+        ctx.beginPath();
+        ctx.moveTo(x - size, y);
+        ctx.lineTo(x + size, y);
+        ctx.stroke();
+        
+        // Diagonal strokes for brighter stars
+        if (size > 2) {
+          ctx.lineWidth = size / 4;
+          ctx.strokeStyle = hexToRgba('#FFFFFF', actualOpacity * 0.5);
+          
+          ctx.beginPath();
+          ctx.moveTo(x - size * 0.7, y - size * 0.7);
+          ctx.lineTo(x + size * 0.7, y + size * 0.7);
+          ctx.stroke();
+          
+          ctx.beginPath();
+          ctx.moveTo(x + size * 0.7, y - size * 0.7);
+          ctx.lineTo(x - size * 0.7, y + size * 0.7);
+          ctx.stroke();
+        }
+      }
+      
+      // Draw mist with soft horizontal strokes
+      function drawMist(mist, color, opacity) {
+        const {x, y, width, height, opacity: mistOpacity} = mist;
+        const layers = 5;
+        
+        for (let layer = 0; layer < layers; layer++) {
+          const layerY = y - height/2 + (height / layers) * layer;
+          const numStrokes = 10 + Math.floor(random() * 10);
+          
+          for (let i = 0; i < numStrokes; i++) {
+            const strokeX = x - width/2 + random() * width;
+            const strokeY = layerY + (random() - 0.5) * height/layers;
+            const strokeLength = 30 + random() * 60;
+            
+            ctx.strokeStyle = hexToRgba(color, mistOpacity * opacity * 0.1);
+            ctx.lineWidth = 10 + random() * 20;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(strokeX - strokeLength/2, strokeY);
+            ctx.lineTo(strokeX + strokeLength/2, strokeY);
+            ctx.stroke();
+          }
+        }
+      }
+      
+      // Draw bird formation
+      function drawBirdFormation(formation, color, opacity) {
+        const {x, y, angle, birdCount, formationType} = formation;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        
+        if (formationType === 'circle') {
+          // Circular murmuration pattern
+          const radius = 40 + random() * 30;
+          for (let i = 0; i < birdCount; i++) {
+            const angle = (i / birdCount) * Math.PI * 2;
+            const r = radius * (0.8 + Math.sin(angle * 3) * 0.2);
+            const bx = Math.cos(angle) * r;
+            const by = Math.sin(angle) * r * 0.6;
+            const size = 3 + Math.sin(angle * 2) * 1;
+            drawFormationBird(bx, by, size, color, opacity * (0.8 + Math.sin(angle) * 0.2));
+          }
+        } else {
+          // Wave formation
+          for (let i = 0; i < birdCount; i++) {
+            const t = i / (birdCount - 1);
+            const waveX = (t - 0.5) * 100;
+            const waveY = Math.sin(t * Math.PI * 2) * 10;
+            const size = 3 + Math.sin(t * Math.PI) * 2;
+            drawFormationBird(waveX, waveY, size, color, opacity * (0.9 + Math.sin(t * Math.PI) * 0.1));
+          }
+        }
+        
+        ctx.restore();
+      }
+      
+      // Helper function to draw individual bird in formation
+      function drawFormationBird(x, y, size, color, opacity) {
+        ctx.strokeStyle = hexToRgba(color, opacity);
+        ctx.lineWidth = Math.max(1, size / 3);
+        ctx.lineCap = 'round';
+        
+        // Simple bird shape
+        ctx.beginPath();
+        ctx.moveTo(x - size/2, y);
+        ctx.lineTo(x, y - size/3);
+        ctx.lineTo(x + size/2, y);
+        ctx.stroke();
+      }
+      
+      // Draw wind effect
+      function drawWindEffect(wind, color, opacity) {
+        const {strength, direction} = wind;
+        const numStreaks = Math.floor(20 * strength);
+        
+        for (let i = 0; i < numStreaks; i++) {
+          const y = random() * canvasHeight;
+          const startX = direction > 0 ? -50 : canvasWidth + 50;
+          const endX = startX + direction * (100 + random() * 200);
+          const streakOpacity = opacity * 0.05 * (0.5 + random() * 0.5);
+          
+          ctx.strokeStyle = hexToRgba(color, streakOpacity);
+          ctx.lineWidth = 0.5 + random() * 1.5;
+          ctx.beginPath();
+          
+          // Wind streak with slight curve
+          const midX = (startX + endX) / 2;
+          const midY = y + (random() - 0.5) * 20;
+          
+          ctx.moveTo(startX, y);
+          ctx.quadraticCurveTo(midX, midY, endX, y + direction * 10);
+          ctx.stroke();
+        }
+      }
+      
+      // Draw rocket with trail
+      function drawRocket(rocket, color, opacity) {
+        const {x, y, size, angle, trailLength} = rocket;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        
+        // Draw exhaust trail
+        const trailSegments = 15;
+        for (let i = 0; i < trailSegments; i++) {
+          const t = i / trailSegments;
+          const trailY = size/2 + t * trailLength;
+          const trailWidth = (1 - t) * size * 0.8;
+          const trailOpacity = opacity * 0.3 * (1 - t);
+          
+          ctx.strokeStyle = theme === 'volcanic' ? 
+            `rgba(255, ${100 + t * 100}, 0, ${trailOpacity})` :
+            `rgba(100, 150, 255, ${trailOpacity})`;
+          ctx.lineWidth = trailWidth;
+          ctx.lineCap = 'round';
+          
+          ctx.beginPath();
+          ctx.moveTo(-trailWidth/2, trailY);
+          ctx.lineTo(trailWidth/2, trailY);
+          ctx.stroke();
+        }
+        
+        // Draw rocket body
+        ctx.strokeStyle = hexToRgba(color, opacity * 0.8);
+        ctx.lineWidth = 2;
+        
+        // Main body
+        ctx.beginPath();
+        ctx.moveTo(0, -size/2);
+        ctx.lineTo(-size/3, size/2);
+        ctx.lineTo(size/3, size/2);
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Nose cone
+        ctx.beginPath();
+        ctx.moveTo(0, -size/2);
+        ctx.lineTo(0, -size/2 - size/4);
+        ctx.stroke();
+        
+        // Fins
+        ctx.beginPath();
+        ctx.moveTo(-size/3, size/3);
+        ctx.lineTo(-size/2, size/2);
+        ctx.moveTo(size/3, size/3);
+        ctx.lineTo(size/2, size/2);
+        ctx.stroke();
+        
+        // Window
+        ctx.beginPath();
+        ctx.arc(0, 0, size/6, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+      
+      // Draw aurora borealis
+      function drawAurora(aurora, color, opacity) {
+        const {waveCount, intensity, speed} = aurora;
+        const time = globalAge * speed * 0.01;
+        
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        
+        for (let w = 0; w < waveCount; w++) {
+          const waveOffset = w * Math.PI * 0.7;
+          const waveY = canvasHeight * 0.1 + w * 50;
+          
+          // Create gradient for each wave
+          const gradient = ctx.createLinearGradient(0, waveY - 100, 0, waveY + 100);
+          
+          if (theme === 'aurora') {
+            const colors = ['#43D9AD', '#37B7C3', '#3ABEF9', '#A7E2FF'];
+            const baseColor = colors[w % colors.length];
+            gradient.addColorStop(0, hexToRgba(baseColor, 0));
+            gradient.addColorStop(0.5, hexToRgba(baseColor, intensity * opacity * 0.5));
+            gradient.addColorStop(1, hexToRgba(baseColor, 0));
+          } else {
+            gradient.addColorStop(0, `rgba(100, 255, 150, 0)`);
+            gradient.addColorStop(0.5, `rgba(100, 255, 150, ${intensity * opacity * 0.4})`);
+            gradient.addColorStop(1, `rgba(100, 255, 150, 0)`);
+          }
+          
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          
+          // Draw flowing wave
+          for (let x = 0; x <= canvasWidth; x += 5) {
+            const wave1 = Math.sin((x * 0.003) + time + waveOffset) * 40;
+            const wave2 = Math.sin((x * 0.005) + time * 1.3 + waveOffset) * 20;
+            const y = waveY + wave1 + wave2;
+            
+            if (x === 0) {
+              ctx.moveTo(x, y - 100);
+            } else {
+              ctx.lineTo(x, y - 100);
+            }
+          }
+          
+          // Complete the shape
+          ctx.lineTo(canvasWidth, waveY + 100);
+          ctx.lineTo(0, waveY + 100);
+          ctx.closePath();
+          ctx.fill();
+        }
+        
+        ctx.restore();
+      }
+      
+      // Draw floating particles
+      function drawFloatingParticle(particle, color, opacity) {
+        const {x, y, size, glowIntensity} = particle;
+        
+        // Update position based on time
+        const time = globalAge * particle.speed * 0.01;
+        const floatX = x + Math.sin(time + particle.angle) * 20;
+        const floatY = y + Math.cos(time * 0.7 + particle.angle) * 15;
+        
+        // Draw glow
+        const glow = ctx.createRadialGradient(floatX, floatY, 0, floatX, floatY, size * 4);
+        
+        if (theme === 'neon' || theme === 'cyber') {
+          const glowColor = theme === 'neon' ? '#FF006E' : '#F72585';
+          glow.addColorStop(0, hexToRgba(glowColor, opacity * glowIntensity));
+          glow.addColorStop(1, hexToRgba(glowColor, 0));
+        } else if (theme === 'volcanic') {
+          glow.addColorStop(0, `rgba(255, 100, 0, ${opacity * glowIntensity})`);
+          glow.addColorStop(1, `rgba(255, 100, 0, 0)`);
+        } else {
+          glow.addColorStop(0, `rgba(255, 255, 255, ${opacity * glowIntensity * 0.5})`);
+          glow.addColorStop(1, `rgba(255, 255, 255, 0)`);
+        }
+        
+        ctx.fillStyle = glow;
+        ctx.fillRect(floatX - size * 4, floatY - size * 4, size * 8, size * 8);
+        
+        // Draw particle
+        ctx.fillStyle = hexToRgba(color, opacity * 0.9);
+        ctx.beginPath();
+        ctx.arc(floatX, floatY, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Helper function for hex to rgba
+      function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+      
+      // --- Restored Artwork Control Functions ---
+      function generateNew(newTheme) {
+        theme = newTheme || theme;
+        init(); 
+        requestAnimationFrame(animate);
+      }
+
+      function toggleDebug() {
+        debug = !debug;
+        console.log("Debug mode:", debug);
+        // Redraw if debug mode has immediate visual changes, otherwise it will be picked up in next draw cycle
+        requestAnimationFrame(animate);
+      }
+
+      // Function to cycle through crack formations (if a button calls this directly)
+      function selectCrackFormation() {
+        const formations = Object.keys(crackFormations);
+        // Ensure crackFormation has a default if it's somehow undefined before this call
+        const currentFormation = crackFormation || "straight"; 
+        const currentIndex = formations.indexOf(currentFormation); 
+        const nextIndex = (currentIndex + 1) % formations.length;
+        setCrackFormation(formations[nextIndex]);
+      }
+      
+      function setCrackFormation(formation) {
+        if (crackFormations[formation]) {
+          crackFormation = formation;
+          console.log(
+            "Selected crack formation:",
+            crackFormation,
+            "-",
+            crackFormations[crackFormation].description
+          );
+          init(); // Re-initialize based on new formation
+          requestAnimationFrame(animate); // Redraw with new formation
+        } else {
+          console.warn("Unknown crack formation:", formation);
+        }
+      }
+      // --- End Restored Artwork Control Functions ---
+
+      // Start with random seed
+      randomSeed();
+      animate();
+    </script>
+  </body>
+</html>

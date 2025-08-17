@@ -1,8 +1,9 @@
 import { network } from "hardhat";
 import { parseEther, formatEther } from "viem";
+import fs from 'fs';
 
 async function main() {
-    console.log("🎰 Deploying Barely Human locally...\n");
+    console.log("🎲 Deploying Full Barely Human Game System Locally...\n");
     
     // Connect to local network using Hardhat 3.0 pattern
     const connection = await network.connect();
@@ -51,31 +52,65 @@ async function main() {
         ]);
         console.log("   ✅ StakingPool deployed at:", stakingPool.address);
         
-        // 5. Deploy CrapsGame with mock VRF (using V2Plus variant)
+        // 5. Deploy CrapsGameV2Plus with proper configuration
         console.log("\n5. Deploying CrapsGameV2Plus...");
         const crapsGame = await viem.deployContract("CrapsGameV2Plus", [
             mockVRF.address,                    // VRF coordinator
             1n,                                 // subscription ID
-            "0x0000000000000000000000000000000000000000000000000000000000000000" // key hash (mock)
+            "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c" // key hash
         ]);
         console.log("   ✅ CrapsGameV2Plus deployed at:", crapsGame.address);
         
-        // 6. Deploy BotManagerV2Plus  
-        console.log("\n6. Deploying BotManagerV2Plus...");
+        // 6. Deploy CrapsBets
+        console.log("\n6. Deploying CrapsBets...");
+        const crapsBets = await viem.deployContract("CrapsBets");
+        console.log("   ✅ CrapsBets deployed at:", crapsBets.address);
+        
+        // 7. Deploy CrapsSettlement
+        console.log("\n7. Deploying CrapsSettlement...");
+        const crapsSettlement = await viem.deployContract("CrapsSettlement");
+        console.log("   ✅ CrapsSettlement deployed at:", crapsSettlement.address);
+        
+        // 8. Deploy BotManagerV2Plus  
+        console.log("\n8. Deploying BotManagerV2Plus...");
         const botManager = await viem.deployContract("BotManagerV2Plus", [
             mockVRF.address,                    // VRF coordinator
             1n,                                 // subscription ID
-            "0x0000000000000000000000000000000000000000000000000000000000000000" // key hash (mock)
+            "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c" // key hash
         ]);
         console.log("   ✅ BotManagerV2Plus deployed at:", botManager.address);
         
-        // 7. Deploy CrapsVault Factory (using minimal variant first)
-        console.log("\n7. Deploying VaultFactoryMinimal...");
+        // 9. Deploy VaultFactoryMinimal  
+        console.log("\n9. Deploying VaultFactoryMinimal...");
         const vaultFactory = await viem.deployContract("VaultFactoryMinimal", [
             botToken.address,
             treasuryContract.address
         ]);
         console.log("   ✅ VaultFactoryMinimal deployed at:", vaultFactory.address);
+        
+        // 10. Set up contract permissions and relationships
+        console.log("\n10. Setting up contract permissions...");
+        
+        // Set contracts on CrapsBets
+        await crapsBets.write.setContracts([crapsGame.address, vaultFactory.address, crapsSettlement.address]);
+        console.log("   ✅ Set contracts on CrapsBets");
+        
+        // Set contracts on CrapsSettlement  
+        await crapsSettlement.write.setContracts([crapsGame.address, crapsBets.address, treasuryContract.address]);
+        console.log("   ✅ Set contracts on CrapsSettlement");
+        
+        // Grant roles to CrapsBets on CrapsGame
+        await crapsGame.write.grantRole([await crapsGame.read.SETTLEMENT_ROLE(), crapsBets.address]);
+        console.log("   ✅ Granted SETTLEMENT_ROLE to CrapsBets");
+        
+        // Grant roles to CrapsSettlement
+        await crapsGame.write.grantRole([await crapsGame.read.SETTLEMENT_ROLE(), crapsSettlement.address]);
+        await crapsBets.write.grantRole([await crapsBets.read.SETTLEMENT_ROLE(), crapsSettlement.address]);
+        console.log("   ✅ Granted roles to CrapsSettlement");
+        
+        // Initialize bot personalities
+        await botManager.write.initializeBots();
+        console.log("   ✅ Initialized bot personalities");
         
         // Test basic functionality
         console.log("\n📊 Testing basic functionality...");
@@ -83,12 +118,15 @@ async function main() {
         const totalSupply = await botToken.read.totalSupply();
         console.log("   Total supply:", formatEther(totalSupply), "BOT");
         
-        const treasuryBalance = await botToken.read.balanceOf([treasury.account.address]);
-        console.log("   Treasury balance:", formatEther(treasuryBalance), "BOT");
+        const gamePhase = await crapsGame.read.getCurrentPhase();
+        console.log("   Game phase:", gamePhase);
         
-        console.log("\n🎉 Local deployment complete!");
+        const botCount = await botManager.read.getBotCount();
+        console.log("   Bot count:", botCount.toString());
         
-        // Save deployment addresses to file
+        console.log("\n🎉 Full game deployment complete!");
+        
+        // Save deployment addresses to file for CLI
         const deploymentData = {
             network: "localhost",
             timestamp: new Date().toISOString(),
@@ -98,6 +136,8 @@ async function main() {
                 Treasury: treasuryContract.address,
                 StakingPool: stakingPool.address,
                 CrapsGameV2Plus: crapsGame.address,
+                CrapsBets: crapsBets.address,
+                CrapsSettlement: crapsSettlement.address,
                 BotManagerV2Plus: botManager.address,
                 VaultFactoryMinimal: vaultFactory.address
             },
@@ -111,17 +151,20 @@ async function main() {
             }
         };
         
-        // Write to deployments directory
-        const fs = await import('fs/promises');
-        await fs.writeFile('deployments/localhost.json', JSON.stringify(deploymentData, null, 2));
-        console.log("   💾 Deployment addresses saved to deployments/localhost.json");
+        // Ensure deployments directory exists
+        if (!fs.existsSync('deployments')) {
+            fs.mkdirSync('deployments');
+        }
+        
+        fs.writeFileSync('deployments/localhost.json', JSON.stringify(deploymentData, null, 2));
+        console.log("   📄 Deployment data saved to deployments/localhost.json");
+        
+        await connection.close();
         
     } catch (error) {
-        console.error("\n❌ Deployment failed:", error);
-        process.exit(1);
-    } finally {
-        // Close connection
+        console.error("❌ Deployment failed:", error);
         await connection.close();
+        process.exit(1);
     }
 }
 

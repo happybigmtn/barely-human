@@ -696,111 +696,613 @@ class BarelyHumanArtGenerator {
   }
   
   /**
-   * Simulate crack growth with formation-specific behavior
+   * Simulate crack growth with formation-specific behavior (optimized)
    */
   simulateCrackGrowth(targetDensity) {
     let iterations = 0;
-    const maxIterations = 1000;
+    const maxIterations = 300; // Reduced for performance
     let currentDensity = 0;
+    const mountainArea = this.calculateMountainArea();
     
     while (currentDensity < targetDensity && iterations < maxIterations) {
       iterations++;
       
-      // Update active cracks
+      // Update active cracks (batch processing)
       const activeCracks = this.cracks.filter(crack => crack.active);
       if (activeCracks.length === 0) break;
       
-      for (const crack of activeCracks) {
-        if (this.rng.next() < 0.8) { // 80% chance to grow each iteration
+      // Process cracks in batches for better performance
+      const batchSize = Math.min(50, activeCracks.length);
+      for (let i = 0; i < batchSize; i++) {
+        const crack = activeCracks[i];
+        if (this.rng.next() < 0.9) { // Higher growth chance for faster completion
           this.growCrack(crack);
         }
       }
       
-      // Calculate current density
-      const totalCrackLength = this.cracks.reduce((sum, crack) => sum + crack.path.length, 0);
-      const mountainArea = this.calculateMountainArea();
-      currentDensity = totalCrackLength / mountainArea;
+      // Calculate density less frequently for performance
+      if (iterations % 10 === 0) {
+        const totalCrackLength = this.cracks.reduce((sum, crack) => sum + crack.path.length, 0);
+        currentDensity = totalCrackLength / mountainArea;
+      }
       
-      // Add new seeds if needed
-      if (activeCracks.length < 10 && this.rng.next() < 0.1) {
+      // Add new seeds if needed (less frequently)
+      if (activeCracks.length < 20 && iterations % 20 === 0 && this.rng.next() < 0.3) {
         this.addSeed();
+      }
+      
+      // Limit total crack count for performance
+      if (this.cracks.length > 2000) {
+        this.cracks = this.cracks.filter(crack => crack.active || crack.path.length > 10);
       }
     }
   }
   
   /**
-   * Grow a single crack according to its formation
+   * Grow a single crack according to its formation - complex algorithms from original
    */
   growCrack(crack) {
     const formation = CRACK_FORMATIONS[crack.formation];
     const oldX = crack.x;
     const oldY = crack.y;
     
-    // Formation-specific angle modification
+    if (!crack.active) return;
+    
+    crack.age = (crack.age || 0) + 1;
+    if (crack.branchCooldown > 0) crack.branchCooldown--;
+    
+    // Initialize formation-specific properties if not set
+    if (!crack.initialized) {
+      this.initializeCrackProperties(crack);
+      crack.initialized = true;
+    }
+    
+    let wobble = 0;
+    let speedModifier = 1;
+    
+    // Formation-specific behavior - complex algorithms from original
     switch (crack.formation) {
       case "chaotic":
+        wobble = Math.sin(crack.age * 0.1 * formation.wobbleFreq) * formation.wobbleAmp;
         crack.angle += (this.rng.next() - 0.5) * formation.angleVariation;
-        crack.angle += Math.sin(crack.path.length * 0.1 * formation.wobbleFreq) * formation.wobbleAmp;
+        crack.angle += wobble;
+        // Add drift
+        crack.angle += Math.sin(crack.x * 0.005 + crack.y * 0.003) * formation.drift;
         break;
+        
       case "curved":
-        crack.angle += Math.sin(crack.path.length * 0.1 * formation.wobbleFreq) * formation.wobbleAmp;
+        wobble = Math.sin(crack.age * 0.1 * formation.wobbleFreq) * formation.wobbleAmp;
+        crack.angle += wobble * formation.curveAmount;
         break;
-      case "circuit":
-        // Snap to grid and occasional 90-degree turns
-        if (crack.path.length % 20 === 0 && this.rng.next() < formation.turnProbability) {
-          crack.angle = Math.round((crack.angle + (this.rng.next() < 0.5 ? 90 : -90)) / 90) * 90;
+        
+      case "branching":
+        // Complex Tarbell-style branching
+        const globalAge = crack.globalAge || 0;
+        if (globalAge < 150) {
+          wobble = Math.sin(crack.age * 0.1 * formation.wobbleFreq) * formation.wobbleAmp;
+          crack.angle += wobble + Math.sin(crack.age * (crack.curveFactor || 0.1)) * 2;
+        }
+        
+        // Fractal branching
+        if (crack.age - (crack.lastBranch || 0) > formation.branchInterval) {
+          const branchProbability = 0.8 * Math.pow(formation.branchDecay, crack.branchDepth || 0);
+          
+          if (this.rng.next() < branchProbability && (crack.branchDepth || 0) < 5) {
+            this.createComplexBranches(crack);
+            crack.lastBranch = crack.age;
+          }
         }
         break;
+        
+      case "spiral":
+        crack.spiralRadius = (crack.spiralRadius || 50) + formation.spiralExpansion;
+        crack.angle += formation.spiralDirection * formation.spiralTightness * 180;
+        wobble = Math.sin(crack.age * 0.05) * 2;
+        speedModifier = 0.5 + Math.min(crack.spiralRadius * 0.1, 2);
+        
+        // Spawn new spirals occasionally
+        if (crack.age % 50 === 0 && this.rng.next() < 0.3 && this.cracks.length < 2000) {
+          this.spawnNewSpiral(crack);
+        }
+        break;
+        
       case "crystalline":
-        if (crack.path.length % formation.segmentLength === 0) {
+        crack.crystalSize = (crack.crystalSize || 1) * formation.growthRate;
+        crack.resonance = (crack.resonance || 0) + (formation.resonanceFreq || 0.1);
+        
+        wobble = Math.sin(crack.resonance * Math.PI * 2) * formation.wobbleAmp * (1 + crack.crystalSize * 0.1);
+        
+        if (crack.age % formation.segmentLength === 0) {
           crack.angle = this.rng.choice(formation.angleOptions);
         }
+        
+        // Facet probability for crystal growth
+        if (this.rng.next() < formation.facetProbability) {
+          this.createCrystalFacets(crack);
+        }
         break;
-      case "spiral":
-        crack.angle += formation.spiralDirection * formation.spiralTightness * 180;
+        
+      case "zen":
+        if (crack.isWave) {
+          this.updateZenWave(crack);
+          return; // Wave movement is handled separately
+        } else {
+          // Substrate-style branching for non-wave cracks
+          crack.angle += (this.rng.next() - 0.5) * formation.angleVariation;
+          const drift = Math.sin(crack.x * 0.005 + crack.y * 0.003) * 2;
+          crack.angle += drift;
+          
+          // Zen-specific branching
+          if (crack.age > 30 && this.rng.next() < 0.008 && this.cracks.length < 1500) {
+            this.createZenBranch(crack);
+          }
+        }
+        break;
+        
+      case "lightning":
+        crack.segmentProgress = (crack.segmentProgress || 0) + crack.speed;
+        
+        if (crack.segmentProgress >= formation.segmentLength) {
+          // Sharp zigzag turn
+          crack.angle += (this.rng.next() < 0.5 ? 1 : -1) * formation.zigzagAngle + (this.rng.next() - 0.5) * 20;
+          crack.segmentProgress = 0;
+          
+          // Lightning branching
+          if (this.rng.next() < formation.branchProbability && this.cracks.length < 2000) {
+            this.createLightningBranch(crack);
+          }
+        }
+        break;
+        
+      case "organic":
+        const growthWave = Math.sin(crack.age * (formation.curveSinFreq || 0.05) + (crack.growthPhase || 0));
+        wobble = growthWave * formation.wobbleAmp;
+        
+        const driftWave = Math.sin(crack.x * 0.01 + crack.y * 0.01) * 3;
+        crack.angle += driftWave + wobble;
+        
+        speedModifier *= formation.growthRate;
+        
+        // Organic branching
+        if (crack.age > 20 && this.rng.next() < formation.branchProbability && this.cracks.length < 2000) {
+          this.createOrganicBranches(crack);
+        }
+        break;
+        
+      case "circuit":
+        // Grid-snapped movement
+        crack.lastTurn = (crack.lastTurn || 0) + crack.speed;
+        
+        if (crack.age % 20 === 0 && this.rng.next() < formation.turnProbability) {
+          crack.angle = Math.round((crack.angle + (this.rng.next() < 0.5 ? 90 : -90)) / 90) * 90;
+        }
+        
+        // Reduced gap filling for performance
+        if (crack.age % 40 === 0 && this.cracks.length < 1000) {
+          this.createCircuitParallelTraces(crack);
+        }
+        
+        // Snap to grid
+        crack.x = Math.round(crack.x / formation.gridSize) * formation.gridSize;
+        crack.y = Math.round(crack.y / formation.gridSize) * formation.gridSize;
+        crack.angle = Math.round(crack.angle / 90) * 90;
+        
+        speedModifier = 1.5 + this.rng.next() * 0.5; // Faster circuit traces
+        break;
+        
+      case "kaleidoscope":
+        if (crack.symmetryIndex !== undefined) {
+          // Update all symmetric copies
+          this.updateKaleidoscopeSymmetry(crack);
+        }
         break;
     }
     
-    // Move crack
-    const speed = 1 + this.bot.aggression * 0.5;
+    // Apply wobble and angle modifications
+    crack.angle += wobble;
+    
+    // Move crack with calculated angle and speed
+    const speed = (crack.speed || 1) * speedModifier * (1 + this.bot.aggression * 0.5);
     crack.x += Math.cos(crack.angle * Math.PI / 180) * speed;
     crack.y += Math.sin(crack.angle * Math.PI / 180) * speed;
     
     // Check boundaries
     if (!this.insideMountain(crack.x, crack.y)) {
-      crack.active = false;
+      // Bounce off boundary instead of just deactivating
+      crack.x = oldX;
+      crack.y = oldY;
+      crack.angle += 180 + (this.rng.next() - 0.5) * 90;
       return;
     }
     
-    // Add to path
-    crack.path.push({x: crack.x, y: crack.y});
+    // Add to path with enhanced tracking
+    crack.path.push({x: crack.x, y: crack.y, age: crack.age});
     
-    // Branching for certain formations
-    if (crack.formation === "branching" && crack.path.length % 25 === 0 && this.rng.next() < 0.3) {
-      this.createBranches(crack);
+    // Limit path length for memory efficiency
+    if (crack.path.length > 1000) {
+      crack.path.shift();
+    }
+    
+    // Apply sand painting effect for artistic quality
+    this.applySandPaintingEffect(crack, oldX, oldY);
+  }
+  
+  /**
+   * Initialize formation-specific properties for cracks
+   */
+  initializeCrackProperties(crack) {
+    const formation = CRACK_FORMATIONS[crack.formation];
+    
+    switch (crack.formation) {
+      case "branching":
+        crack.branchDepth = crack.branchDepth || 0;
+        crack.branchInterval = formation.branchInterval;
+        crack.branchAngle = formation.branchAngle;
+        crack.branchDecay = formation.branchDecay;
+        crack.curveFactor = 0.1 + this.rng.next() * 0.1;
+        crack.lastBranch = 0;
+        crack.wobbleFreq = formation.wobbleFreq || 0;
+        crack.wobbleAmp = formation.wobbleAmp || 0;
+        break;
+        
+      case "spiral":
+        crack.spiralRadius = 50 + this.rng.next() * 50;
+        crack.spiralDirection = formation.spiralDirection;
+        crack.spiralTightness = formation.spiralTightness;
+        crack.spiralExpansion = formation.spiralExpansion;
+        break;
+        
+      case "crystalline":
+        crack.crystalSize = 1;
+        crack.resonance = this.rng.next() * Math.PI * 2;
+        crack.resonanceFreq = 0.05 + this.rng.next() * 0.1;
+        break;
+        
+      case "zen":
+        if (crack.isWave) {
+          crack.waveData = crack.waveData || {
+            startX: crack.x,
+            startY: crack.y,
+            direction: this.rng.next() < 0.5 ? 1 : -1,
+            phase: this.rng.next() * Math.PI * 2,
+            amplitude: formation.waveAmplitude,
+            frequency: formation.waveFrequency
+          };
+          crack.progress = 0;
+        }
+        break;
+        
+      case "lightning":
+        crack.segmentProgress = 0;
+        crack.segmentLength = formation.segmentLength;
+        crack.branchProbability = formation.branchProbability;
+        crack.zigzagAngle = formation.zigzagAngle;
+        break;
+        
+      case "organic":
+        crack.growthRate = formation.growthRate;
+        crack.branchProbability = formation.branchProbability;
+        crack.curveSinFreq = 0.05 + this.rng.next() * 0.05;
+        crack.growthPhase = this.rng.next() * Math.PI * 2;
+        break;
+        
+      case "circuit":
+        crack.gridSize = formation.gridSize;
+        crack.turnProbability = formation.turnProbability;
+        crack.branchProbability = formation.branchProbability;
+        crack.lastTurn = 0;
+        break;
     }
   }
   
   /**
-   * Create branch cracks
+   * Create complex branches for branching formation
    */
-  createBranches(parentCrack) {
-    const numBranches = 1 + this.rng.nextInt(0, 2);
+  createComplexBranches(parentCrack) {
     const formation = CRACK_FORMATIONS[parentCrack.formation];
+    const angleDecay = Math.pow(0.8, parentCrack.branchDepth || 0);
+    const baseAngle = formation.branchAngle * angleDecay;
     
-    for (let i = 0; i < numBranches; i++) {
-      const branchAngle = parentCrack.angle + (i === 0 ? -1 : 1) * formation.branchAngle;
+    const numBranches = this.rng.next() < 0.3 ? 1 : 2;
+    
+    if (numBranches === 1) {
+      const direction = this.rng.next() < 0.5 ? -1 : 1;
+      const branch = this.createBranchCrack(
+        parentCrack.x, parentCrack.y, 
+        parentCrack.angle + direction * baseAngle,
+        parentCrack
+      );
+      this.cracks.push(branch);
+    } else {
+      const leftAngle = baseAngle * (0.7 + this.rng.next() * 0.6);
+      const rightAngle = baseAngle * (0.7 + this.rng.next() * 0.6);
       
-      this.cracks.push({
+      const leftBranch = this.createBranchCrack(
+        parentCrack.x, parentCrack.y,
+        parentCrack.angle - leftAngle,
+        parentCrack
+      );
+      const rightBranch = this.createBranchCrack(
+        parentCrack.x, parentCrack.y,
+        parentCrack.angle + rightAngle,
+        parentCrack
+      );
+      
+      this.cracks.push(leftBranch, rightBranch);
+    }
+  }
+  
+  /**
+   * Create a branch crack with inherited properties
+   */
+  createBranchCrack(x, y, angle, parent) {
+    return {
+      x: x,
+      y: y,
+      angle: angle,
+      type: "branch",
+      active: true,
+      formation: parent.formation,
+      color: this.rng.choice(this.bot.palette),
+      path: [{x, y}],
+      branchDepth: (parent.branchDepth || 0) + 1,
+      speed: (parent.speed || 1) * (0.8 + this.rng.next() * 0.2),
+      age: 0,
+      lastBranch: 0
+    };
+  }
+  
+  /**
+   * Update zen wave movement
+   */
+  updateZenWave(crack) {
+    crack.progress += crack.speed * 0.01;
+    
+    if (crack.progress > 1) {
+      crack.active = false;
+      return;
+    }
+    
+    let x;
+    if (crack.waveData.direction > 0) {
+      x = crack.progress * this.width;
+    } else {
+      x = (1 - crack.progress) * this.width;
+    }
+    
+    const y = crack.waveData.startY + Math.sin(x * crack.waveData.frequency + crack.waveData.phase) * crack.waveData.amplitude;
+    
+    // Smooth interpolation
+    crack.x = crack.x * 0.9 + x * 0.1;
+    crack.y = crack.y * 0.9 + y * 0.1;
+    
+    // Update angle to follow wave
+    const lookAhead = 20;
+    const nextX = x + lookAhead * crack.waveData.direction;
+    const nextY = crack.waveData.startY + Math.sin(nextX * crack.waveData.frequency + crack.waveData.phase) * crack.waveData.amplitude;
+    crack.angle = Math.atan2(nextY - crack.y, nextX - crack.x) * 180 / Math.PI;
+    
+    if (!this.insideMountain(x, y)) {
+      crack.active = false;
+    }
+  }
+  
+  /**
+   * Create zen substrate branches
+   */
+  createZenBranch(parentCrack) {
+    const branchAngle = parentCrack.angle + (this.rng.next() < 0.5 ? 70 : -70) + (this.rng.next() - 0.5) * 20;
+    const branch = {
+      x: parentCrack.x,
+      y: parentCrack.y,
+      angle: branchAngle,
+      type: "branch",
+      active: true,
+      formation: "zen",
+      color: this.rng.choice(this.bot.palette),
+      path: [{x: parentCrack.x, y: parentCrack.y}],
+      speed: 0.8 + this.rng.next() * 0.4,
+      isBranch: true,
+      age: 0
+    };
+    this.cracks.push(branch);
+  }
+  
+  /**
+   * Create lightning branches
+   */
+  createLightningBranch(parentCrack) {
+    const branchAngle = parentCrack.angle + (this.rng.next() < 0.5 ? 45 : -45) + (this.rng.next() - 0.5) * 30;
+    const branch = {
+      x: parentCrack.x,
+      y: parentCrack.y,
+      angle: branchAngle,
+      type: "branch",
+      active: true,
+      formation: "lightning",
+      color: this.rng.choice(this.bot.palette),
+      path: [{x: parentCrack.x, y: parentCrack.y}],
+      speed: parentCrack.speed * 1.2,
+      segmentLength: parentCrack.segmentLength * 0.7,
+      age: 0
+    };
+    this.cracks.push(branch);
+  }
+  
+  /**
+   * Create organic branches
+   */
+  createOrganicBranches(parentCrack) {
+    const numBranches = this.rng.next() < 0.7 ? 1 : 2;
+    for (let i = 0; i < numBranches; i++) {
+      const branchAngle = parentCrack.angle + (this.rng.next() - 0.5) * 60;
+      const branch = {
         x: parentCrack.x,
         y: parentCrack.y,
         angle: branchAngle,
         type: "branch",
         active: true,
-        formation: parentCrack.formation,
+        formation: "organic",
         color: this.rng.choice(this.bot.palette),
-        path: [{x: parentCrack.x, y: parentCrack.y}]
+        path: [{x: parentCrack.x, y: parentCrack.y}],
+        speed: parentCrack.speed * (0.5 + this.rng.next() * 0.5),
+        growthPhase: (parentCrack.growthPhase || 0) + this.rng.next() * Math.PI,
+        age: 0
+      };
+      this.cracks.push(branch);
+    }
+  }
+  
+  /**
+   * Create parallel circuit traces for aggressive gap filling
+   */
+  createCircuitParallelTraces(parentCrack) {
+    const formation = CRACK_FORMATIONS[parentCrack.formation];
+    
+    for (let i = 1; i <= 2; i++) {
+      const perpAngle = parentCrack.angle + 90;
+      const offsetDist = formation.gridSize * i;
+      
+      for (let side = -1; side <= 1; side += 2) {
+        const offsetX = Math.cos(perpAngle * Math.PI / 180) * offsetDist * side;
+        const offsetY = Math.sin(perpAngle * Math.PI / 180) * offsetDist * side;
+        
+        const newX = Math.round((parentCrack.x + offsetX) / formation.gridSize) * formation.gridSize;
+        const newY = Math.round((parentCrack.y + offsetY) / formation.gridSize) * formation.gridSize;
+        
+        if (this.insideMountain(newX, newY) && this.rng.next() < 0.7) {
+          const newCircuit = {
+            x: newX,
+            y: newY,
+            angle: parentCrack.angle,
+            type: "spreader",
+            active: true,
+            formation: "circuit",
+            color: this.rng.choice(this.bot.palette),
+            path: [{x: newX, y: newY}],
+            speed: 1.5 + this.rng.next() * 0.5,
+            age: 0
+          };
+          this.cracks.push(newCircuit);
+        }
+      }
+    }
+  }
+  
+  /**
+   * Spawn new spiral for spiral formation
+   */
+  spawnNewSpiral(parentCrack) {
+    const newX = parentCrack.x + (this.rng.next() - 0.5) * 100;
+    const newY = parentCrack.y + (this.rng.next() - 0.5) * 100;
+    
+    if (this.insideMountain(newX, newY)) {
+      const newSpiral = {
+        x: newX,
+        y: newY,
+        angle: this.rng.next() * 360,
+        type: "spreader",
+        active: true,
+        formation: "spiral",
+        color: this.rng.choice(this.bot.palette),
+        path: [{x: newX, y: newY}],
+        speed: 0.5,
+        age: 0
+      };
+      this.cracks.push(newSpiral);
+    }
+  }
+  
+  /**
+   * Create crystal facets for crystalline formation
+   */
+  createCrystalFacets(parentCrack) {
+    const formation = CRACK_FORMATIONS[parentCrack.formation];
+    const numFacets = 2 + this.rng.nextInt(0, 3);
+    
+    for (let i = 0; i < numFacets; i++) {
+      const facetAngle = this.rng.choice(formation.angleOptions);
+      const facet = {
+        x: parentCrack.x,
+        y: parentCrack.y,
+        angle: facetAngle,
+        type: "facet",
+        active: true,
+        formation: "crystalline",
+        color: this.rng.choice(this.bot.palette),
+        path: [{x: parentCrack.x, y: parentCrack.y}],
+        speed: parentCrack.speed * 0.8,
+        age: 0
+      };
+      this.cracks.push(facet);
+    }
+  }
+  
+  /**
+   * Update kaleidoscope symmetry
+   */
+  updateKaleidoscopeSymmetry(crack) {
+    const formation = CRACK_FORMATIONS[crack.formation];
+    const symmetry = formation.symmetryFold;
+    
+    // Create symmetric copies of the crack's movement
+    for (let s = 1; s < symmetry; s++) {
+      const angle = (s / symmetry) * 360;
+      const centerX = this.width * 0.5;
+      const centerY = this.height * 0.5;
+      
+      // Rotate around center
+      const relX = crack.x - centerX;
+      const relY = crack.y - centerY;
+      const rotatedX = relX * Math.cos(angle * Math.PI / 180) - relY * Math.sin(angle * Math.PI / 180);
+      const rotatedY = relX * Math.sin(angle * Math.PI / 180) + relY * Math.cos(angle * Math.PI / 180);
+      
+      const newX = centerX + rotatedX;
+      const newY = centerY + rotatedY;
+      
+      if (this.insideMountain(newX, newY)) {
+        const symmetricCrack = {
+          x: newX,
+          y: newY,
+          angle: crack.angle + angle,
+          type: crack.type,
+          active: true,
+          formation: "kaleidoscope",
+          color: this.rng.choice(this.bot.palette),
+          path: [{x: newX, y: newY}],
+          speed: crack.speed,
+          symmetryIndex: s,
+          age: 0
+        };
+        this.cracks.push(symmetricCrack);
+      }
+    }
+  }
+  
+  /**
+   * Apply sand painting effects for artistic quality
+   */
+  applySandPaintingEffect(crack, oldX, oldY) {
+    // Store sand painting data for SVG generation
+    if (!crack.sandPoints) crack.sandPoints = [];
+    
+    const numPoints = 3 + this.rng.nextInt(0, 5);
+    for (let i = 0; i < numPoints; i++) {
+      const offsetX = (this.rng.next() - 0.5) * 3;
+      const offsetY = (this.rng.next() - 0.5) * 3;
+      const intensity = 0.3 + this.rng.next() * 0.7;
+      
+      crack.sandPoints.push({
+        x: crack.x + offsetX,
+        y: crack.y + offsetY,
+        intensity: intensity,
+        color: crack.color
       });
+    }
+    
+    // Limit sand points for memory
+    if (crack.sandPoints.length > 200) {
+      crack.sandPoints = crack.sandPoints.slice(-100);
     }
   }
   
@@ -822,7 +1324,10 @@ class BarelyHumanArtGenerator {
         active: true,
         formation: this.bot.crackFormation,
         color: this.rng.choice(this.bot.palette),
-        path: [{x, y}]
+        path: [{x, y}],
+        speed: 1.0 + this.rng.next() * 0.5,
+        age: 0,
+        initialized: false
       });
     }
   }
@@ -901,6 +1406,19 @@ class BarelyHumanArtGenerator {
           <feMergeNode in="coloredBlur"/>
           <feMergeNode in="SourceGraphic"/>
         </feMerge>
+      </filter>
+      
+      <filter id="soften" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="1" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      
+      <filter id="texture" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence baseFrequency="0.9" numOctaves="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
       </filter>
       
       <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
@@ -993,56 +1511,256 @@ class BarelyHumanArtGenerator {
   }
   
   /**
-   * Generate SVG crack paths with formation-specific styling
+   * Generate SVG crack paths with formation-specific styling and sand painting effects
    */
   generateSVGCracks() {
     let svg = "";
     
+    // First pass: render sand painting effects
+    svg += this.generateSandPaintingEffects();
+    
+    // Second pass: render main crack paths
     for (const crack of this.cracks) {
       if (crack.path.length < 2) continue;
       
-      // Build path
-      let pathData = `M ${crack.path[0].x},${crack.path[0].y}`;
-      for (let i = 1; i < crack.path.length; i++) {
-        pathData += ` L ${crack.path[i].x},${crack.path[i].y}`;
-      }
+      // Build smooth path with curves for better artistic quality
+      let pathData = this.buildSmoothPath(crack.path);
       
       // Formation-specific styling
-      let strokeWidth = 0.5;
-      let opacity = 0.8;
-      let filter = "";
+      const styling = this.getCrackStyling(crack);
       
-      switch (crack.formation) {
-        case "neon":
-        case "cyber":
-          strokeWidth = 1;
-          opacity = 0.9;
-          filter = 'filter="url(#glow)"';
-          break;
-        case "volcanic":
-          strokeWidth = 0.8;
-          opacity = 0.9;
-          filter = 'filter="url(#glow)"';
-          break;
-        case "circuit":
-          strokeWidth = 0.3;
-          opacity = 0.7;
-          break;
-        case "zen":
-          strokeWidth = 0.4;
-          opacity = 0.6;
-          break;
-        case "crystalline":
-          strokeWidth = 0.6;
-          opacity = 0.8;
-          break;
+      svg += `<path d="${pathData}" stroke="${crack.color}" stroke-width="${styling.strokeWidth}" 
+                fill="none" opacity="${styling.opacity}" stroke-linecap="round" 
+                stroke-linejoin="round" ${styling.filter} />`;
+      
+      // Add formation-specific special effects
+      svg += this.generateFormationSpecificEffects(crack);
+    }
+    
+    // Third pass: render highlights and accents
+    svg += this.generateCrackHighlights();
+    
+    return svg;
+  }
+  
+  /**
+   * Build smooth curved path from crack points
+   */
+  buildSmoothPath(points) {
+    if (points.length < 3) {
+      let path = `M ${points[0].x},${points[0].y}`;
+      for (let i = 1; i < points.length; i++) {
+        path += ` L ${points[i].x},${points[i].y}`;
       }
+      return path;
+    }
+    
+    let path = `M ${points[0].x},${points[0].y}`;
+    
+    // Use quadratic curves for smoother appearance
+    for (let i = 1; i < points.length - 1; i++) {
+      const current = points[i];
+      const next = points[i + 1];
+      const midX = (current.x + next.x) / 2;
+      const midY = (current.y + next.y) / 2;
       
-      svg += `<path d="${pathData}" stroke="${crack.color}" stroke-width="${strokeWidth}" 
-                fill="none" opacity="${opacity}" stroke-linecap="round" ${filter} />`;
+      path += ` Q ${current.x},${current.y} ${midX},${midY}`;
+    }
+    
+    // Final point
+    const lastPoint = points[points.length - 1];
+    path += ` L ${lastPoint.x},${lastPoint.y}`;
+    
+    return path;
+  }
+  
+  /**
+   * Get formation-specific styling
+   */
+  getCrackStyling(crack) {
+    let strokeWidth = 0.5;
+    let opacity = 0.8;
+    let filter = "";
+    
+    switch (crack.formation) {
+      case "chaotic":
+        strokeWidth = 0.8 + this.rng.next() * 0.4;
+        opacity = 0.7 + this.rng.next() * 0.2;
+        break;
+      case "neon":
+      case "cyber":
+        strokeWidth = 1;
+        opacity = 0.9;
+        filter = 'filter="url(#glow)"';
+        break;
+      case "volcanic":
+        strokeWidth = 0.8;
+        opacity = 0.9;
+        filter = 'filter="url(#glow)"';
+        break;
+      case "circuit":
+        strokeWidth = 0.3;
+        opacity = 0.7;
+        break;
+      case "zen":
+        strokeWidth = crack.isWave ? 0.6 : 0.4;
+        opacity = crack.isWave ? 0.8 : 0.6;
+        break;
+      case "crystalline":
+        strokeWidth = 0.6;
+        opacity = 0.8;
+        break;
+      case "lightning":
+        strokeWidth = 1.2;
+        opacity = 0.9;
+        filter = 'filter="url(#glow)"';
+        break;
+      case "organic":
+        strokeWidth = 0.4 + (crack.age || 0) * 0.001;
+        opacity = 0.6 + this.rng.next() * 0.3;
+        break;
+      case "branching":
+        const depth = crack.branchDepth || 0;
+        strokeWidth = Math.max(0.2, 1.0 - depth * 0.15);
+        opacity = Math.max(0.4, 0.9 - depth * 0.1);
+        break;
+      case "spiral":
+        strokeWidth = 0.5 + (crack.spiralRadius || 50) * 0.002;
+        opacity = 0.7;
+        break;
+      case "kaleidoscope":
+        strokeWidth = 0.7;
+        opacity = 0.8;
+        filter = 'filter="url(#glow)"';
+        break;
+    }
+    
+    return { strokeWidth, opacity, filter };
+  }
+  
+  /**
+   * Generate sand painting effects
+   */
+  generateSandPaintingEffects() {
+    let svg = "";
+    
+    for (const crack of this.cracks) {
+      if (!crack.sandPoints) continue;
+      
+      for (const point of crack.sandPoints) {
+        const size = 0.5 + this.rng.next() * 1.5;
+        const alpha = point.intensity * 0.4;
+        
+        svg += `<circle cx="${point.x}" cy="${point.y}" r="${size}" 
+                  fill="${point.color}" opacity="${alpha}" />`;
+      }
     }
     
     return svg;
+  }
+  
+  /**
+   * Generate formation-specific effects
+   */
+  generateFormationSpecificEffects(crack) {
+    let svg = "";
+    
+    switch (crack.formation) {
+      case "volcanic":
+        // Lava glow effects
+        if (crack.type === "base" && this.rng.next() < 0.1) {
+          const glowSize = 5 + this.rng.next() * 5;
+          svg += `<circle cx="${crack.x}" cy="${crack.y}" r="${glowSize}" 
+                    fill="rgba(255, 69, 0, 0.5)" opacity="0.6" />`;
+        }
+        break;
+        
+      case "lightning":
+        // Electric sparks
+        if (this.rng.next() < 0.05) {
+          const sparkSize = 2 + this.rng.next() * 3;
+          svg += `<circle cx="${crack.x}" cy="${crack.y}" r="${sparkSize}" 
+                    fill="#FFFFFF" opacity="0.8" filter="url(#glow)" />`;
+        }
+        break;
+        
+      case "crystalline":
+        // Crystal facet reflections
+        if (crack.type === "facet" && this.rng.next() < 0.2) {
+          const facetLength = 8 + this.rng.next() * 12;
+          const facetAngle = crack.angle + (this.rng.next() - 0.5) * 30;
+          const endX = crack.x + Math.cos(facetAngle * Math.PI / 180) * facetLength;
+          const endY = crack.y + Math.sin(facetAngle * Math.PI / 180) * facetLength;
+          
+          svg += `<line x1="${crack.x}" y1="${crack.y}" x2="${endX}" y2="${endY}" 
+                    stroke="#FFFFFF" stroke-width="0.5" opacity="0.6" />`;
+        }
+        break;
+        
+      case "zen":
+        // Ripple effects for waves
+        if (crack.isWave && this.rng.next() < 0.03) {
+          const rippleSize = 10 + this.rng.next() * 15;
+          svg += `<circle cx="${crack.x}" cy="${crack.y}" r="${rippleSize}" 
+                    fill="none" stroke="${crack.color}" stroke-width="0.3" 
+                    opacity="0.4" />`;
+        }
+        break;
+    }
+    
+    return svg;
+  }
+  
+  /**
+   * Generate crack highlights for artistic depth
+   */
+  generateCrackHighlights() {
+    let svg = "";
+    
+    // Select a few prominent cracks for highlighting
+    const prominentCracks = this.cracks
+      .filter(crack => crack.path.length > 50 && crack.type !== "branch")
+      .slice(0, Math.floor(this.cracks.length * 0.1));
+    
+    for (const crack of prominentCracks) {
+      if (crack.path.length < 10) continue;
+      
+      // Create highlight path using every 3rd point for performance
+      let highlightPath = `M ${crack.path[0].x},${crack.path[0].y}`;
+      for (let i = 3; i < crack.path.length; i += 3) {
+        highlightPath += ` L ${crack.path[i].x},${crack.path[i].y}`;
+      }
+      
+      // Lighter color for highlight
+      const highlightColor = this.lightenColor(crack.color, 0.3);
+      
+      svg += `<path d="${highlightPath}" stroke="${highlightColor}" stroke-width="0.2" 
+                fill="none" opacity="0.5" stroke-linecap="round" />`;
+    }
+    
+    return svg;
+  }
+  
+  /**
+   * Lighten a color for highlights
+   */
+  lightenColor(color, amount) {
+    // Simple color lightening - works with hex colors
+    if (color.startsWith('#')) {
+      const hex = color.slice(1);
+      const num = parseInt(hex, 16);
+      let r = (num >> 16) + Math.floor(amount * 255);
+      let g = (num >> 8 & 0x00FF) + Math.floor(amount * 255);
+      let b = (num & 0x0000FF) + Math.floor(amount * 255);
+      
+      r = Math.min(255, r);
+      g = Math.min(255, g);
+      b = Math.min(255, b);
+      
+      return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+    }
+    
+    return color; // Return original if not hex
   }
   
   /**
@@ -1180,17 +1898,18 @@ class ArtGeneratorUtils {
   }
 }
 
-// Export for Node.js/browser compatibility
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    BarelyHumanArtGenerator,
-    ArtGeneratorUtils,
-    BOT_PERSONALITIES,
-    RARITY_TRAITS,
-    THEMES,
-    CRACK_FORMATIONS
-  };
-} else if (typeof window !== 'undefined') {
+// Export for ES modules and browser compatibility
+export {
+  BarelyHumanArtGenerator,
+  ArtGeneratorUtils,
+  BOT_PERSONALITIES,
+  RARITY_TRAITS,
+  THEMES,
+  CRACK_FORMATIONS
+};
+
+// Browser global compatibility
+if (typeof window !== 'undefined') {
   window.BarelyHumanArt = {
     BarelyHumanArtGenerator,
     ArtGeneratorUtils,

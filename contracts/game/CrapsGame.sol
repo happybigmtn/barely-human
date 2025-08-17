@@ -46,6 +46,7 @@ contract CrapsGame is
     // Request tracking
     mapping(uint256 => bool) public pendingRequests;
     mapping(uint256 => uint256) public requestToSeries;
+    mapping(uint256 => bool) public processedRequests; // SECURITY FIX: Prevent duplicate processing
     
     // Series history
     mapping(uint256 => ShooterState) public seriesHistory;
@@ -248,8 +249,10 @@ contract CrapsGame is
     ) internal override {
         require(pendingRequests[requestId], "Invalid request");
         require(requestToSeries[requestId] == currentSeriesId, "Series mismatch");
+        require(!processedRequests[requestId], "Request already processed"); // SECURITY FIX: Prevent double processing
         
         delete pendingRequests[requestId];
+        processedRequests[requestId] = true; // SECURITY FIX: Mark as processed
         
         // Generate dice values (1-6)
         uint8 die1 = uint8((randomWords[0] % 6) + 1);

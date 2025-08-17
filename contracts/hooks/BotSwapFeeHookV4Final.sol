@@ -209,10 +209,20 @@ contract BotSwapFeeHookV4Final is IHooks, AccessControl, ReentrancyGuard {
             );
         }
 
-        // Calculate fee amount
-        uint256 amountIn = params.zeroForOne
-            ? uint256(params.amountSpecified)
-            : uint256(params.amountSpecified);
+        // SECURITY FIX: Handle both exact input and exact output swaps properly
+        uint256 amountIn;
+        if (params.amountSpecified > 0) {
+            // Exact input swap - use the specified amount
+            amountIn = uint256(params.amountSpecified);
+        } else {
+            // Exact output swap - skip fee collection for now to prevent manipulation
+            // In production, this would require oracle integration for proper fee calculation
+            return (
+                IHooks.beforeSwap.selector,
+                BeforeSwapDeltaLibrary.ZERO_DELTA,
+                0
+            );
+        }
 
         uint256 feeAmount = (amountIn * FEE_BASIS_POINTS) / BASIS_POINTS;
 

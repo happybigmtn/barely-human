@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barely Human - Animated Art Evolution</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ff6b9d, #f8b500, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 2fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .control-group select,
+        .control-group input {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .bot-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .bot-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-size: 11px;
+        }
+
+        .bot-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .bot-card.selected {
+            border-color: #ff6b9d;
+            background: rgba(255, 107, 157, 0.2);
+        }
+
+        .bot-card h4 {
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+
+        .bot-card p {
+            font-size: 9px;
+            opacity: 0.7;
+        }
+
+        .animation-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b9d, #f8b500);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .main-display {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+        }
+
+        .canvas-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: #000;
+        }
+
+        #artCanvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .metadata-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: fit-content;
+        }
+
+        .metadata-panel h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #ff6b9d;
+        }
+
+        .status-section {
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .status-section h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin: 5px 0;
+        }
+
+        .trait-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 13px;
+        }
+
+        .trait-item:last-child {
+            border-bottom: none;
+        }
+
+        .trait-label {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .trait-value {
+            color: #f8b500;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b9d, #f8b500);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .speed-control input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-display {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .bot-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .loading {
+            opacity: 0.6;
+        }
+
+        .error {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Barely Human</h1>
+            <p>Real-Time Crack Evolution - Watch AI Bot Personalities Create Art</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <label for="seed">VRF Seed (hex or number)</label>
+                    <input type="text" id="seed" placeholder="0x123456789abcdef..." value="">
+                </div>
+                <div class="control-group">
+                    <label for="seriesId">Series ID</label>
+                    <input type="number" id="seriesId" placeholder="1" value="1" min="1">
+                </div>
+                <div class="control-group">
+                    <label for="canvasSize">Canvas Size</label>
+                    <select id="canvasSize">
+                        <option value="400">400px</option>
+                        <option value="500" selected>500px</option>
+                        <option value="600">600px</option>
+                        <option value="800">800px</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-secondary" onclick="randomSeed()">Random Seed</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Select Bot Personality</label>
+                <div class="bot-grid" id="botGrid">
+                    <!-- Bot cards populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="animation-controls">
+                <button class="btn btn-primary" onclick="startEvolution()" id="startBtn">Start Evolution</button>
+                <button class="btn btn-secondary" onclick="pauseEvolution()" id="pauseBtn" disabled>Pause</button>
+                <button class="btn btn-secondary" onclick="resetEvolution()" id="resetBtn" disabled>Reset</button>
+                <button class="btn btn-secondary" onclick="exportSVG()" id="exportBtn" disabled>Export SVG</button>
+            </div>
+
+            <div class="speed-control">
+                <label>Speed:</label>
+                <input type="range" id="speedControl" min="1" max="10" value="5" onchange="updateSpeed()">
+                <span id="speedDisplay">5x</span>
+            </div>
+        </div>
+
+        <div class="main-display">
+            <div class="canvas-container">
+                <div class="canvas-wrapper">
+                    <canvas id="artCanvas" width="500" height="500"></canvas>
+                    <div class="canvas-overlay" id="canvasOverlay">
+                        Ready to start evolution...
+                    </div>
+                </div>
+            </div>
+
+            <div class="metadata-panel">
+                <h3>Evolution Status</h3>
+                
+                <div class="status-section">
+                    <h4>Animation Progress</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="status-item">
+                        <span>Iteration:</span>
+                        <span id="iterationCount">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Active Cracks:</span>
+                        <span id="activeCracks">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Total Cracks:</span>
+                        <span id="totalCracks">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Density:</span>
+                        <span id="densityPercent">0%</span>
+                    </div>
+                </div>
+
+                <div id="traits">
+                    <div class="trait-item">
+                        <span class="trait-label">Status</span>
+                        <span class="trait-value">Select bot and start evolution</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./deterministic-generator-browser.js"></script>
+    <script src="./animated-generator.js"></script>
+    <script>
+        // Animation state
+        let animationGenerator = null;
+        let animationId = null;
+        let selectedBotId = 0;
+        let canvas = null;
+        let ctx = null;
+        let animationSpeed = 5;
+        let isAnimating = false;
+        let currentIteration = 0;
+        let maxIterations = 300;
+
+        // Bot data for UI
+        const BOT_DATA = [
+            { id: 0, name: "Alice All-In", theme: "Volcanic", formation: "Chaotic" },
+            { id: 1, name: "Bob Calculator", theme: "Klein", formation: "Circuit" },
+            { id: 2, name: "Charlie Lucky", theme: "Aurora", formation: "Spiral" },
+            { id: 3, name: "Diana Ice Queen", theme: "Mist", formation: "Crystalline" },
+            { id: 4, name: "Eddie Entertainer", theme: "Neon", formation: "Kaleidoscope" },
+            { id: 5, name: "Fiona Fearless", theme: "Storm", formation: "Lightning" },
+            { id: 6, name: "Greg Grinder", theme: "Zen", formation: "Zen Waves" },
+            { id: 7, name: "Helen Hot Streak", theme: "Dawn", formation: "Curved" },
+            { id: 8, name: "Ivan Intimidator", theme: "Void", formation: "Branching" },
+            { id: 9, name: "Julia Jinx", theme: "Cyber", formation: "Organic" }
+        ];
+
+        // Initialize
+        function init() {
+            canvas = document.getElementById('artCanvas');
+            ctx = canvas.getContext('2d');
+            
+            populateBotGrid();
+            randomSeed();
+            selectBot(0);
+            updateCanvasSize();
+        }
+
+        function populateBotGrid() {
+            const grid = document.getElementById('botGrid');
+            
+            BOT_DATA.forEach(bot => {
+                const card = document.createElement('div');
+                card.className = 'bot-card';
+                card.onclick = () => selectBot(bot.id);
+                card.innerHTML = `
+                    <h4>${bot.name}</h4>
+                    <p>${bot.formation}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectBot(botId) {
+            selectedBotId = botId;
+            
+            document.querySelectorAll('.bot-card').forEach((card, index) => {
+                card.classList.toggle('selected', index === botId);
+            });
+
+            updateBotInfo(BOT_DATA[botId]);
+            
+            if (isAnimating) {
+                resetEvolution();
+            }
+        }
+
+        function updateBotInfo(bot) {
+            const traitsContainer = document.getElementById('traits');
+            traitsContainer.innerHTML = `
+                <div class="trait-item">
+                    <span class="trait-label">Bot</span>
+                    <span class="trait-value">${bot.name}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-label">Theme</span>
+                    <span class="trait-value">${bot.theme}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-label">Formation</span>
+                    <span class="trait-value">${bot.formation}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-label">Status</span>
+                    <span class="trait-value">Ready to evolve</span>
+                </div>
+            `;
+        }
+
+        function randomSeed() {
+            const randomHex = '0x' + Math.floor(Math.random() * 0x1000000000000000).toString(16).padStart(16, '0');
+            document.getElementById('seed').value = randomHex;
+        }
+
+        function updateCanvasSize() {
+            const size = parseInt(document.getElementById('canvasSize').value);
+            canvas.width = size;
+            canvas.height = size;
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+        }
+
+        function updateSpeed() {
+            animationSpeed = parseInt(document.getElementById('speedControl').value);
+            document.getElementById('speedDisplay').textContent = animationSpeed + 'x';
+        }
+
+        function startEvolution() {
+            const seedInput = document.getElementById('seed').value;
+            const seriesId = parseInt(document.getElementById('seriesId').value) || 1;
+
+            if (!seedInput) {
+                alert('Please enter a seed value');
+                return;
+            }
+
+            updateCanvasSize();
+
+            try {
+                // Create animation generator
+                let seed;
+                if (seedInput.startsWith('0x')) {
+                    seed = parseInt(seedInput.slice(2, 18), 16);
+                } else {
+                    seed = parseInt(seedInput);
+                }
+
+                animationGenerator = new AnimatedArtGenerator(seed, selectedBotId, seriesId, canvas);
+                
+                // Reset animation state
+                currentIteration = 0;
+                isAnimating = true;
+                
+                // Update UI
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('pauseBtn').disabled = false;
+                document.getElementById('resetBtn').disabled = false;
+                document.getElementById('exportBtn').disabled = true;
+                
+                // Start animation loop
+                animate();
+                
+            } catch (error) {
+                console.error('Evolution start error:', error);
+                alert('Failed to start evolution: ' + error.message);
+            }
+        }
+
+        function pauseEvolution() {
+            isAnimating = !isAnimating;
+            
+            if (isAnimating) {
+                document.getElementById('pauseBtn').textContent = 'Pause';
+                animate();
+            } else {
+                document.getElementById('pauseBtn').textContent = 'Resume';
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+        }
+
+        function resetEvolution() {
+            isAnimating = false;
+            currentIteration = 0;
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Reset UI
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('pauseBtn').textContent = 'Pause';
+            document.getElementById('resetBtn').disabled = true;
+            document.getElementById('exportBtn').disabled = true;
+            
+            // Reset status
+            updateStatus(0, 0, 0, 0);
+            document.getElementById('canvasOverlay').textContent = 'Ready to start evolution...';
+        }
+
+        function exportSVG() {
+            if (!animationGenerator) {
+                alert('No artwork to export');
+                return;
+            }
+
+            try {
+                const svg = animationGenerator.generateSVG();
+                const blob = new Blob([svg], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `barely-human-${selectedBotId}-${document.getElementById('seriesId').value}-${Date.now()}.svg`;
+                a.click();
+                
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                alert('Export failed: ' + error.message);
+            }
+        }
+
+        function animate() {
+            if (!isAnimating || !animationGenerator) return;
+
+            // Run multiple iterations per frame based on speed
+            for (let i = 0; i < animationSpeed; i++) {
+                if (currentIteration >= maxIterations) {
+                    // Animation complete
+                    isAnimating = false;
+                    document.getElementById('pauseBtn').disabled = true;
+                    document.getElementById('exportBtn').disabled = false;
+                    document.getElementById('canvasOverlay').textContent = 'Evolution Complete!';
+                    return;
+                }
+
+                animationGenerator.step();
+                currentIteration++;
+            }
+
+            // Update display
+            animationGenerator.render();
+            updateStatus(
+                currentIteration,
+                animationGenerator.getActiveCrackCount(),
+                animationGenerator.getTotalCrackCount(),
+                animationGenerator.getDensity()
+            );
+
+            // Continue animation
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function updateStatus(iteration, active, total, density) {
+            document.getElementById('iterationCount').textContent = iteration;
+            document.getElementById('activeCracks').textContent = active;
+            document.getElementById('totalCracks').textContent = total;
+            document.getElementById('densityPercent').textContent = (density * 100).toFixed(1) + '%';
+            
+            const progress = (iteration / maxIterations) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            
+            document.getElementById('canvasOverlay').textContent = 
+                `Iteration: ${iteration} | Active: ${active} | Density: ${(density * 100).toFixed(1)}%`;
+        }
+
+        // Canvas size change handler
+        document.getElementById('canvasSize').addEventListener('change', () => {
+            if (!isAnimating) {
+                updateCanvasSize();
+            }
+        });
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

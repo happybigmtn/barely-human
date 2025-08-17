@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Preview Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .pass { background: #2d5a2d; }
+        .fail { background: #5a2d2d; }
+        #test-svg { border: 1px solid #ccc; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Web Preview Test</h1>
+    <div id="test-results"></div>
+    <div id="test-svg"></div>
+
+    <script src="./deterministic-generator-browser.js"></script>
+    <script>
+        let testResults = [];
+
+        function addTest(name, passed, details = '') {
+            const result = {
+                name: name,
+                passed: passed,
+                details: details
+            };
+            testResults.push(result);
+            
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <strong>${passed ? '✅' : '❌'} ${name}</strong>
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            document.getElementById('test-results').appendChild(div);
+        }
+
+        // Test 1: Check if generator is loaded
+        try {
+            const generatorAvailable = typeof window.BarelyHumanArt !== 'undefined';
+            addTest('Generator Module Loaded', generatorAvailable, 
+                generatorAvailable ? 'BarelyHumanArt global object found' : 'BarelyHumanArt not found');
+        } catch (error) {
+            addTest('Generator Module Loaded', false, `Error: ${error.message}`);
+        }
+
+        // Test 2: Check ArtGeneratorUtils
+        try {
+            const utilsAvailable = typeof window.BarelyHumanArt.ArtGeneratorUtils !== 'undefined';
+            addTest('ArtGeneratorUtils Available', utilsAvailable,
+                utilsAvailable ? 'generateFromVRF method accessible' : 'ArtGeneratorUtils not found');
+        } catch (error) {
+            addTest('ArtGeneratorUtils Available', false, `Error: ${error.message}`);
+        }
+
+        // Test 3: Check BOT_PERSONALITIES
+        try {
+            const personalities = window.BarelyHumanArt.BOT_PERSONALITIES;
+            const personalitiesValid = personalities && Object.keys(personalities).length === 10;
+            addTest('Bot Personalities Data', personalitiesValid,
+                personalitiesValid ? `10 bot personalities loaded` : `Invalid personalities data`);
+        } catch (error) {
+            addTest('Bot Personalities Data', false, `Error: ${error.message}`);
+        }
+
+        // Test 4: Generate sample artwork
+        try {
+            const seed = '0x123456789abcdef0';
+            const botId = 0;
+            const seriesId = 1;
+            
+            const result = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF(seed, botId, seriesId);
+            
+            const validSVG = result.svg && result.svg.includes('<svg') && result.svg.includes('</svg>');
+            const hasMetadata = result.metadata && result.metadata.name;
+            const hasTraits = result.traits && typeof result.traits === 'object';
+            
+            const generationSuccess = validSVG && hasMetadata && hasTraits;
+            
+            addTest('Artwork Generation', generationSuccess,
+                generationSuccess ? 
+                `SVG: ${result.svg.length} chars, Traits: ${Object.keys(result.traits).length}` : 
+                `SVG valid: ${validSVG}, Metadata: ${hasMetadata}, Traits: ${hasTraits}`);
+            
+            // Display the generated SVG
+            if (validSVG) {
+                const scaledSVG = result.svg
+                    .replace('width="1000"', 'width="300"')
+                    .replace('height="1000"', 'height="300"');
+                document.getElementById('test-svg').innerHTML = `
+                    <h3>Sample Generated Artwork (Bot 0: Alice All-In)</h3>
+                    ${scaledSVG}
+                    <p><strong>Traits:</strong> ${JSON.stringify(result.traits, null, 2)}</p>
+                `;
+            }
+            
+        } catch (error) {
+            addTest('Artwork Generation', false, `Error: ${error.message}`);
+        }
+
+        // Test 5: Test deterministic consistency
+        try {
+            const seed = '0xaaaaaaaaaaaaaaaa';
+            const botId = 1;
+            const seriesId = 1;
+            
+            const result1 = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF(seed, botId, seriesId);
+            const result2 = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF(seed, botId, seriesId);
+            
+            const identical = result1.svg === result2.svg;
+            
+            addTest('Deterministic Consistency', identical,
+                identical ? 'Same seed produces identical artwork' : 'Artwork differs between generations');
+                
+        } catch (error) {
+            addTest('Deterministic Consistency', false, `Error: ${error.message}`);
+        }
+
+        // Test 6: Test bot differentiation
+        try {
+            const seed = '0x1111111111111111';
+            const seriesId = 1;
+            
+            const bot0 = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF(seed, 0, seriesId);
+            const bot1 = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF(seed, 1, seriesId);
+            const bot2 = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF(seed, 2, seriesId);
+            
+            const allDifferent = (bot0.svg !== bot1.svg) && (bot1.svg !== bot2.svg) && (bot0.svg !== bot2.svg);
+            
+            addTest('Bot Differentiation', allDifferent,
+                allDifferent ? 'Different bots produce unique artwork' : 'Some bots produce identical artwork');
+                
+        } catch (error) {
+            addTest('Bot Differentiation', false, `Error: ${error.message}`);
+        }
+
+        // Summary
+        setTimeout(() => {
+            const passed = testResults.filter(r => r.passed).length;
+            const total = testResults.length;
+            
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = `test-result ${passed === total ? 'pass' : 'fail'}`;
+            summaryDiv.innerHTML = `
+                <h3>📊 Test Summary</h3>
+                <p><strong>Passed:</strong> ${passed}/${total}</p>
+                <p><strong>Status:</strong> ${passed === total ? 'All tests passed! Web preview should work correctly.' : 'Some tests failed. Check the errors above.'}</p>
+            `;
+            document.getElementById('test-results').appendChild(summaryDiv);
+        }, 100);
+
+    </script>
+</body>
+</html>

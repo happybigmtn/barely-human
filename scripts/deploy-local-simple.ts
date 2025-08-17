@@ -2,7 +2,7 @@ import { network } from "hardhat";
 import { parseEther, formatEther } from "viem";
 
 async function main() {
-    console.log("🎰 Deploying Barely Human locally...\n");
+    console.log("🎰 Deploying Basic Contracts locally...\n");
     
     // Connect to local network using Hardhat 3.0 pattern
     const connection = await network.connect();
@@ -28,13 +28,8 @@ async function main() {
         ]);
         console.log("   ✅ BOT Token deployed at:", botToken.address);
         
-        // 2. Deploy Mock VRF Coordinator V2Plus
-        console.log("\n2. Deploying Mock VRF Coordinator V2Plus...");
-        const mockVRF = await viem.deployContract("MockVRFCoordinatorV2Plus");
-        console.log("   ✅ Mock VRF V2Plus deployed at:", mockVRF.address);
-        
-        // 3. Deploy Treasury
-        console.log("\n3. Deploying Treasury...");
+        // 2. Deploy Treasury
+        console.log("\n2. Deploying Treasury...");
         const treasuryContract = await viem.deployContract("Treasury", [
             botToken.address,
             deployer.account.address, // dev wallet
@@ -42,40 +37,14 @@ async function main() {
         ]);
         console.log("   ✅ Treasury deployed at:", treasuryContract.address);
         
-        // 4. Deploy StakingPool
-        console.log("\n4. Deploying StakingPool...");
+        // 3. Deploy StakingPool
+        console.log("\n3. Deploying StakingPool...");
         const stakingPool = await viem.deployContract("StakingPool", [
             botToken.address,          // staking token (BOT)
             botToken.address,          // reward token (also BOT)
             treasuryContract.address   // treasury address
         ]);
         console.log("   ✅ StakingPool deployed at:", stakingPool.address);
-        
-        // 5. Deploy CrapsGame with mock VRF (using V2Plus variant)
-        console.log("\n5. Deploying CrapsGameV2Plus...");
-        const crapsGame = await viem.deployContract("CrapsGameV2Plus", [
-            mockVRF.address,                    // VRF coordinator
-            1n,                                 // subscription ID
-            "0x0000000000000000000000000000000000000000000000000000000000000000" // key hash (mock)
-        ]);
-        console.log("   ✅ CrapsGameV2Plus deployed at:", crapsGame.address);
-        
-        // 6. Deploy BotManagerV2Plus  
-        console.log("\n6. Deploying BotManagerV2Plus...");
-        const botManager = await viem.deployContract("BotManagerV2Plus", [
-            mockVRF.address,                    // VRF coordinator
-            1n,                                 // subscription ID
-            "0x0000000000000000000000000000000000000000000000000000000000000000" // key hash (mock)
-        ]);
-        console.log("   ✅ BotManagerV2Plus deployed at:", botManager.address);
-        
-        // 7. Deploy CrapsVault Factory (using minimal variant first)
-        console.log("\n7. Deploying VaultFactoryMinimal...");
-        const vaultFactory = await viem.deployContract("VaultFactoryMinimal", [
-            botToken.address,
-            treasuryContract.address
-        ]);
-        console.log("   ✅ VaultFactoryMinimal deployed at:", vaultFactory.address);
         
         // Test basic functionality
         console.log("\n📊 Testing basic functionality...");
@@ -86,7 +55,7 @@ async function main() {
         const treasuryBalance = await botToken.read.balanceOf([treasury.account.address]);
         console.log("   Treasury balance:", formatEther(treasuryBalance), "BOT");
         
-        console.log("\n🎉 Local deployment complete!");
+        console.log("\n🎉 Basic deployment complete!");
         
         // Save deployment addresses to file
         const deploymentData = {
@@ -94,12 +63,8 @@ async function main() {
             timestamp: new Date().toISOString(),
             contracts: {
                 BOTToken: botToken.address,
-                MockVRFV2Plus: mockVRF.address,
                 Treasury: treasuryContract.address,
-                StakingPool: stakingPool.address,
-                CrapsGameV2Plus: crapsGame.address,
-                BotManagerV2Plus: botManager.address,
-                VaultFactoryMinimal: vaultFactory.address
+                StakingPool: stakingPool.address
             },
             deployer: deployer.account.address,
             accounts: {
@@ -113,8 +78,8 @@ async function main() {
         
         // Write to deployments directory
         const fs = await import('fs/promises');
-        await fs.writeFile('deployments/localhost.json', JSON.stringify(deploymentData, null, 2));
-        console.log("   💾 Deployment addresses saved to deployments/localhost.json");
+        await fs.writeFile('deployments/localhost-simple.json', JSON.stringify(deploymentData, null, 2));
+        console.log("   💾 Deployment addresses saved to deployments/localhost-simple.json");
         
     } catch (error) {
         console.error("\n❌ Deployment failed:", error);

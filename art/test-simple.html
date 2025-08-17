@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Test</title>
+</head>
+<body>
+    <h1>Simple Test</h1>
+    <div id="result"></div>
+    
+    <script src="./deterministic-generator-browser.js"></script>
+    <script>
+        try {
+            // Test if the generator is loaded
+            if (typeof window.BarelyHumanArt !== 'undefined') {
+                console.log('✅ Generator loaded');
+                
+                // Test generation
+                const result = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF('0x123456789abcdef0', 0, 1);
+                
+                if (result && result.svg && result.metadata) {
+                    document.getElementById('result').innerHTML = `
+                        <h2>✅ SUCCESS!</h2>
+                        <p>SVG Generated: ${result.svg.length} characters</p>
+                        <p>Bot: ${result.metadata.attributes.find(a => a.trait_type === 'Bot')?.value}</p>
+                        <p>Formation: ${result.metadata.attributes.find(a => a.trait_type === 'Formation')?.value}</p>
+                        <div style="border: 1px solid #ccc; width: 300px; height: 300px;">
+                            ${result.svg.replace('width="1000"', 'width="300"').replace('height="1000"', 'height="300"')}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML = '<h2>❌ Generation failed</h2>';
+                }
+            } else {
+                document.getElementById('result').innerHTML = '<h2>❌ Generator not loaded</h2>';
+            }
+        } catch (error) {
+            document.getElementById('result').innerHTML = `<h2>❌ Error: ${error.message}</h2>`;
+            console.error(error);
+        }
+    </script>
+</body>
+</html>
