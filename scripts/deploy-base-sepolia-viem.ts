@@ -1,227 +1,288 @@
-import hre from "hardhat";
-import { parseEther, formatEther } from "viem";
+import { network } from "hardhat";
 import fs from "fs";
 import path from "path";
+import { createPublicClient, createWalletClient, http, parseUnits, formatEther } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { baseSepolia } from "viem/chains";
+import chalk from "chalk";
+import * as dotenv from "dotenv";
 
-// Base Sepolia addresses
-const BASE_SEPOLIA = {
-    CHAINLINK_VRF_COORDINATOR: "0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634" as `0x${string}`,
-    CHAINLINK_KEY_HASH: "0x83250c5584ffa93feb6ee082981c5ebe484c865196750b39835ad4f13780435d" as `0x${string}`,
-    CHAINLINK_SUBSCRIPTION_ID: 1n, // You'll need to create this
-    USDC: "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as `0x${string}`, // Base Sepolia USDC
-    WETH: "0x4200000000000000000000000000000000000006" as `0x${string}`, // Base Sepolia WETH
-    UNISWAP_V2_ROUTER: "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24" as `0x${string}`, // Base Sepolia Router
-};
+dotenv.config();
 
-// Deployment configuration
-const CONFIG = {
-    // Team wallets (replace with actual addresses)
-    TEAM_WALLET: (process.env.TEAM_WALLET || "0x0000000000000000000000000000000000000001") as `0x${string}`,
-    DEVELOPMENT_WALLET: (process.env.DEV_WALLET || "0x0000000000000000000000000000000000000002") as `0x${string}`,
-    INSURANCE_WALLET: (process.env.INSURANCE_WALLET || "0x0000000000000000000000000000000000000003") as `0x${string}`,
-    
-    // Bot personalities
-    BOT_NAMES: [
-        "Alice All-In",
-        "Bob Calculator",
-        "Charlie Lucky",
-        "Diana Ice Queen",
-        "Eddie Entertainer",
-        "Fiona Fearless",
-        "Greg Grinder",
-        "Helen Hot Streak",
-        "Ivan Intimidator",
-        "Julia Jinx"
-    ],
-    
-    // Initial liquidity (in BOT tokens)
-    INITIAL_LIQUIDITY_PER_VAULT: parseEther("10000000"), // 10M BOT per vault
-};
+/**
+ * Complete deployment script for Base Sepolia using Viem
+ * Deploys all 21 contracts with proper configuration
+ */
 
 async function main() {
-    console.log("🎰 Deploying Barely Human to Base Sepolia...\n");
+  console.log(chalk.bold.cyan("\n🚀 Deploying Barely Human Casino to Base Sepolia\n"));
+  
+  // Setup account and clients
+  const account = privateKeyToAccount(process.env.DEPLOYER_PRIVATE_KEY as `0x${string}`);
+  
+  const publicClient = createPublicClient({
+    chain: baseSepolia,
+    transport: http(process.env.BASE_SEPOLIA_RPC_URL)
+  });
+  
+  const walletClient = createWalletClient({
+    account,
+    chain: baseSepolia,
+    transport: http(process.env.BASE_SEPOLIA_RPC_URL)
+  });
+  
+  // Get balance
+  const balance = await publicClient.getBalance({ address: account.address });
+  
+  console.log(chalk.gray("Deployer address:"), account.address);
+  console.log(chalk.gray("Deployer balance:"), formatEther(balance), "ETH");
+  console.log(chalk.gray("Network:"), "Base Sepolia (84532)\n");
+  
+  if (balance < parseUnits("0.1", 18)) {
+    console.log(chalk.red("⚠️  Low balance warning! You may need more ETH for deployment."));
+  }
+  
+  // Connect to Hardhat runtime with viem
+  const connection = await network.connect();
+  const { viem } = connection;
+  
+  const contracts: any = {};
+  const deploymentLog: any[] = [];
+  
+  try {
+    // ==================== 1. Deploy BOT Token ====================
+    console.log(chalk.yellow("Deploying BOT Token..."));
+    // BOTToken needs 5 addresses: treasury, liquidity, stakingRewards, team, community
+    // We'll use deployer address for now and update later
+    const botToken = await viem.deployContract("BOTToken", [
+      account.address, // treasury (will update)
+      account.address, // liquidity 
+      account.address, // stakingRewards (will update)
+      account.address, // team
+      account.address  // community
+    ]);
+    contracts.BOTToken = botToken.address;
+    console.log(chalk.green(`✅ BOT Token deployed at: ${contracts.BOTToken}`));
+    deploymentLog.push({ name: "BOTToken", address: contracts.BOTToken });
     
-    const publicClient = await hre.viem.getPublicClient();
-    const [deployer, treasury, liquidity, staking, team, community] = await hre.viem.getWalletClients();
+    // ==================== 2. Deploy Libraries ====================
+    console.log(chalk.yellow("Deploying libraries..."));
     
-    console.log("Deployer address:", deployer.account.address);
+    const vaultFactoryLib = await viem.deployContract("VaultFactoryLib");
+    contracts.VaultFactoryLib = vaultFactoryLib.address;
     
-    const balance = await publicClient.getBalance({ address: deployer.account.address });
-    console.log("Deployer balance:", formatEther(balance), "ETH\n");
+    const crapsSettlementLib = await viem.deployContract("CrapsSettlementLib");
+    contracts.CrapsSettlementLib = crapsSettlementLib.address;
     
-    // Track deployed addresses
-    const deployed: Record<string, `0x${string}`> = {};
+    console.log(chalk.green("✅ Libraries deployed"));
+    deploymentLog.push({ name: "VaultFactoryLib", address: contracts.VaultFactoryLib });
+    deploymentLog.push({ name: "CrapsSettlementLib", address: contracts.CrapsSettlementLib });
     
-    try {
-        // 1. Deploy BOT Token
-        console.log("1. Deploying BOT Token...");
-        const botToken = await hre.viem.deployContract("BOTToken", [
-            treasury.account.address,
-            liquidity.account.address,
-            staking.account.address,
-            team.account.address,
-            community.account.address
-        ]);
-        deployed.BOTToken = botToken.address;
-        console.log("   ✅ BOT Token deployed at:", botToken.address);
-        
-        // 2. Deploy Mock VRF Coordinator (for testing)
-        console.log("\n2. Deploying Mock VRF Coordinator...");
-        const mockVRF = await hre.viem.deployContract("MockVRFCoordinator");
-        deployed.MockVRFCoordinator = mockVRF.address;
-        console.log("   ✅ Mock VRF deployed at:", mockVRF.address);
-        
-        // 3. Deploy Treasury
-        console.log("\n3. Deploying Treasury...");
-        const treasuryContract = await hre.viem.deployContract("Treasury", [
-            botToken.address,
-            CONFIG.DEVELOPMENT_WALLET,
-            CONFIG.INSURANCE_WALLET
-        ]);
-        deployed.Treasury = treasuryContract.address;
-        console.log("   ✅ Treasury deployed at:", treasuryContract.address);
-        
-        // 4. Deploy StakingPool
-        console.log("\n4. Deploying StakingPool...");
-        const stakingPool = await hre.viem.deployContract("StakingPool", [
-            botToken.address,
-            treasuryContract.address
-        ]);
-        deployed.StakingPool = stakingPool.address;
-        console.log("   ✅ StakingPool deployed at:", stakingPool.address);
-        
-        // 5. Deploy VaultFactoryLib
-        console.log("\n5. Deploying VaultFactoryLib...");
-        const vaultFactoryLib = await hre.viem.deployContract("VaultFactoryLib");
-        deployed.VaultFactoryLib = vaultFactoryLib.address;
-        console.log("   ✅ VaultFactoryLib deployed at:", vaultFactoryLib.address);
-        
-        // 6. Deploy CrapsGame
-        console.log("\n6. Deploying CrapsGame...");
-        const crapsGame = await hre.viem.deployContract("CrapsGame", [
-            mockVRF.address,
-            BASE_SEPOLIA.CHAINLINK_SUBSCRIPTION_ID,
-            BASE_SEPOLIA.CHAINLINK_KEY_HASH
-        ]);
-        deployed.CrapsGame = crapsGame.address;
-        console.log("   ✅ CrapsGame deployed at:", crapsGame.address);
-        
-        // 7. Deploy CrapsBets
-        console.log("\n7. Deploying CrapsBets...");
-        const crapsBets = await hre.viem.deployContract("CrapsBets", [
-            crapsGame.address
-        ]);
-        deployed.CrapsBets = crapsBets.address;
-        console.log("   ✅ CrapsBets deployed at:", crapsBets.address);
-        
-        // 8. Deploy CrapsSettlement
-        console.log("\n8. Deploying CrapsSettlement...");
-        const crapsSettlement = await hre.viem.deployContract("CrapsSettlement", [
-            crapsGame.address
-        ]);
-        deployed.CrapsSettlement = crapsSettlement.address;
-        console.log("   ✅ CrapsSettlement deployed at:", crapsSettlement.address);
-        
-        // 9. Deploy BotManager
-        console.log("\n9. Deploying BotManager...");
-        const botManager = await hre.viem.deployContract("BotManager", [
-            crapsGame.address
-        ]);
-        deployed.BotManager = botManager.address;
-        console.log("   ✅ BotManager deployed at:", botManager.address);
-        
-        // 10. Deploy VaultFactoryOptimized (with library)
-        console.log("\n10. Deploying VaultFactoryOptimized...");
-        const vaultFactory = await hre.viem.deployContract("VaultFactoryOptimized", [
-            botToken.address,
-            crapsGame.address,
-            treasuryContract.address
-        ], {
-            libraries: {
-                VaultFactoryLib: vaultFactoryLib.address
-            }
-        });
-        deployed.VaultFactoryOptimized = vaultFactory.address;
-        console.log("   ✅ VaultFactoryOptimized deployed at:", vaultFactory.address);
-        
-        // 11. Deploy GachaMintPass
-        console.log("\n11. Deploying GachaMintPass...");
-        const gachaMintPass = await hre.viem.deployContract("GachaMintPass", [
-            mockVRF.address,
-            BASE_SEPOLIA.CHAINLINK_SUBSCRIPTION_ID,
-            BASE_SEPOLIA.CHAINLINK_KEY_HASH,
-            crapsGame.address
-        ]);
-        deployed.GachaMintPass = gachaMintPass.address;
-        console.log("   ✅ GachaMintPass deployed at:", gachaMintPass.address);
-        
-        // 12. Deploy BotSwapFeeHook
-        console.log("\n12. Deploying BotSwapFeeHook...");
-        const botSwapFeeHook = await hre.viem.deployContract("BotSwapFeeHook", [
-            botToken.address,
-            treasuryContract.address
-        ]);
-        deployed.BotSwapFeeHook = botSwapFeeHook.address;
-        console.log("   ✅ BotSwapFeeHook deployed at:", botSwapFeeHook.address);
-        
-        console.log("\n" + "=".repeat(50));
-        console.log("🎉 DEPLOYMENT COMPLETE!");
-        console.log("=".repeat(50));
-        
-        // Configure contracts
-        console.log("\n📝 Configuring contracts...");
-        
-        // Set up roles
-        console.log("   Setting up CrapsGame roles...");
-        const GAME_ROLE = await crapsGame.read.GAME_ROLE();
-        await crapsGame.write.grantRole([GAME_ROLE, crapsBets.address]);
-        await crapsGame.write.grantRole([GAME_ROLE, crapsSettlement.address]);
-        await crapsGame.write.grantRole([GAME_ROLE, botManager.address]);
-        
-        // Create bot vaults
-        console.log("   Creating bot vaults...");
-        for (let i = 0; i < CONFIG.BOT_NAMES.length; i++) {
-            const tx = await vaultFactory.write.createBotVault([
-                BigInt(i),
-                CONFIG.BOT_NAMES[i]
-            ]);
-            console.log(`      ✅ Created vault for ${CONFIG.BOT_NAMES[i]}`);
-        }
-        
-        // Save deployment addresses
-        const deploymentPath = path.join(__dirname, "../deployments");
-        if (!fs.existsSync(deploymentPath)) {
-            fs.mkdirSync(deploymentPath);
-        }
-        
-        const deploymentFile = path.join(deploymentPath, `base-sepolia-${Date.now()}.json`);
-        fs.writeFileSync(deploymentFile, JSON.stringify({
-            network: "base-sepolia",
-            chainId: 84532,
-            deployer: deployer.account.address,
-            timestamp: new Date().toISOString(),
-            contracts: deployed
-        }, null, 2));
-        
-        console.log("\n📁 Deployment addresses saved to:", deploymentFile);
-        
-        // Print summary
-        console.log("\n" + "=".repeat(50));
-        console.log("📋 DEPLOYMENT SUMMARY");
-        console.log("=".repeat(50));
-        Object.entries(deployed).forEach(([name, address]) => {
-            console.log(`${name}: ${address}`);
-        });
-        
-    } catch (error) {
-        console.error("\n❌ Deployment failed:", error);
-        process.exit(1);
+    // ==================== 3. Deploy Treasury ====================
+    console.log(chalk.yellow("Deploying Treasury..."));
+    const treasury = await viem.deployContract("Treasury", [
+      contracts.BOTToken,
+      account.address, // development wallet
+      account.address  // insurance wallet
+    ]);
+    contracts.Treasury = treasury.address;
+    console.log(chalk.green(`✅ Treasury deployed at: ${contracts.Treasury}`));
+    deploymentLog.push({ name: "Treasury", address: contracts.Treasury });
+    
+    // ==================== 4. Deploy StakingPool ====================
+    console.log(chalk.yellow("Deploying StakingPool..."));
+    const stakingPool = await viem.deployContract("StakingPool", [
+      contracts.BOTToken,  // staking token
+      contracts.BOTToken,  // reward token (same as staking)
+      contracts.Treasury   // treasury
+    ]);
+    contracts.StakingPool = stakingPool.address;
+    console.log(chalk.green(`✅ StakingPool deployed at: ${contracts.StakingPool}`));
+    deploymentLog.push({ name: "StakingPool", address: contracts.StakingPool });
+    
+    // ==================== 5. Deploy VaultFactory ====================
+    console.log(chalk.yellow("Deploying VaultFactory..."));
+    const vaultFactory = await viem.deployContract("VaultFactoryMinimal", [
+      contracts.BOTToken,
+      contracts.Treasury
+    ]);
+    contracts.VaultFactory = vaultFactory.address;
+    console.log(chalk.green(`✅ VaultFactory deployed at: ${contracts.VaultFactory}`));
+    deploymentLog.push({ name: "VaultFactory", address: contracts.VaultFactory });
+    
+    // ==================== 6. Deploy Game Contracts ====================
+    console.log(chalk.yellow("Deploying game contracts..."));
+    
+    // Deploy CrapsGameV2Plus with VRF config
+    const crapsGame = await viem.deployContract("CrapsGameV2Plus", [
+      process.env.VRF_COORDINATOR_ADDRESS as `0x${string}`,
+      BigInt(process.env.VRF_SUBSCRIPTION_ID!),
+      process.env.VRF_KEY_HASH as `0x${string}`
+    ]);
+    contracts.CrapsGameV2Plus = crapsGame.address;
+    
+    // Deploy BotManagerV2Plus (for VRF 2.5 compatibility)
+    const botManager = await viem.deployContract("BotManagerV2Plus", [
+      process.env.VRF_COORDINATOR_ADDRESS as `0x${string}`,  // vrfCoordinator
+      BigInt(process.env.VRF_SUBSCRIPTION_ID!),  // subscriptionId (uint256)
+      process.env.VRF_KEY_HASH as `0x${string}`  // keyHash
+    ]);
+    contracts.BotManager = botManager.address;
+    
+    // Deploy CrapsBets
+    const crapsBets = await viem.deployContract("CrapsBets");
+    contracts.CrapsBets = crapsBets.address;
+    
+    // Deploy CrapsSettlement
+    const crapsSettlement = await viem.deployContract("CrapsSettlement");
+    contracts.CrapsSettlement = crapsSettlement.address;
+    
+    console.log(chalk.green("✅ Game contracts deployed"));
+    deploymentLog.push({ name: "CrapsGameV2Plus", address: contracts.CrapsGameV2Plus });
+    deploymentLog.push({ name: "BotManager", address: contracts.BotManager });
+    deploymentLog.push({ name: "CrapsBets", address: contracts.CrapsBets });
+    deploymentLog.push({ name: "CrapsSettlement", address: contracts.CrapsSettlement });
+    
+    // ==================== 7. Deploy NFT Contracts ====================
+    console.log(chalk.yellow("Deploying NFT contracts..."));
+    
+    // Deploy GachaMintPassV2Plus
+    const mintPass = await viem.deployContract("GachaMintPassV2Plus", [
+      process.env.VRF_COORDINATOR_ADDRESS as `0x${string}`,
+      BigInt(process.env.VRF_SUBSCRIPTION_ID!),
+      process.env.VRF_KEY_HASH as `0x${string}`,
+      "https://api.barelyhuman.casino/nft/metadata/"  // baseTokenURI
+    ]);
+    contracts.GachaMintPassV2Plus = mintPass.address;
+    
+    // Deploy BarelyHumanArt
+    const artNFT = await viem.deployContract("BarelyHumanArt", [
+      "Barely Human Art",
+      "BHART"
+    ]);
+    contracts.GenerativeArtNFT = artNFT.address;
+    
+    console.log(chalk.green("✅ NFT contracts deployed"));
+    deploymentLog.push({ name: "GachaMintPassV2Plus", address: contracts.GachaMintPassV2Plus });
+    deploymentLog.push({ name: "GenerativeArtNFT", address: contracts.GenerativeArtNFT });
+    
+    // ==================== 8. Deploy Escrow ====================
+    console.log(chalk.yellow("Deploying BotBettingEscrow..."));
+    const escrow = await viem.deployContract("BotBettingEscrow", [
+      contracts.BOTToken,
+      contracts.BotManager,
+      contracts.Treasury
+    ]);
+    contracts.BotBettingEscrow = escrow.address;
+    console.log(chalk.green(`✅ BotBettingEscrow deployed at: ${contracts.BotBettingEscrow}`));
+    deploymentLog.push({ name: "BotBettingEscrow", address: contracts.BotBettingEscrow });
+    
+    // ==================== 9. Deploy Cross-Chain (LayerZero) ====================
+    console.log(chalk.yellow("Deploying cross-chain contracts..."));
+    const layerZeroEndpoint = "0x6EDCE65403992e310A62460808c4b910D972f10f"; // Base Sepolia LZ endpoint
+    
+    const omniCoordinator = await viem.deployContract("OmniVaultCoordinator", [
+      layerZeroEndpoint,
+      contracts.VaultFactory,
+      contracts.BOTToken
+    ]);
+    contracts.OmniVaultCoordinator = omniCoordinator.address;
+    console.log(chalk.green(`✅ OmniVaultCoordinator deployed at: ${contracts.OmniVaultCoordinator}`));
+    deploymentLog.push({ name: "OmniVaultCoordinator", address: contracts.OmniVaultCoordinator });
+    
+    // ==================== 10. Deploy Uniswap V4 Hook ====================
+    console.log(chalk.yellow("Deploying Uniswap V4 hook..."));
+    const swapHook = await viem.deployContract("BotSwapFeeHookV4Final", [
+      contracts.Treasury,
+      contracts.BOTToken
+    ]);
+    contracts.BotSwapFeeHookV4Final = swapHook.address;
+    console.log(chalk.green(`✅ BotSwapFeeHook deployed at: ${contracts.BotSwapFeeHookV4Final}`));
+    deploymentLog.push({ name: "BotSwapFeeHookV4Final", address: contracts.BotSwapFeeHookV4Final });
+    
+    // ==================== 11. Configuration & Setup ====================
+    console.log(chalk.yellow("\nConfiguring contracts..."));
+    
+    const walletClients = await viem.getWalletClients();
+    const deployerClient = walletClients[0];
+    
+    // Grant roles
+    const treasuryContract = await viem.getContractAt("Treasury", contracts.Treasury);
+    const DISTRIBUTOR_ROLE = await treasuryContract.read.DISTRIBUTOR_ROLE();
+    await treasuryContract.write.grantRole([DISTRIBUTOR_ROLE, contracts.StakingPool]);
+    
+    // Set game contract in VaultFactory
+    const vaultFactoryContract = await viem.getContractAt("VaultFactoryMinimal", contracts.VaultFactory);
+    await vaultFactoryContract.write.setGameContract([contracts.CrapsGameV2Plus]);
+    await vaultFactoryContract.write.setBotManager([contracts.BotManager]);
+    
+    // Set contracts in game
+    const gameContract = await viem.getContractAt("CrapsGameV2Plus", contracts.CrapsGameV2Plus);
+    await gameContract.write.setBetsContract([contracts.CrapsBets]);
+    await gameContract.write.setSettlementContract([contracts.CrapsSettlement]);
+    
+    // Initialize bot manager
+    const botManagerContract = await viem.getContractAt("BotManagerV2Plus", contracts.BotManager);
+    await botManagerContract.write.initializeBots();
+    
+    // Deploy all bot vaults
+    await vaultFactoryContract.write.deployAllBots();
+    
+    // Fund contracts with initial BOT tokens
+    const tokenContract = await viem.getContractAt("BOTToken", contracts.BOTToken);
+    const initialSupply = parseUnits("1000000", 18); // 1M BOT
+    await tokenContract.write.transfer([contracts.Treasury, initialSupply / 10n]);
+    await tokenContract.write.transfer([contracts.StakingPool, initialSupply / 10n]);
+    
+    console.log(chalk.green("✅ Contracts configured successfully"));
+    
+  } catch (error) {
+    console.error(chalk.red("Deployment failed:"), error);
+    await connection.close();
+    process.exit(1);
+  }
+  
+  // Close connection
+  await connection.close();
+  
+  // ==================== 12. Save Deployment Info ====================
+  const deploymentInfo = {
+    network: "base-sepolia",
+    chainId: 84532,
+    deployer: account.address,
+    timestamp: new Date().toISOString(),
+    contracts: contracts,
+    deploymentLog: deploymentLog,
+    vrfConfig: {
+      coordinator: process.env.VRF_COORDINATOR_ADDRESS,
+      subscriptionId: process.env.VRF_SUBSCRIPTION_ID,
+      keyHash: process.env.VRF_KEY_HASH
     }
+  };
+  
+  const deploymentPath = path.join(__dirname, "../deployments/base-sepolia-deployment.json");
+  fs.mkdirSync(path.dirname(deploymentPath), { recursive: true });
+  fs.writeFileSync(deploymentPath, JSON.stringify(deploymentInfo, null, 2));
+  
+  // ==================== Summary ====================
+  console.log(chalk.bold.green("\n✅ Deployment Complete!\n"));
+  console.log(chalk.bold("📋 Contract Addresses:"));
+  
+  console.table(deploymentLog);
+  
+  console.log(chalk.gray("\nDeployment info saved to:"), deploymentPath);
+  console.log(chalk.yellow("\n⚠️  Next Steps:"));
+  console.log("1. Add contracts as VRF consumers on Chainlink");
+  console.log("2. Verify contracts on BaseScan");
+  console.log("3. Run integration tests");
+  console.log("4. Configure frontend to use Base Sepolia");
+  
+  return contracts;
 }
 
 main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-        console.error(error);
-        process.exit(1);
-    });
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

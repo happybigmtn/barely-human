@@ -1,4 +1,3 @@
-import { configVariable } from "hardhat/config";
 import hardhatToolboxViem from "@nomicfoundation/hardhat-toolbox-viem";
 import * as dotenv from "dotenv";
 
@@ -17,26 +16,24 @@ export default {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1,  // Minimum runs for smallest bytecode
+        runs: 1, // Minimum runs for smallest bytecode
       },
-      viaIR: true,  // Enable for stack too deep issues
+      viaIR: true, // Enable for stack too deep issues
       metadata: {
-        bytecodeHash: "none",  // Disable metadata hash for consistent bytecode
-        useLiteralContent: true,  // Include source code in metadata
+        bytecodeHash: "none", // Disable metadata hash for consistent bytecode
+        useLiteralContent: true, // Include source code in metadata
       },
       outputSelection: {
         "*": {
           "*": [
             "abi",
             "evm.bytecode",
-            "evm.deployedBytecode", 
+            "evm.deployedBytecode",
             "evm.methodIdentifiers",
-            "metadata"
+            "metadata",
           ],
-          "": [
-            "ast"
-          ]
-        }
+          "": ["ast"],
+        },
       },
     },
   },
@@ -52,36 +49,36 @@ export default {
     sepolia: {
       type: "http",
       chainType: "l1",
-      url: configVariable("SEPOLIA_RPC_URL"),
-      accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
+      url: process.env.SEPOLIA_RPC_URL || "",
+      accounts: process.env.SEPOLIA_PRIVATE_KEY ? [process.env.SEPOLIA_PRIVATE_KEY] : [],
     },
     baseSepolia: {
       type: "http",
       chainType: "op",
-      url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
+      url: process.env.BASE_SEPOLIA_RPC_URL || "",
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
       chainId: 84532,
     },
     base: {
       type: "http",
       chainType: "op",
-      url: "https://mainnet.base.org",
-      accounts: [configVariable("BASE_MAINNET_PRIVATE_KEY")],
+      url: process.env.BASE_MAINNET_RPC_URL || "",
+      accounts: process.env.BASE_MAINNET_PRIVATE_KEY ? [process.env.BASE_MAINNET_PRIVATE_KEY] : [],
       chainId: 8453,
     },
     arbitrumSepolia: {
       type: "http",
       chainType: "generic",
-      url: process.env.ARBITRUM_SEPOLIA_RPC_URL || "https://sepolia-rollup.arbitrum.io/rpc",
+      url: process.env.ARBITRUM_SEPOLIA_RPC_URL || "",
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
       chainId: 421614,
     },
   },
   etherscan: {
     apiKey: {
-      baseSepolia: process.env.BASESCAN_API_KEY || "NBBRKU4DMW8DI9WE28EDAFJWYI1B8UQUMV",
-      base: process.env.BASESCAN_API_KEY || "NBBRKU4DMW8DI9WE28EDAFJWYI1B8UQUMV",
-      arbitrumSepolia: process.env.ARBISCAN_API_KEY || "VRHE5MXG3N93VAW5M8M1I6VDRF15FZ94A8",
+      baseSepolia: process.env.BASESCAN_API_KEY || "",
+      base: process.env.BASESCAN_API_KEY || "",
+      arbitrumSepolia: process.env.ARBISCAN_API_KEY || "",
     },
     customChains: [
       {
