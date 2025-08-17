@@ -57,7 +57,7 @@ contract CircuitBreaker is AccessControl, Pausable {
     
     // Errors
     error CircuitBreakerTripped();
-    error RateLimitExceeded();
+    error RateLimitReached();
     error ThresholdExceeded();
     error NotInEmergency();
     error CooldownActive();
@@ -161,7 +161,7 @@ contract CircuitBreaker is AccessControl, Pausable {
             // Check if limit exceeded
             if (limit.operations > limit.limit) {
                 emit RateLimitExceeded(selector, msg.sender);
-                revert RateLimitExceeded();
+                revert RateLimitReached();
             }
         }
     }

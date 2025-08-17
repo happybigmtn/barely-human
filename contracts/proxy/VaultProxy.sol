@@ -104,7 +104,10 @@ contract VaultProxyFactory is Ownable {
         proxies = new address[](botIds.length);
         
         for (uint256 i = 0; i < botIds.length; i++) {
-            proxies[i] = deployVaultProxy(botIds[i], initDatas[i]);
+            bytes32 salt = keccak256(abi.encodePacked(botIds[i], block.timestamp));
+            proxies[i] = address(new BeaconProxy{salt: salt}(beacon, initDatas[i]));
+            deployedProxies.push(proxies[i]);
+            emit ProxyDeployed(proxies[i], botIds[i]);
         }
     }
     
