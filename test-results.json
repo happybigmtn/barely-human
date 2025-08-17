@@ -1,24 +1,405 @@
 {
-  "timestamp": "2025-08-17T02:50:48.800Z",
-  "success": false,
-  "totalDuration": 6589,
-  "results": [
+  "timestamp": "2025-08-17T04:33:37.370Z",
+  "statistics": {
+    "totalTests": 124,
+    "passed": 82,
+    "failed": 42,
+    "passRate": 66.1,
+    "duration": 19796
+  },
+  "suites": [
     {
-      "name": "Unit Tests",
-      "success": true,
-      "duration": 3320,
-      "critical": true
+      "name": "Unit Tests - Core Contracts",
+      "files": 2,
+      "results": [
+        {
+          "file": "test/BOTToken.working.test.ts",
+          "passed": 29,
+          "failed": 2,
+          "duration": 1265,
+          "errors": []
+        },
+        {
+          "file": "test/StakingPool.working.test.ts",
+          "passed": 24,
+          "failed": 2,
+          "duration": 1246,
+          "errors": []
+        }
+      ]
     },
     {
-      "name": "Integration Tests",
-      "success": false,
-      "duration": 3267,
-      "critical": true
+      "name": "Unit Tests - Token System",
+      "files": 3,
+      "results": [
+        {
+          "file": "test/BOTToken.node.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 653,
+          "errors": [
+            "Command failed: npx hardhat run test/BOTToken.node.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/BOTToken.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 669,
+          "errors": [
+            "Command failed: npx hardhat run test/BOTToken.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/BOTToken.working.test.ts",
+          "passed": 29,
+          "failed": 2,
+          "duration": 1250,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "name": "Unit Tests - Game Logic",
+      "files": 4,
+      "results": [
+        {
+          "file": "test/CrapsBets.test.js",
+          "passed": 0,
+          "failed": 1,
+          "duration": 663,
+          "errors": [
+            "Command failed: npx hardhat run test/CrapsBets.test.js 2>&1"
+          ]
+        },
+        {
+          "file": "test/CrapsGame.test.js",
+          "passed": 0,
+          "failed": 1,
+          "duration": 685,
+          "errors": [
+            "Command failed: npx hardhat run test/CrapsGame.test.js 2>&1"
+          ]
+        },
+        {
+          "file": "test/CrapsSettlement.test.js",
+          "passed": 0,
+          "failed": 1,
+          "duration": 658,
+          "errors": [
+            "Command failed: npx hardhat run test/CrapsSettlement.test.js 2>&1"
+          ]
+        },
+        {
+          "file": "test/CrapsVault.test.js",
+          "passed": 0,
+          "failed": 1,
+          "duration": 642,
+          "errors": [
+            "Command failed: npx hardhat run test/CrapsVault.test.js 2>&1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Unit Tests - Vault System",
+      "files": 5,
+      "results": [
+        {
+          "file": "test/BotVaultIntegration.test.ts",
+          "passed": 0,
+          "failed": 22,
+          "duration": 1245,
+          "errors": []
+        },
+        {
+          "file": "test/CrapsVault.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 1317,
+          "errors": [
+            "Command failed: npx hardhat run test/CrapsVault.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/OmniVaultCoordinator.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 796,
+          "errors": [
+            "Command failed: npx hardhat run test/OmniVaultCoordinator.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/VaultFactory.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 1579,
+          "errors": [
+            "Command failed: npx hardhat run test/VaultFactory.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/integration/CrossChainVault.integration.test.ts",
+          "passed": 0,
+          "failed": 0,
+          "duration": 817,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "name": "Integration Tests - User Journey",
+      "files": 1,
+      "results": [
+        {
+          "file": "test/integration/UserJourney.integration.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 685,
+          "errors": [
+            "Command failed: npx hardhat run test/integration/UserJourney.integration.test.ts 2>&1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Integration Tests - Cross-Chain",
+      "files": 2,
+      "results": [
+        {
+          "file": "test/integration/CrossChainVault.integration.test.ts",
+          "passed": 0,
+          "failed": 0,
+          "duration": 780,
+          "errors": []
+        },
+        {
+          "file": "test/integration/MultiChainSync.test.ts",
+          "passed": 0,
+          "failed": 0,
+          "duration": 796,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "name": "Integration Tests - Bot System",
+      "files": 1,
+      "results": [
+        {
+          "file": "test/integration/BotPersonality.integration.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 806,
+          "errors": [
+            "Command failed: npx hardhat run test/integration/BotPersonality.integration.test.ts 2>&1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Performance Tests",
+      "files": 4,
+      "results": [
+        {
+          "file": "test/performance/BatchOperationsStress.test.ts",
+          "passed": 0,
+          "failed": 0,
+          "duration": 812,
+          "errors": []
+        },
+        {
+          "file": "test/performance/BotScalability.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 821,
+          "errors": [
+            "Command failed: npx hardhat run test/performance/BotScalability.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/performance/GasBenchmark.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 805,
+          "errors": [
+            "Command failed: npx hardhat run test/performance/GasBenchmark.test.ts 2>&1"
+          ]
+        },
+        {
+          "file": "test/performance/LoadTest.test.ts",
+          "passed": 0,
+          "failed": 1,
+          "duration": 806,
+          "errors": [
+            "Command failed: npx hardhat run test/performance/LoadTest.test.ts 2>&1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "E2E Tests",
+      "files": 0,
+      "results": []
     }
   ],
-  "summary": {
-    "total": 2,
-    "passed": 1,
-    "failed": 1
-  }
+  "failedTests": [
+    {
+      "file": "test/BOTToken.working.test.ts",
+      "passed": 29,
+      "failed": 2,
+      "duration": 1265,
+      "errors": []
+    },
+    {
+      "file": "test/StakingPool.working.test.ts",
+      "passed": 24,
+      "failed": 2,
+      "duration": 1246,
+      "errors": []
+    },
+    {
+      "file": "test/BOTToken.node.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 653,
+      "errors": [
+        "Command failed: npx hardhat run test/BOTToken.node.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/BOTToken.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 669,
+      "errors": [
+        "Command failed: npx hardhat run test/BOTToken.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/BOTToken.working.test.ts",
+      "passed": 29,
+      "failed": 2,
+      "duration": 1250,
+      "errors": []
+    },
+    {
+      "file": "test/CrapsBets.test.js",
+      "passed": 0,
+      "failed": 1,
+      "duration": 663,
+      "errors": [
+        "Command failed: npx hardhat run test/CrapsBets.test.js 2>&1"
+      ]
+    },
+    {
+      "file": "test/CrapsGame.test.js",
+      "passed": 0,
+      "failed": 1,
+      "duration": 685,
+      "errors": [
+        "Command failed: npx hardhat run test/CrapsGame.test.js 2>&1"
+      ]
+    },
+    {
+      "file": "test/CrapsSettlement.test.js",
+      "passed": 0,
+      "failed": 1,
+      "duration": 658,
+      "errors": [
+        "Command failed: npx hardhat run test/CrapsSettlement.test.js 2>&1"
+      ]
+    },
+    {
+      "file": "test/CrapsVault.test.js",
+      "passed": 0,
+      "failed": 1,
+      "duration": 642,
+      "errors": [
+        "Command failed: npx hardhat run test/CrapsVault.test.js 2>&1"
+      ]
+    },
+    {
+      "file": "test/BotVaultIntegration.test.ts",
+      "passed": 0,
+      "failed": 22,
+      "duration": 1245,
+      "errors": []
+    },
+    {
+      "file": "test/CrapsVault.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 1317,
+      "errors": [
+        "Command failed: npx hardhat run test/CrapsVault.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/OmniVaultCoordinator.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 796,
+      "errors": [
+        "Command failed: npx hardhat run test/OmniVaultCoordinator.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/VaultFactory.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 1579,
+      "errors": [
+        "Command failed: npx hardhat run test/VaultFactory.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/integration/UserJourney.integration.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 685,
+      "errors": [
+        "Command failed: npx hardhat run test/integration/UserJourney.integration.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/integration/BotPersonality.integration.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 806,
+      "errors": [
+        "Command failed: npx hardhat run test/integration/BotPersonality.integration.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/performance/BotScalability.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 821,
+      "errors": [
+        "Command failed: npx hardhat run test/performance/BotScalability.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/performance/GasBenchmark.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 805,
+      "errors": [
+        "Command failed: npx hardhat run test/performance/GasBenchmark.test.ts 2>&1"
+      ]
+    },
+    {
+      "file": "test/performance/LoadTest.test.ts",
+      "passed": 0,
+      "failed": 1,
+      "duration": 806,
+      "errors": [
+        "Command failed: npx hardhat run test/performance/LoadTest.test.ts 2>&1"
+      ]
+    }
+  ],
+  "productionReady": false,
+  "ethGlobalReady": false
 }

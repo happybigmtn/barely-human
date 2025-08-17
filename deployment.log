@@ -1,0 +1,20 @@
+
+> Hackathon@1.0.0 deploy:local
+> hardhat run scripts/deploy-local.ts
+
+[dotenv@17.2.1] injecting env (17) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+Compiling your Solidity contracts...
+Warning: Function state mutability can be restricted to view
+   --> ./contracts/hooks/BotSwapFeeHookV4Final.sol:195:5:
+    |
+195 |     function beforeSwap(
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Compiled 1 Solidity file with solc 0.8.28 (evm target: cancun)
+
+🎰 Deploying Barely Human locally...
+
+TypeError: Cannot read properties of undefined (reading 'getPublicClient')
+    at main (/home/r/Coding/Hackathon/scripts/deploy-local.ts:7:41)
+    at <anonymous> (/home/r/Coding/Hackathon/scripts/deploy-local.ts:66:1)
