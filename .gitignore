@@ -77,3 +77,13 @@ deprecated-scripts/
 *deployer*.json
 *mnemonic*.txt
 accounts-*.json
+
+# Bot Wallet Security
+*bot*wallet*.json
+*botWallet*.json
+bot-accounts.json
+bot-keys*.json
+bot-wallets*.json
+*bot*private*key*
+bot-credentials.json
+*bot*seed*.json
