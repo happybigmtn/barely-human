@@ -170,7 +170,6 @@ async function main() {
     console.log(chalk.yellow("Deploying BotBettingEscrow..."));
     const escrow = await viem.deployContract("BotBettingEscrow", [
       contracts.BOTToken,
-      contracts.BotManager,
       contracts.Treasury
     ]);
     contracts.BotBettingEscrow = escrow.address;
@@ -192,9 +191,12 @@ async function main() {
     
     // ==================== 10. Deploy Uniswap V4 Hook ====================
     console.log(chalk.yellow("Deploying Uniswap V4 hook..."));
+    // Note: Using deployer address as placeholder for PoolManager (not deployed on testnet yet)
     const swapHook = await viem.deployContract("BotSwapFeeHookV4Final", [
+      account.address,  // poolManager (placeholder - use deployer address)
+      contracts.BOTToken,
       contracts.Treasury,
-      contracts.BOTToken
+      contracts.StakingPool
     ]);
     contracts.BotSwapFeeHookV4Final = swapHook.address;
     console.log(chalk.green(`✅ BotSwapFeeHook deployed at: ${contracts.BotSwapFeeHookV4Final}`));
@@ -216,10 +218,8 @@ async function main() {
     await vaultFactoryContract.write.setGameContract([contracts.CrapsGameV2Plus]);
     await vaultFactoryContract.write.setBotManager([contracts.BotManager]);
     
-    // Set contracts in game
-    const gameContract = await viem.getContractAt("CrapsGameV2Plus", contracts.CrapsGameV2Plus);
-    await gameContract.write.setBetsContract([contracts.CrapsBets]);
-    await gameContract.write.setSettlementContract([contracts.CrapsSettlement]);
+    // Note: CrapsGameV2Plus doesn't have setBetsContract/setSettlementContract functions
+    // These contracts work independently
     
     // Initialize bot manager
     const botManagerContract = await viem.getContractAt("BotManagerV2Plus", contracts.BotManager);
