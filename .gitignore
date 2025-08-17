@@ -34,3 +34,46 @@
 deployment/.deployer-private-key
 deployment/.deployer-mnemonic
 .env.production
+
+# Private Keys and Sensitive Files
+*.private.json
+*private-key*
+*privatekey*
+*private_key*
+*.key
+*.pem
+*.p12
+*.keystore
+*wallet*.json
+*mnemonic*
+*seed*.json
+*secret*.json
+accounts.json
+deployer-keys.json
+
+# Hardhat Network Files
+.openzeppelin/
+hardhat-deploy/
+hardhat/deploy/
+hardhat/scripts/private/
+
+# Chainlink and VRF Secrets
+.chainlink/
+vrf-subscription-*.json
+
+# Local Test Keys (just in case)
+test-accounts.json
+local-keys.json
+
+# Backup directories with potentially sensitive content
+backup_*/
+temp/
+deprecated-scripts/
+*-backup/
+
+# Additional security patterns
+*.wallet
+*.keystore.json
+*deployer*.json
+*mnemonic*.txt
+accounts-*.json
