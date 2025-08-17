@@ -15,7 +15,9 @@ const __dirname = dirname(__filename);
 dotenv.config();
 
 /**
- * Complete deployment script for Base Sepolia using Viem
+ * ALTERNATIVE deployment script for Base Sepolia using Viem
+ * NOTE: Main deployment script is deploy-base-sepolia.ts
+ * This version provides an alternative viem-only approach
  * Deploys all 21 contracts with proper configuration
  */
 

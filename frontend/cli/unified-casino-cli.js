@@ -16,6 +16,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { CONTRACT_ABIS } from './config/contract-abis.js';
+import { BOT_PERSONALITIES, BET_TYPES, GAME_PHASES, CLI_CONFIG } from './config/game-constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,82 +27,6 @@ const args = process.argv.slice(2);
 const isNonInteractive = args.includes('--non-interactive') || args.includes('-n');
 const isTestMode = args.includes('--test') || args.includes('-t');
 const isQuiet = args.includes('--quiet') || args.includes('-q');
-
-// Contract ABIs (simplified)
-const CONTRACT_ABIS = {
-  BOTToken: [
-    "function balanceOf(address) view returns (uint256)",
-    "function totalSupply() view returns (uint256)",
-    "function transfer(address to, uint256 amount) returns (bool)",
-    "function approve(address spender, uint256 amount) returns (bool)",
-    "function name() view returns (string)",
-    "function symbol() view returns (string)"
-  ],
-  CrapsGame: [
-    "function currentSeriesId() view returns (uint256)",
-    "function gamePhase() view returns (uint8)",
-    "function currentPoint() view returns (uint256)",
-    "function rollDice()",
-    "function getSeriesInfo(uint256) view returns (tuple(uint256,uint256,uint8,uint256,uint256,uint256))"
-  ],
-  CrapsBets: [
-    "function placeBet(uint256 betType, uint256 amount)",
-    "function getBetInfo(uint256 betId) view returns (tuple(address,uint256,uint256,uint256,bool,bool))",
-    "function playerBets(address player, uint256 index) view returns (uint256)"
-  ],
-  CrapsVault: [
-    "function deposit(uint256 assets, address receiver) returns (uint256)",
-    "function withdraw(uint256 assets, address receiver, address owner) returns (uint256)",
-    "function balanceOf(address) view returns (uint256)",
-    "function totalAssets() view returns (uint256)",
-    "function convertToShares(uint256 assets) view returns (uint256)",
-    "function convertToAssets(uint256 shares) view returns (uint256)"
-  ],
-  StakingPool: [
-    "function stake(uint256 amount)",
-    "function withdraw(uint256 amount)",
-    "function claimRewards()",
-    "function getStakedBalance(address) view returns (uint256)",
-    "function getRewardBalance(address) view returns (uint256)",
-    "function totalStaked() view returns (uint256)"
-  ],
-  Treasury: [
-    "function getBalance() view returns (uint256)",
-    "function distributeFees()",
-    "function withdrawEmergency()",
-    "function getTreasuryStats() view returns (tuple(uint256,uint256,uint256,uint256))"
-  ],
-  BotManager: [
-    "function getBotInfo(uint256 botId) view returns (tuple(string,uint256,uint256,uint256,uint256))",
-    "function activeBots() view returns (uint256)",
-    "function getBotPerformance(uint256 botId) view returns (tuple(uint256,uint256,uint256,uint256))"
-  ]
-};
-
-// Bot personalities
-const BOT_PERSONALITIES = [
-  { id: 0, name: "Alice All-In", emoji: "🎯" },
-  { id: 1, name: "Bob Calculator", emoji: "🧮" },
-  { id: 2, name: "Charlie Lucky", emoji: "🍀" },
-  { id: 3, name: "Diana Ice Queen", emoji: "❄️" },
-  { id: 4, name: "Eddie Entertainer", emoji: "🎭" },
-  { id: 5, name: "Fiona Fearless", emoji: "⚡" },
-  { id: 6, name: "Greg Grinder", emoji: "💎" },
-  { id: 7, name: "Helen Hot Streak", emoji: "🔥" },
-  { id: 8, name: "Ivan Intimidator", emoji: "👹" },
-  { id: 9, name: "Julia Jinx", emoji: "🌀" }
-];
-
-// Bet types
-const BET_TYPES = {
-  0: "Pass Line",
-  1: "Don't Pass",
-  2: "Come",
-  3: "Don't Come",
-  4: "Field",
-  5: "YES 4", 6: "YES 5", 7: "YES 6", 8: "YES 8", 9: "YES 9", 10: "YES 10",
-  11: "NO 4", 12: "NO 5", 13: "NO 6", 14: "NO 8", 15: "NO 9", 16: "NO 10"
-};
 
 class UnifiedCasinoCLI {
   constructor() {
