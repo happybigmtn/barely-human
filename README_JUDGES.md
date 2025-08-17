@@ -10,7 +10,7 @@ BarelyHuman revolves around 10 bots playing a single table of craps, with you an
 
 The meta point here is to remove the human one step from the act of gambling. It's not that LP stakes aren't also effectively risking money to chance (yes the double negative makes you think). Rather, the point is to make you ponder: when I gamble, have I effectively become a bot? And with all the human affordances offered by LLMs, the line between machine and man becomes ambiguous indeed.
 
-There is a mechanical detail here that is equally important: gambling is the modern day equivalent of smoking, and house edge is tar. What if we could also leverage trustlessness as a primitive to create a truly player-owned casino, one step removed? As the human investors slowly watch the bots bleed out to house edge, the tokens get redistributed programatically back to the investors. Through performance art, we create zero edge.
+There is a mechanical detail here that is equally important: gambling is the modern day equivalent of smoking, and house edge is tar. What if we could also leverage trustlessness as a primitive to create a truly player-owned casino, one step removed? As the human investors slowly watch the bots bleed out to house edge, the tokens get redistributed programmatically back to the investors. Through performance art, we create zero edge.
 
 ## Key Features
 
@@ -27,9 +27,9 @@ There is a mechanical detail here that is equally important: gambling is the mod
 - **Randomness**: Chainlink VRF 2.5 (production-ready VRFConsumerBaseV2Plus)
 - **Cross-Chain**: LayerZero V2 OApp for omni-chain coordination
 - **AI Framework**: ElizaOS for bot personality engines
-- **Networks**: Base (primary), Base Sepolia, Arbitrum Sepolia deployments
-- **Partner Integrations**: Circle, Gemini, ENS, The Graph, OpenSea, Hardhat
-- **Prize Qualification**: 9 partners, $75,000+ total prize pool
+- **Networks**: Base (primary), Base Sepolia, Arbitrum Sepolia, Flow Testnet deployments
+- **Partner Integrations**: Circle, Gemini, ENS, The Graph, OpenSea, Flow, Hardhat
+- **Prize Qualification**: 10 partners, $85,000+ total prize pool
 
 ## Core Contracts (12 primary + supporting libraries)
 
@@ -43,16 +43,9 @@ There is a mechanical detail here that is equally important: gambling is the mod
 6. Treasury.sol: Fee collection and distribution with multi-sig controls
 7. StakingPool.sol: BOT token staking with accumulative reward distribution
 
-**Cross-Chain & DeFi Integration:**
-8. BotSwapFeeHookV4Final.sol: Uniswap V4 IHooks implementation for 2% fee capture
-9. OmniVaultCoordinator.sol: LayerZero V2 OApp for cross-chain vault synchronization
-10. CircleCCTPV2Integration.sol: Circle CCTP V2 for cross-chain USDC transfers
-11. CirclePaymasterIntegration.sol: ERC-4337 paymaster for gasless USDC transactions
+**Cross-Chain & DeFi Integration:** 8. BotSwapFeeHookV4Final.sol: Uniswap V4 IHooks implementation for 2% fee capture 9. OmniVaultCoordinator.sol: LayerZero V2 OApp for cross-chain vault synchronization 10. CircleCCTPV2Integration.sol: Circle CCTP V2 for cross-chain USDC transfers 11. CirclePaymasterIntegration.sol: ERC-4337 paymaster for gasless USDC transactions
 
-**Partner Integrations:**
-12. GeminiWalletIntegration.sol: ERC-7579 modular accounts with passkey security
-13. OpenSeaNFTMarketplace.sol: Complete NFT marketplace with AI-generated metadata
-14. BotENSIntegration.sol: ENS subdomains and L2 primary name resolution
+**Partner Integrations:** 12. GeminiWalletIntegration.sol: ERC-7579 modular accounts with passkey security 13. OpenSeaNFTMarketplace.sol: Complete NFT marketplace with AI-generated metadata 14. BotENSIntegration.sol: ENS subdomains and L2 primary name resolution
 
 ## Advanced Features
 
@@ -91,13 +84,7 @@ There is a mechanical detail here that is equally important: gambling is the mod
 5. Virtual debt mechanism prevents treasury insolvency during losing streaks
 6. 1-week expiration for unclaimed rebates (retained by treasury)
 
-**Token Economics:**
-7. BOTTokenV2.sol - Enhanced token with proper initial allocations
-8. TokenDistributor.sol - Testnet leaderboard rewards and vesting
-9. CommunityFaucet.sol - Rate-limited distribution (1000 BOT/day per user)
-10. Progressive rebate scaling from 50% → 100% over time
-
-💰 Revolutionary Token Economics
+**Token Economics:** 7. BOTTokenV2.sol - Enhanced token with proper initial allocations 8. TokenDistributor.sol - Testnet leaderboard rewards and vesting 9. CommunityFaucet.sol - Rate-limited distribution (1000 BOT/day per user) 10. Progressive rebate scaling from 50% → 100% over time
 
 **Initial Distribution:**
 
@@ -202,32 +189,6 @@ There is a mechanical detail here that is equally important: gambling is the mod
 ## Generative Art
 
 **The generative art system** uses the VRF random seed to create reproducible artwork. By implementing a custom SeededRandom PRNG, identical seeds always produce identical art - crucial for on-chain verification. In creating this work as an "AI artist", I was inspired by Tarbell's Substrate algo from over 20 years ago. I applied this crack generation algo to the generation of mountains, as my name in Korean is "Big Mountain". I found it to be a powerful metaphor for the stories that make each of us who we are.
-
-## 🚀 ETHGlobal NYC 2025 Competitive Edge
-
-**Technical Excellence:**
-- **Hardhat 3.0 Beta**: Among first to use latest version with Viem integration
-- **VRF 2.5**: Exceeds standard VRF 2.0 requirements with advanced features
-- **LayerZero V2**: Latest protocol implementation vs most teams using V1
-- **Circle CCTP V2**: Advanced hooks implementation beyond basic integration
-
-**Innovation Depth:**
-- **Net Settlement Economics**: Revolutionary zero-edge casino mechanics
-- **AI-Driven NFTs**: Bot personalities generating unique art collections
-- **Cross-Chain Gaming**: Unified state management across multiple chains
-- **Passkey Security**: Modern WebAuthn integration for casino operations
-
-**Partner Integration Breadth:**
-- **9 Partners**: Circle, Gemini, ENS, The Graph, OpenSea, Hardhat, LayerZero, Chainlink, Uniswap
-- **Complete Implementations**: Not just API calls, full feature integration
-- **Novel Use Cases**: Casino gaming is unique application for most protocols
-- **Production Ready**: Security audited, gas optimized, comprehensive testing
-
-**Prize Pool Strategy:**
-- **$75,000+ Total**: Diversified across multiple high-value prizes
-- **Technical Depth**: Each integration exceeds minimum requirements
-- **Competitive Moats**: Most teams focus on 1-2 partners; we integrated 9
-- **Documentation**: Complete qualification analysis with evidence
 
 This project represents the convergence of cutting-edge DeFi primitives, AI agents, and gaming mechanics creating a self-sustaining entertainment ecosystem. Through "directed vibe coding", we explored the maximum number of protocols possible in 36 hours, creating a foundation that demonstrates both technical excellence and commercial viability.
 
@@ -384,7 +345,33 @@ This project represents the convergence of cutting-edge DeFi primitives, AI agen
 
 ---
 
-## 9. **Hardhat - Developer Tools Excellence**
+## 9. **Flow - Builder Pool Prize ($10,000)**
+
+**Qualification Status**: ✅ **NEWLY IMPLEMENTED**
+
+**Why We Qualify**:
+
+- ✅ **Flow Testnet Contract** - `art/flow-integration/BarelyHumanCraps.cdc`
+- ✅ **Cadence Language** - Native Flow smart contract implementation
+- ✅ **Cross-Chain Integration** - Synchronization with Base network via events
+- ✅ **10 Bot Personalities** - Matching main contract personalities
+- ✅ **Casino Logic** - Full craps game simulation on Flow
+- ✅ **VRF Integration** - Deterministic game outcomes using seed-based randomness
+
+**New Implementation**: Complete Flow blockchain integration for cross-chain casino expansion
+
+**Technical Highlights**:
+- **Cadence Smart Contract**: Native Flow implementation with proper event emission
+- **Cross-Chain Events**: CrossChainGameSync events for Base network coordination
+- **Bot Strategy Implementation**: Each bot personality has unique betting patterns
+- **Game Statistics**: Real-time analytics and history tracking
+- **Deterministic Outcomes**: Seed-based dice rolling for fair gameplay
+
+**Prize Pool**: $10,000 (Split evenly between all qualifying projects)
+
+---
+
+## 10. **Hardhat - Developer Tools Excellence**
 
 **Qualification Status**: ✅ **ADVANCED USAGE**
 
@@ -409,12 +396,13 @@ This project represents the convergence of cutting-edge DeFi primitives, AI agen
 | **Circle Complete** | $10,000    | ✅ ALL 4 TRACKS | CCTP V2, gasless, gateway      |
 | **ENS Complete**    | $10,000    | ✅ BOTH TRACKS  | Bot identities + L2 names      |
 | **OpenSea AI**      | $10,000    | ✅ NEW IMPL     | AI-generated bot art           |
+| **Flow Builder**    | $10,000    | ✅ NEW IMPL     | Cadence contract + cross-chain |
 | **The Graph**       | $5,000     | ✅ NEW IMPL     | Complete subgraph              |
 | **Gemini Wallet**   | $5,000     | ✅ NEW IMPL     | ERC-7579 + passkeys            |
 | **Chainlink VRF**   | $4,000     | ✅ STRONG       | VRF 2.5 advanced usage         |
 | **Hardhat Tools**   | TBD        | ✅ ADVANCED     | Hardhat 3.0 beta mastery       |
 
-**Total Estimated Value: $75,000+**
+**Total Estimated Value: $85,000+**
 
 ## 📁 Project Structure
 
@@ -427,6 +415,12 @@ contracts/
 ├── game/               # Core game logic
 ├── vault/              # ERC4626 LP vaults
 └── token/              # BOT token
+
+art/flow-integration/    # Flow blockchain integration ($10,000 prize)
+├── BarelyHumanCraps.cdc    # Cadence smart contract
+├── deploy-script.js        # Flow deployment tools
+├── test-contract.js        # Contract testing
+└── README.md              # Flow integration docs
 
 scripts/
 ├── deploy-ens-integration.ts

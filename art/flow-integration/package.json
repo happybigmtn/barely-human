@@ -1,0 +1,24 @@
+{
+  "name": "barely-human-flow-integration",
+  "version": "1.0.0",
+  "description": "Flow blockchain integration for Barely Human DeFi Casino",
+  "main": "deploy-script.js",
+  "scripts": {
+    "deploy": "node deploy-script.js",
+    "test": "node test-contract.js"
+  },
+  "dependencies": {
+    "@onflow/fcl": "^1.11.0",
+    "@onflow/types": "^1.2.2"
+  },
+  "keywords": [
+    "flow",
+    "blockchain",
+    "defi",
+    "casino",
+    "craps",
+    "ethglobal"
+  ],
+  "author": "Barely Human Team",
+  "license": "MIT"
+}

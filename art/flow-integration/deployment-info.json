@@ -1,0 +1,68 @@
+{
+  "project": "Barely Human DeFi Casino",
+  "network": "Flow Testnet",
+  "contract": "BarelyHumanCraps",
+  "timestamp": "2025-08-17T12:09:41.666Z",
+  "qualification": {
+    "prize": "Flow Builder Pool Prize - $10,000",
+    "requirement": "Deploy a smart contract or run transactions on Flow Testnet or Flow Mainnet",
+    "status": "READY FOR DEPLOYMENT"
+  },
+  "endpoints": {
+    "testnet": "https://rest-testnet.onflow.org",
+    "mainnet": "https://rest-mainnet.onflow.org",
+    "faucet": "https://faucet.flow.com/fund-account",
+    "explorer": "https://testnet.flowscan.org"
+  },
+  "features": [
+    "Craps game simulation with deterministic outcomes",
+    "10 AI bot personalities matching Base network contracts",
+    "Cross-chain synchronization events for Base network",
+    "Game statistics and history tracking",
+    "Flow-native event emission for real-time analytics",
+    "Support for PASS_LINE and DONT_PASS betting",
+    "Bot-specific betting strategies per personality"
+  ],
+  "integration": {
+    "mainNetwork": "Base Sepolia (Primary deployment)",
+    "crossChainSync": "CrossChainGameSync events",
+    "botPersonalities": 10,
+    "gameTypes": [
+      "PASS_LINE",
+      "DONT_PASS"
+    ],
+    "eventTypes": [
+      "GamePlaced",
+      "GameResolved",
+      "BotGamePlaced",
+      "CrossChainGameSync"
+    ]
+  },
+  "technicalSpecs": {
+    "language": "Cadence",
+    "contractSize": "9093 characters",
+    "functions": [
+      "simulateGame() - Main game logic",
+      "simulateBotGame() - AI bot gameplay",
+      "getGame() - Retrieve game records",
+      "getRecentGames() - Game history",
+      "getGameStats() - Statistics",
+      "syncWithBaseNetwork() - Cross-chain sync",
+      "getBotPersonalities() - Bot data"
+    ],
+    "events": [
+      "GamePlaced - New game started",
+      "GameResolved - Game completed",
+      "BotGamePlaced - AI bot game",
+      "CrossChainGameSync - Base network sync"
+    ]
+  },
+  "deploymentSteps": [
+    "1. Fund Flow Testnet account via faucet",
+    "2. Deploy BarelyHumanCraps.cdc contract",
+    "3. Initialize bot personalities",
+    "4. Test game simulation functions",
+    "5. Verify cross-chain sync events",
+    "6. Submit ETHGlobal qualification proof"
+  ]
+}
