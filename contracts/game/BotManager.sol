@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 import "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.sol";
 import "../vault/CrapsVault.sol";
-import "../vault/VaultFactoryOptimized.sol";
+import "../vault/VaultFactoryUltraOptimized.sol";
 import "./ICrapsGame.sol";
 
 /**
@@ -88,7 +88,7 @@ contract BotManager is VRFConsumerBaseV2, AccessControl, ReentrancyGuard, Pausab
     mapping(uint256 => bool[]) public botResultHistory;
     mapping(uint256 => uint256) public pendingDecisions;
     
-    VaultFactoryOptimized public immutable vaultFactory;
+    VaultFactoryUltraOptimized public immutable vaultFactory;
     ICrapsGame public gameContract;
     
     uint256 public constant MAX_BET_PERCENTAGE = 1000; // 10% of bankroll max
@@ -147,7 +147,7 @@ contract BotManager is VRFConsumerBaseV2, AccessControl, ReentrancyGuard, Pausab
     ) VRFConsumerBaseV2(_vrfCoordinator) {
         require(_vaultFactory != address(0), "Invalid factory");
         
-        vaultFactory = VaultFactoryOptimized(_vaultFactory);
+        vaultFactory = VaultFactoryUltraOptimized(_vaultFactory);
         COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
         subscriptionId = _subscriptionId;
         keyHash = _keyHash;

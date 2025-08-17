@@ -144,6 +144,22 @@ contract GameVRF is VRFConsumerBaseV2 {
 4. **External Audit** - Security review
 5. **Performance Monitoring** - Analytics and alerts
 
+## Recent Art Generation Updates (Aug 17, 2025)
+
+### Greg Grinder Acceleration Fix
+- **Issue**: Crack density buildup was too slow, clustering after 30% of animation
+- **Solution**: Applied 2.5x acceleration factor for first 30% of animation time
+- **Changes**: 
+  - 15 horizontal waves (vs 10), 10 vertical (vs 6), 8 diagonal (vs 4)
+  - Speed boost: 2.5x for 0-30%, 1.5x for 30-60% of animation
+  - Increased seed spawning and branching frequency
+  - File: `art/deterministic-full.html`
+
+### Other Bot Personality Fixes
+- **Diana Ice Queen**: Growth rate 1.005 (was 1.02 causing 2-second stops)
+- **Helen Hot Streak**: Added curved formation branching
+- **All Bots**: Ensured 30-second minimum duration for NFT capture
+
 ## Security Reminders
 - Never expose private keys in code
 - Always use ReentrancyGuard for transfers

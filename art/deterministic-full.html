@@ -415,7 +415,9 @@
           drift: 0.2,
           angleVariation: 3,
           curveAmount: 0.5,
-          description: "Smooth curves",
+          branchProbability: 0.12, // Added branching for more dynamic growth
+          speedVariation: 0.3, // Added speed variation
+          description: "Smooth curves with dynamic branching",
         },
         chaotic: {
           wobbleFreq: 2 + random() * 3,
@@ -452,7 +454,7 @@
           angleVariation: 5,
           angleOptions: [0, 30, 45, 60, 90, 120, 135, 150],
           segmentLength: 10 + random() * 20,
-          growthRate: 1.02, // Changed from 0.95 to 1.02 - crystals should grow, not shrink
+          growthRate: 1.005, // Much slower growth rate - was 1.02 which reached threshold too quickly
           facetProbability: 0.18, // Increased for more branching
           shatterProbability: 0.08, // Increased for more dynamic growth
           resonanceFreq: 0.02,
@@ -1288,32 +1290,84 @@
           cracks = [];
           window.zenWaveLines = []; // Store globally for boundary checking
           
-          // Create sweeping wave lines - 8 from left, 8 from right
+          // Create sweeping wave lines - enhanced for better spread
           const waveLines = window.zenWaveLines;
           
-          // 8 waves from the left - tighter spacing
-          for (let i = 0; i < 8; i++) {
-            const y = canvasHeight * (0.1 + i * 0.11);
+          // Greg Grinder (bot 6) gets accelerated early growth
+          const isGregGrinder = selectedBotId === 6;
+          const accelerationFactor = isGregGrinder ? 2.5 : 1.0;
+          
+          // Horizontal waves from left - spread across full height
+          const horizontalWaveCount = isGregGrinder ? 15 : 10; // More waves for Greg
+          for (let i = 0; i < horizontalWaveCount; i++) {
+            const y = canvasHeight * (0.05 + i * (0.9 / horizontalWaveCount));
             waveLines.push({
               startX: 0,
               startY: y,
               direction: 1, // Moving right
-              phase: i * 0.3,
-              amplitude: 30 + random() * 20,
-              frequency: 0.003 + random() * 0.002
+              phase: i * 0.4,
+              amplitude: (25 + random() * 25) * accelerationFactor, // Larger amplitude for Greg
+              frequency: (0.002 + random() * 0.003) * (isGregGrinder ? 1.5 : 1), // Higher frequency for Greg
+              isHorizontal: true,
+              speed: isGregGrinder ? 2.0 : 1.2 // Faster wave progression for Greg
             });
           }
           
-          // 8 waves from the right - interleaved with left waves
-          for (let i = 0; i < 8; i++) {
-            const y = canvasHeight * (0.12 + i * 0.11);
+          // Horizontal waves from right - interleaved spacing
+          for (let i = 0; i < horizontalWaveCount; i++) {
+            const y = canvasHeight * (0.07 + i * (0.9 / horizontalWaveCount));
             waveLines.push({
               startX: canvasWidth,
               startY: y,
               direction: -1, // Moving left
-              phase: Math.PI + i * 0.3,
-              amplitude: 30 + random() * 20,
-              frequency: 0.003 + random() * 0.002
+              phase: Math.PI + i * 0.4,
+              amplitude: (25 + random() * 25) * accelerationFactor,
+              frequency: (0.002 + random() * 0.003) * (isGregGrinder ? 1.5 : 1),
+              isHorizontal: true,
+              speed: isGregGrinder ? 2.0 : 1.2
+            });
+          }
+          
+          // Add vertical waves for better coverage
+          const verticalWaveCount = isGregGrinder ? 10 : 6; // More vertical waves for Greg
+          for (let i = 0; i < verticalWaveCount; i++) {
+            const x = canvasWidth * (0.05 + i * (0.9 / verticalWaveCount));
+            waveLines.push({
+              startX: x,
+              startY: random() < 0.5 ? 0 : canvasHeight,
+              direction: random() < 0.5 ? 1 : -1,
+              phase: i * 0.5,
+              amplitude: (35 + random() * 30) * accelerationFactor,
+              frequency: (0.0025 + random() * 0.0025) * (isGregGrinder ? 1.5 : 1),
+              isHorizontal: false, // Vertical waves
+              verticalX: x,
+              speed: isGregGrinder ? 2.0 : 1.2
+            });
+          }
+          
+          // Add diagonal waves for even more coverage
+          for (let i = 0; i < 4; i++) {
+            const startCorner = Math.floor(random() * 4); // 0=top-left, 1=top-right, 2=bottom-left, 3=bottom-right
+            let startX, startY, targetX, targetY;
+            
+            switch(startCorner) {
+              case 0: startX = 0; startY = 0; targetX = canvasWidth; targetY = canvasHeight; break;
+              case 1: startX = canvasWidth; startY = 0; targetX = 0; targetY = canvasHeight; break;
+              case 2: startX = 0; startY = canvasHeight; targetX = canvasWidth; targetY = 0; break;
+              case 3: startX = canvasWidth; startY = canvasHeight; targetX = 0; targetY = 0; break;
+            }
+            
+            waveLines.push({
+              startX: startX,
+              startY: startY,
+              direction: 1,
+              phase: i * 0.7,
+              amplitude: 20 + random() * 15,
+              frequency: 0.004 + random() * 0.002,
+              isHorizontal: false,
+              isDiagonal: true,
+              targetX: targetX,
+              targetY: targetY
             });
           }
           
@@ -1325,16 +1379,35 @@
               const progress = p / numPoints;
               let x, y;
               
-              if (wave.direction > 0) {
-                // Left to right
-                x = progress * canvasWidth;
+              if (wave.isDiagonal) {
+                // Diagonal waves from corner to corner
+                x = wave.startX + (wave.targetX - wave.startX) * progress;
+                y = wave.startY + (wave.targetY - wave.startY) * progress;
+                
+                // Add sine wave perturbation to make it wavy
+                const perpOffset = Math.sin(progress * Math.PI * 8 + wave.phase) * wave.amplitude;
+                const perpAngle = Math.atan2(wave.targetY - wave.startY, wave.targetX - wave.startX) + Math.PI / 2;
+                x += Math.cos(perpAngle) * perpOffset;
+                y += Math.sin(perpAngle) * perpOffset;
+                
+              } else if (!wave.isHorizontal) {
+                // Vertical waves
+                y = wave.direction > 0 ? progress * canvasHeight : (1 - progress) * canvasHeight;
+                x = wave.verticalX + Math.sin(y * wave.frequency + wave.phase) * wave.amplitude;
+                
               } else {
-                // Right to left
-                x = (1 - progress) * canvasWidth;
+                // Horizontal waves (original behavior)
+                if (wave.direction > 0) {
+                  // Left to right
+                  x = progress * canvasWidth;
+                } else {
+                  // Right to left
+                  x = (1 - progress) * canvasWidth;
+                }
+                
+                // Calculate wavy Y position
+                y = wave.startY + Math.sin(x * wave.frequency + wave.phase) * wave.amplitude;
               }
-              
-              // Calculate wavy Y position
-              y = wave.startY + Math.sin(x * wave.frequency + wave.phase) * wave.amplitude;
               
               // Only create wave point if inside mountain
               if (insideMountain(x, y)) {
@@ -1364,16 +1437,24 @@
                 cracks.push(crack);
                 
                 // More branches to fill gaps between waves
-                if (p % 4 === 0) { // More frequent branching
-                  const numBranches = 3 + Math.floor(random() * 3);
+                // Greg Grinder creates much denser branching networks
+                const branchFrequency = isGregGrinder ? 2 : 4; // Greg branches every 2 points vs 4
+                if (p % branchFrequency === 0) { // More frequent branching
+                  const baseBranches = isGregGrinder ? 5 : 3;
+                  const numBranches = baseBranches + Math.floor(random() * 3);
                   
                   for (let b = 0; b < numBranches; b++) {
                     const side = random() < 0.5 ? 1 : -1;
                     const branchAngle = angle + side * (85 + random() * 10) + (random() - 0.5) * 20;
                     
                     const branch = new Crack(x, y, branchAngle, "branch", "zen");
-                    branch.speed = 1.2 + random() * 0.3;
+                    branch.speed = (isGregGrinder ? 1.8 : 1.2) + random() * 0.3;
                     branch.isBranch = true;
+                    
+                    // Greg's branches also grow faster
+                    if (isGregGrinder) {
+                      branch.growthRate = 1.3;
+                    }
                     
                     cracks.push(branch);
                   }
@@ -1557,10 +1638,24 @@
           let wobble = 0;
 
           if (this.formation === "curved") {
-            // Smooth curves
-            wobble =
-              Math.sin(this.age * 0.1 * this.wobbleFreq) * this.wobbleAmp;
+            // Smooth curves with enhanced dynamics for Helen Hot Streak
+            wobble = Math.sin(this.age * 0.1 * this.wobbleFreq) * this.wobbleAmp;
             this.angle += wobble * crackFormations.curved.curveAmount;
+            
+            // Add speed variation for more dynamic movement
+            if (this.age % 20 === 0) {
+              this.speed *= (1 + (random() - 0.5) * crackFormations.curved.speedVariation);
+              this.speed = Math.max(0.3, Math.min(2.0, this.speed)); // Keep within bounds
+            }
+            
+            // Enhanced branching for Helen's hot streak personality
+            if (random() < crackFormations.curved.branchProbability && cracks.length < 2500) {
+              const branchAngle = this.angle + (random() < 0.5 ? 45 : -45) + (random() - 0.5) * 30;
+              const branch = new Crack(this.x, this.y, branchAngle, this.type, "curved");
+              branch.speed = this.speed * (0.7 + random() * 0.6);
+              branch.wobbleFreq = this.wobbleFreq * (0.8 + random() * 0.4);
+              cracks.push(branch);
+            }
           } else if (this.formation === "branching") {
             // Tarbell-like behavior: curves only for first 5 seconds (150 frames), then straight
             if (globalAge < 150) {
@@ -1681,7 +1776,9 @@
               this.segmentProgress = 0;
               
               // Crystal faceting - spawn branches at crystalline angles
-              const facetProbabilityAdjusted = this.facetProbability * (durationMultiplier || 1.0); // More faceting for longer duration
+              const bot = BOT_PERSONALITIES[selectedBotId];
+              const durationMultiplier = bot ? bot.durationMultiplier : 1.0;
+              const facetProbabilityAdjusted = this.facetProbability * durationMultiplier; // More faceting for longer duration
               if (random() < facetProbabilityAdjusted && cracks.length < 3000) {
                 this.facetCount++;
                 const facetAngles = [60, 90, 120]; // Common crystal angles
@@ -1719,13 +1816,23 @@
             // Crystal growth can slow down over time - adjusted for bot personality
             const bot = BOT_PERSONALITIES[selectedBotId];
             const durationMultiplier = bot ? bot.durationMultiplier : 1.0;
-            const sizeThreshold = 10 * durationMultiplier; // Scale threshold by duration multiplier
+            const sizeThreshold = 25 * durationMultiplier; // Increased base threshold from 10 to 25
             const speedThreshold = 0.05 / durationMultiplier; // Lower threshold for longer duration bots
             
             if (this.crystalSize > sizeThreshold) {
               const slowdownRate = 0.995 + (1 - durationMultiplier) * 0.003; // Slower degradation for higher duration
               this.speed *= slowdownRate;
-              if (this.speed < speedThreshold) this.active = false;
+              if (this.speed < speedThreshold) {
+                // Only stop due to slow speed after 30 seconds - before that, reset and continue
+                if (!animationStartTime || (Date.now() - animationStartTime) >= THUMBNAIL_CAPTURE_TIME) {
+                  this.active = false;
+                } else {
+                  // Reset crystal properties and continue growing
+                  this.speed = 0.8 + random() * 0.4;
+                  this.crystalSize = Math.max(1, this.crystalSize * 0.7); // Shrink but don't go to zero
+                  this.resonance = random() * Math.PI * 2; // Reset resonance
+                }
+              }
             }
             
             // Interference patterns with nearby crystals
@@ -2071,8 +2178,27 @@
           }
 
           // Move with calculated angle
-          this.x += Math.cos((this.angle * Math.PI) / 180) * this.speed;
-          this.y += Math.sin((this.angle * Math.PI) / 180) * this.speed;
+          // Greg Grinder acceleration - boost speed in first 30% of animation
+          let effectiveSpeed = this.speed;
+          if (selectedBotId === 6 && animationStartTime) {
+            const elapsedTime = Date.now() - animationStartTime;
+            const normalizedTime = elapsedTime / THUMBNAIL_CAPTURE_TIME;
+            
+            // Aggressive speed boost in first 30%, gradual decrease after
+            if (normalizedTime < 0.3) {
+              effectiveSpeed *= 2.5; // 2.5x speed in first 30%
+            } else if (normalizedTime < 0.6) {
+              effectiveSpeed *= 1.5; // 1.5x speed from 30-60%
+            }
+            
+            // Also apply growth rate if set
+            if (this.growthRate) {
+              effectiveSpeed *= this.growthRate;
+            }
+          }
+          
+          this.x += Math.cos((this.angle * Math.PI) / 180) * effectiveSpeed;
+          this.y += Math.sin((this.angle * Math.PI) / 180) * effectiveSpeed;
 
           // Check boundary
           if (!insideMountain(this.x, this.y)) {
@@ -2243,7 +2369,14 @@
                   }
                 }
               } else {
-                this.active = false;
+                // Only stop due to collision after 30 seconds - before that, bounce and continue
+                if (!animationStartTime || (Date.now() - animationStartTime) >= THUMBNAIL_CAPTURE_TIME) {
+                  this.active = false;
+                } else {
+                  // Bounce off collision and continue
+                  this.angle += 45 + random() * 90; // Change direction
+                  this.speed = Math.max(0.5, this.speed); // Maintain minimum speed
+                }
               }
 
               // Enhanced branching - more aggressive
@@ -2898,57 +3031,175 @@
 
           // Check if stuck and add more seeds if needed - adjusted for longer duration
           const activeCracks = cracks.filter((c) => c.active).length;
-          const minActiveCracks = Math.floor(20 * durationMultiplier);
+          // Greg Grinder needs more active cracks to maintain momentum
+          const isGregGrinder = selectedBotId === 6;
+          const baseMinActive = isGregGrinder ? 50 : 20;
+          const minActiveCracks = Math.floor(baseMinActive * durationMultiplier);
           if (activeCracks < minActiveCracks && !isComplete && density < maxDensity * 0.9) {
             // For zen formation, add new waves and branches
             if (crackFormation === "zen") {
-              // Add new wave segments in gaps
-              const gapY = canvasHeight * (0.2 + random() * 0.6);
-              const newWave = {
-                startX: random() < 0.5 ? 0 : canvasWidth,
-                startY: gapY,
-                direction: random() < 0.5 ? 1 : -1,
-                phase: random() * Math.PI * 2,
-                amplitude: 25 + random() * 20,
-                frequency: 0.003 + random() * 0.002
-              };
+              // Greg Grinder spawns multiple waves at once
+              const numNewWaves = isGregGrinder ? 3 : 1;
+              
+              for (let w = 0; w < numNewWaves; w++) {
+                // Add new wave segments with varied orientations for better spread
+                const waveType = Math.floor(random() * 3); // 0=horizontal, 1=vertical, 2=diagonal
+                let newWave;
+              
+              if (waveType === 0) {
+                // Horizontal wave
+                const gapY = canvasHeight * (0.1 + random() * 0.8); // Full height range
+                newWave = {
+                  startX: random() < 0.5 ? 0 : canvasWidth,
+                  startY: gapY,
+                  direction: random() < 0.5 ? 1 : -1,
+                  phase: random() * Math.PI * 2,
+                  amplitude: 25 + random() * 25,
+                  frequency: 0.002 + random() * 0.003,
+                  isHorizontal: true
+                };
+              } else if (waveType === 1) {
+                // Vertical wave
+                const gapX = canvasWidth * (0.1 + random() * 0.8);
+                newWave = {
+                  startX: gapX,
+                  startY: random() < 0.5 ? 0 : canvasHeight,
+                  direction: random() < 0.5 ? 1 : -1,
+                  phase: random() * Math.PI * 2,
+                  amplitude: 30 + random() * 25,
+                  frequency: 0.0025 + random() * 0.0025,
+                  isHorizontal: false,
+                  verticalX: gapX
+                };
+              } else {
+                // Diagonal wave
+                const corner = Math.floor(random() * 4);
+                let startX, startY, targetX, targetY;
+                
+                switch(corner) {
+                  case 0: startX = 0; startY = 0; targetX = canvasWidth; targetY = canvasHeight; break;
+                  case 1: startX = canvasWidth; startY = 0; targetX = 0; targetY = canvasHeight; break;
+                  case 2: startX = 0; startY = canvasHeight; targetX = canvasWidth; targetY = 0; break;
+                  case 3: startX = canvasWidth; startY = canvasHeight; targetX = 0; targetY = 0; break;
+                }
+                
+                newWave = {
+                  startX: startX,
+                  startY: startY,
+                  direction: 1,
+                  phase: random() * Math.PI * 2,
+                  amplitude: 20 + random() * 15,
+                  frequency: 0.004 + random() * 0.002,
+                  isHorizontal: false,
+                  isDiagonal: true,
+                  targetX: targetX,
+                  targetY: targetY
+                };
+              }
               
               // Create wave points - more for longer duration
               const numPoints = Math.floor(50 * durationMultiplier);
               for (let p = 0; p < numPoints; p++) {
                 const progress = p / numPoints;
-                let x = newWave.direction > 0 ? progress * canvasWidth : (1 - progress) * canvasWidth;
-                let y = newWave.startY + Math.sin(x * newWave.frequency + newWave.phase) * newWave.amplitude;
+                let x, y;
+                
+                if (newWave.isDiagonal) {
+                  // Diagonal waves
+                  x = newWave.startX + (newWave.targetX - newWave.startX) * progress;
+                  y = newWave.startY + (newWave.targetY - newWave.startY) * progress;
+                  
+                  // Add wave perturbation
+                  const perpOffset = Math.sin(progress * Math.PI * 6 + newWave.phase) * newWave.amplitude;
+                  const perpAngle = Math.atan2(newWave.targetY - newWave.startY, newWave.targetX - newWave.startX) + Math.PI / 2;
+                  x += Math.cos(perpAngle) * perpOffset;
+                  y += Math.sin(perpAngle) * perpOffset;
+                  
+                } else if (!newWave.isHorizontal) {
+                  // Vertical waves
+                  y = newWave.direction > 0 ? progress * canvasHeight : (1 - progress) * canvasHeight;
+                  x = newWave.verticalX + Math.sin(y * newWave.frequency + newWave.phase) * newWave.amplitude;
+                  
+                } else {
+                  // Horizontal waves (original)
+                  x = newWave.direction > 0 ? progress * canvasWidth : (1 - progress) * canvasWidth;
+                  y = newWave.startY + Math.sin(x * newWave.frequency + newWave.phase) * newWave.amplitude;
+                }
                 
                 if (insideMountain(x, y)) {
                   const angle = Math.atan2(newWave.amplitude * newWave.frequency * Math.cos(x * newWave.frequency + newWave.phase), 1) * 180 / Math.PI;
                   const crack = new Crack(x, y, angle, "wave", "zen");
                   crack.waveData = newWave;
                   crack.progress = progress;
-                  crack.speed = 1.5;
+                  crack.speed = isGregGrinder ? 2.5 : 1.5;
                   crack.isWave = true;
+                  
+                  // Greg's emergency cracks also grow faster
+                  if (isGregGrinder) {
+                    crack.growthRate = 1.3;
+                  }
+                  
                   cracks.push(crack);
                   
-                  // Add branches
-                  if (p % 10 === 0) {
-                    for (let b = 0; b < 2; b++) {
+                  // Add branches (more for Greg)
+                  const branchFreq = isGregGrinder ? 5 : 10;
+                  if (p % branchFreq === 0) {
+                    const numBranches = isGregGrinder ? 4 : 2;
+                    for (let b = 0; b < numBranches; b++) {
                       const branchAngle = angle + (random() < 0.5 ? 90 : -90) + (random() - 0.5) * 20;
                       const branch = new Crack(x, y, branchAngle, "branch", "zen");
-                      branch.speed = 1.2;
+                      branch.speed = isGregGrinder ? 2.0 : 1.2;
                       branch.isBranch = true;
+                      
+                      if (isGregGrinder) {
+                        branch.growthRate = 1.3;
+                      }
+                      
                       cracks.push(branch);
                     }
                   }
                 }
               }
               
-              // Also add some fill seeds - more for longer duration
-              const fillSeeds = Math.floor(10 * durationMultiplier);
+              // Also add some fill seeds - more for longer duration, spread wider
+              const fillSeeds = Math.floor(15 * durationMultiplier); // Increased base seeds
               for (let i = 0; i < fillSeeds; i++) {
-                const angle = random() * Math.PI * 2;
-                const radius = random() * 0.7;
-                const seedX = canvasWidth * 0.5 + Math.cos(angle) * canvasWidth * radius * 0.4;
-                const seedY = canvasHeight * 0.5 + Math.sin(angle) * canvasHeight * radius * 0.35;
+                // Enhanced spreading - multiple distribution strategies
+                let seedX, seedY;
+                
+                if (i % 3 === 0) {
+                  // Wide radial distribution from center
+                  const angle = random() * Math.PI * 2;
+                  const radius = 0.3 + random() * 0.6; // Wider radius range
+                  seedX = canvasWidth * 0.5 + Math.cos(angle) * canvasWidth * radius * 0.45;
+                  seedY = canvasHeight * 0.5 + Math.sin(angle) * canvasHeight * radius * 0.4;
+                } else if (i % 3 === 1) {
+                  // Grid-based distribution for better coverage
+                  const gridX = Math.floor(i / 3) % 4;
+                  const gridY = Math.floor(i / 12);
+                  seedX = canvasWidth * (0.15 + gridX * 0.23 + random() * 0.1);
+                  seedY = canvasHeight * (0.2 + gridY * 0.2 + random() * 0.1);
+                } else {
+                  // Edge-based seeding for perimeter coverage
+                  const edge = Math.floor(random() * 4);
+                  switch(edge) {
+                    case 0: // Top edge
+                      seedX = canvasWidth * (0.1 + random() * 0.8);
+                      seedY = canvasHeight * (0.1 + random() * 0.2);
+                      break;
+                    case 1: // Right edge  
+                      seedX = canvasWidth * (0.7 + random() * 0.2);
+                      seedY = canvasHeight * (0.2 + random() * 0.6);
+                      break;
+                    case 2: // Bottom edge
+                      seedX = canvasWidth * (0.1 + random() * 0.8);
+                      seedY = canvasHeight * (0.7 + random() * 0.2);
+                      break;
+                    case 3: // Left edge
+                      seedX = canvasWidth * (0.1 + random() * 0.2);
+                      seedY = canvasHeight * (0.2 + random() * 0.6);
+                      break;
+                  }
+                }
                 
                 if (insideMountain(seedX, seedY)) {
                   const crack = new Crack(seedX, seedY, random() * 360, "fill", "zen");
@@ -2957,6 +3208,7 @@
                   cracks.push(crack);
                 }
               }
+              } // End of multiple waves loop for Greg Grinder
             } else if (crackFormation === "crystalline") {
               // Special crystalline seed generation - create crystal nucleation points
               const baseSeeds = 4 + Math.floor(random() * 4); // More seeds for crystals
