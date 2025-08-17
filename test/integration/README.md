@@ -54,6 +54,36 @@ Comprehensive end-to-end integration tests for the Barely Human DeFi Casino syst
 - ✅ High-volume performance testing
 - ✅ Balance and vault integrity verification
 
+### 6. Cross-Chain Vault Integration Test
+**File**: `CrossChainVault.integration.test.ts`
+
+- ✅ Cross-chain vault balance synchronization
+- ✅ Multi-chain LP management
+- ✅ Bot token transfers between chains
+- ✅ Security mechanisms for cross-chain operations
+- ✅ Gas optimization for cross-chain calls
+- ✅ Fallback mechanisms for failed messages
+
+### 7. LayerZero V2 Messaging Test
+**File**: `LayerZeroMessaging.test.ts`
+
+- ✅ Message integrity and structure validation
+- ✅ Cross-chain message delivery mechanisms
+- ✅ Message ordering and nonce management
+- ✅ Peer validation and security
+- ✅ Message types and payload handling
+- ✅ Failure handling and retry mechanisms
+
+### 8. Multi-Chain Synchronization Test
+**File**: `MultiChainSync.test.ts`
+
+- ✅ Cross-chain state consistency
+- ✅ Consensus and conflict resolution
+- ✅ Bot performance synchronization
+- ✅ Fallback mechanisms for chain failures
+- ✅ Attack vector protection
+- ✅ Performance under load
+
 ## 🚀 Running the Tests
 
 ### Prerequisites
@@ -75,6 +105,17 @@ npx hardhat run test/integration/VRFIntegration.test.ts
 npx hardhat run test/integration/StakingRewards.integration.test.ts
 npx hardhat run test/integration/BotPersonality.integration.test.ts
 npx hardhat run test/integration/MultiGameSeries.integration.test.ts
+
+# Run cross-chain integration tests
+npx hardhat run test/integration/CrossChainVault.integration.test.ts
+npx hardhat run test/integration/LayerZeroMessaging.test.ts
+npx hardhat run test/integration/MultiChainSync.test.ts
+
+# Run all cross-chain tests with test runner
+npx hardhat run test/integration/run-integration-tests.ts
+
+# Run cross-chain tests on forked networks
+npx hardhat run test/integration/run-integration-tests.ts -- --forked
 ```
 
 ### Advanced Usage
@@ -179,7 +220,11 @@ test/integration/
 ├── VRFIntegration.test.ts             # Chainlink VRF testing
 ├── StakingRewards.integration.test.ts  # Tokenomics validation
 ├── BotPersonality.integration.test.ts  # AI bot behavior testing
-└── MultiGameSeries.integration.test.ts # Extended gameplay testing
+├── MultiGameSeries.integration.test.ts # Extended gameplay testing
+├── CrossChainVault.integration.test.ts # Cross-chain vault coordination
+├── LayerZeroMessaging.test.ts          # LayerZero V2 messaging
+├── MultiChainSync.test.ts              # Multi-chain synchronization
+└── run-integration-tests.ts            # Cross-chain test runner
 ```
 
 ## 🎮 Test Scenarios
@@ -282,3 +327,72 @@ Exit codes:
 **Ready for Production Deployment** ✅
 
 These comprehensive integration tests validate that the Barely Human DeFi Casino is ready for testnet deployment and eventual mainnet launch.
+
+## 🌐 Cross-Chain Integration (ETHGlobal NYC 2025)
+
+### LayerZero V2 Implementation
+The casino implements LayerZero V2 for seamless cross-chain operation:
+
+- **Hub-Spoke Architecture**: Base Sepolia as hub, Arbitrum Sepolia as spoke
+- **OApp Pattern**: Proper LayerZero V2 OApp inheritance and implementation
+- **Message Types**: 4 distinct message types for different cross-chain operations
+- **Security**: Nonce-based replay protection, peer validation, role-based authorization
+
+### Cross-Chain Features Tested
+
+#### Vault Coordination
+- Balance synchronization across multiple chains
+- Cross-chain liquidity management and rebalancing
+- Bot token transfers with security validation
+- Emergency recovery mechanisms
+
+#### Message Integrity
+- All 4 message types: Vault Sync, Game State, Settlement, Bot Transfer
+- Message ordering with nonce-based replay protection
+- Peer relationship validation
+- LayerZero V2 retry and fallback mechanisms
+
+#### Multi-Chain Consensus
+- 3-chain consensus mechanisms
+- Timestamp-based conflict resolution
+- Outlier detection and rejection
+- Attack vector protection
+
+### Running Cross-Chain Tests
+
+```bash
+# Quick cross-chain test suite
+npm run test:integration-suite
+
+# Individual cross-chain tests
+npm run test:cross-chain-vault
+npm run test:layerzero-messaging
+npm run test:multi-chain-sync
+
+# Test on forked networks (requires RPC URLs)
+npm run test:integration-forked
+```
+
+### ETHGlobal Prize Qualification
+
+✅ **LayerZero V2 Requirements Met**:
+- Uses LayerZero V2 packages (`@layerzerolabs/lz-evm-oapp-v2`)
+- Proper OApp inheritance and implementation
+- Cross-chain messaging with security best practices
+- Multi-testnet deployment (Base Sepolia ↔ Arbitrum Sepolia)
+- Comprehensive testing suite
+
+✅ **Cross-Chain Features**:
+- Unified liquidity across chains
+- Cross-chain state synchronization
+- Multi-chain bot coordination
+- Hub-spoke architecture
+- Gas-optimized messaging
+
+### Cross-Chain Security
+
+- **Access Control**: Owner-only configuration, role-based messaging
+- **Replay Protection**: Incrementing nonce system, timestamp validation
+- **Peer Validation**: Trusted peer relationships only
+- **Emergency Controls**: Circuit breakers, emergency withdrawal
+- **Attack Prevention**: DoS protection, front-running resistance

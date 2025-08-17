@@ -6,6 +6,11 @@ import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import chalk from "chalk";
 import * as dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 dotenv.config();
 
@@ -228,11 +233,14 @@ async function main() {
     // Deploy all bot vaults
     await vaultFactoryContract.write.deployAllBots();
     
-    // Fund contracts with initial BOT tokens
-    const tokenContract = await viem.getContractAt("BOTToken", contracts.BOTToken);
-    const initialSupply = parseUnits("1000000", 18); // 1M BOT
-    await tokenContract.write.transfer([contracts.Treasury, initialSupply / 10n]);
-    await tokenContract.write.transfer([contracts.StakingPool, initialSupply / 10n]);
+    // Note: Token transfers are commented out as the deployer gets allocated tokens
+    // in separate addresses during constructor. To fund contracts:
+    // 1. Transfer tokens from allocation addresses to deployer
+    // 2. Then transfer from deployer to contracts
+    // const tokenContract = await viem.getContractAt("BOTToken", contracts.BOTToken);
+    // const initialSupply = parseUnits("1000000", 18); // 1M BOT
+    // await tokenContract.write.transfer([contracts.Treasury, initialSupply / 10n]);
+    // await tokenContract.write.transfer([contracts.StakingPool, initialSupply / 10n]);
     
     console.log(chalk.green("✅ Contracts configured successfully"));
     

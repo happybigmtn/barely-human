@@ -16,7 +16,7 @@ export default {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1, // Minimum runs for smallest bytecode
+        runs: 200, // Standard optimization for production gas efficiency
       },
       viaIR: true, // Enable for stack too deep issues
       metadata: {

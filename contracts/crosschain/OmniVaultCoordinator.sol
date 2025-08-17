@@ -435,7 +435,9 @@ contract OmniVaultCoordinator is OApp, ReentrancyGuard {
      * @notice Withdraw native tokens for gas fees
      */
     function withdrawGas() external onlyOwner {
-        payable(owner()).transfer(address(this).balance);
+        uint256 balance = address(this).balance;
+        (bool success, ) = payable(owner()).call{value: balance}("");
+        require(success, "ETH transfer failed");
     }
 
     /**

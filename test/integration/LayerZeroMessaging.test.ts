@@ -35,11 +35,11 @@ const OAPP_ABI = parseAbi([
   "function peers(uint32 _eid) external view returns (bytes32)",
   "function setVault(address _vault) external",
   "function setGameCoordinator(address _gameCoordinator) external",
-  "function quote(uint32 _dstEid, bytes _message, bytes _options, bool _payInLzToken) external view returns ((uint256 nativeFee, uint256 lzTokenFee))",
-  "function syncVaultBalance(uint32 _dstEid, uint256 _amount, bytes _options) external payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee))",
-  "function syncGameState(uint32 _dstEid, uint256 _gameId, bytes32 _state, bytes _options) external payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee))",
-  "function syncSettlement(uint32 _dstEid, uint256 _gameId, address[] _winners, uint256[] _amounts, bytes _options) external payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee))",
-  "function transferBotTokens(uint32 _dstEid, address _bot, uint256 _amount, bytes _options) external payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee))",
+  "function quote(uint32 _dstEid, bytes _message, bytes _options, bool _payInLzToken) external view returns ((uint256,uint256))",
+  "function syncVaultBalance(uint32 _dstEid, uint256 _amount, bytes _options) external payable returns ((bytes32,uint64,(uint256,uint256)))",
+  "function syncGameState(uint32 _dstEid, uint256 _gameId, bytes32 _state, bytes _options) external payable returns ((bytes32,uint64,(uint256,uint256)))",
+  "function syncSettlement(uint32 _dstEid, uint256 _gameId, address[] _winners, uint256[] _amounts, bytes _options) external payable returns ((bytes32,uint64,(uint256,uint256)))",
+  "function transferBotTokens(uint32 _dstEid, address _bot, uint256 _amount, bytes _options) external payable returns ((bytes32,uint64,(uint256,uint256)))",
   "function crossChainBalances(uint32) external view returns (uint256)",
   "function gameStates(uint256, uint32) external view returns (bytes32)",
   "function botPerformance(address, uint32) external view returns (uint256)",
@@ -50,8 +50,8 @@ const OAPP_ABI = parseAbi([
 ]);
 
 const MOCK_ENDPOINT_ABI = parseAbi([
-  "function lzReceive(tuple(uint32 srcEid, bytes32 sender, uint64 nonce) _origin, bytes32 _guid, bytes _message, address _executor, bytes _extraData) external",
-  "function simulateReceive(address _oapp, tuple(uint32 srcEid, bytes32 sender, uint64 nonce) _origin, bytes32 _guid, bytes _message) external",
+  "function lzReceive((uint32,bytes32,uint64) _origin, bytes32 _guid, bytes _message, address _executor, bytes _extraData) external",
+  "function simulateReceive(address _oapp, (uint32,bytes32,uint64) _origin, bytes32 _guid, bytes _message) external",
   "function nextGuid() external view returns (bytes32)",
   "function nextNonce() external view returns (uint64)"
 ]);
@@ -722,7 +722,7 @@ async function testGasEstimationAndOptimization(viem: any, deployer: any, contra
 }
 
 // Run tests
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 

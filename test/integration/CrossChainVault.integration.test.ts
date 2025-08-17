@@ -34,11 +34,11 @@ const VAULT_ABI = parseAbi([
 ]);
 
 const COORDINATOR_ABI = parseAbi([
-  "function syncVaultBalance(uint32 _dstEid, uint256 _amount, bytes _options) external payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee))",
-  "function transferBotTokens(uint32 _dstEid, address _bot, uint256 _amount, bytes _options) external payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee))",
+  "function syncVaultBalance(uint32 _dstEid, uint256 _amount, bytes _options) external payable returns ((bytes32,uint64,(uint256,uint256)))",
+  "function transferBotTokens(uint32 _dstEid, address _bot, uint256 _amount, bytes _options) external payable returns ((bytes32,uint64,(uint256,uint256)))",
   "function setVault(address _vault) external",
   "function setPeer(uint32 _eid, bytes32 _peer) external",
-  "function quote(uint32 _dstEid, bytes _message, bytes _options, bool _payInLzToken) external view returns ((uint256 nativeFee, uint256 lzTokenFee))",
+  "function quote(uint32 _dstEid, bytes _message, bytes _options, bool _payInLzToken) external view returns ((uint256,uint256))",
   "function getTotalCrossChainBalance() external view returns (uint256)",
   "function crossChainBalances(uint32) external view returns (uint256)",
   "function nonce() external view returns (uint256)",
@@ -56,8 +56,8 @@ const BOT_TOKEN_ABI = parseAbi([
 ]);
 
 const MOCK_ENDPOINT_ABI = parseAbi([
-  "function lzReceive(tuple(uint32 srcEid, bytes32 sender, uint64 nonce) _origin, bytes32 _guid, bytes _message, address _executor, bytes _extraData) external",
-  "function simulateReceive(address _oapp, tuple(uint32 srcEid, bytes32 sender, uint64 nonce) _origin, bytes32 _guid, bytes _message) external"
+  "function lzReceive((uint32,bytes32,uint64) _origin, bytes32 _guid, bytes _message, address _executor, bytes _extraData) external",
+  "function simulateReceive(address _oapp, (uint32,bytes32,uint64) _origin, bytes32 _guid, bytes _message) external"
 ]);
 
 console.log("🏦 Starting Cross-Chain Vault Integration Tests");
@@ -629,7 +629,7 @@ async function testGasOptimization(viem: any, deployer: any, contracts: any) {
 }
 
 // Run tests
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 

@@ -30,10 +30,10 @@ const CONSENSUS_THRESHOLD = 2; // Minimum chains for consensus
 const MAX_STATE_DRIFT = parseEther("100"); // Maximum acceptable balance drift
 
 const COORDINATOR_ABI = parseAbi([
-  "function syncVaultBalance(uint32 _dstEid, uint256 _amount, bytes _options) external payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee))",
-  "function syncGameState(uint32 _dstEid, uint256 _gameId, bytes32 _state, bytes _options) external payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee))",
-  "function syncSettlement(uint32 _dstEid, uint256 _gameId, address[] _winners, uint256[] _amounts, bytes _options) external payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee))",
-  "function transferBotTokens(uint32 _dstEid, address _bot, uint256 _amount, bytes _options) external payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee))",
+  "function syncVaultBalance(uint32 _dstEid, uint256 _amount, bytes _options) external payable returns ((bytes32,uint64,(uint256,uint256)))",
+  "function syncGameState(uint32 _dstEid, uint256 _gameId, bytes32 _state, bytes _options) external payable returns ((bytes32,uint64,(uint256,uint256)))",
+  "function syncSettlement(uint32 _dstEid, uint256 _gameId, address[] _winners, uint256[] _amounts, bytes _options) external payable returns ((bytes32,uint64,(uint256,uint256)))",
+  "function transferBotTokens(uint32 _dstEid, address _bot, uint256 _amount, bytes _options) external payable returns ((bytes32,uint64,(uint256,uint256)))",
   "function setPeer(uint32 _eid, bytes32 _peer) external",
   "function setVault(address _vault) external",
   "function setGameCoordinator(address _gameCoordinator) external",
@@ -42,7 +42,7 @@ const COORDINATOR_ABI = parseAbi([
   "function gameStates(uint256, uint32) external view returns (bytes32)",
   "function botPerformance(address, uint32) external view returns (uint256)",
   "function nonce() external view returns (uint256)",
-  "function quote(uint32 _dstEid, bytes _message, bytes _options, bool _payInLzToken) external view returns ((uint256 nativeFee, uint256 lzTokenFee))",
+  "function quote(uint32 _dstEid, bytes _message, bytes _options, bool _payInLzToken) external view returns ((uint256,uint256))",
   "function emergencyWithdraw(address _token, address _to, uint256 _amount) external"
 ]);
 
@@ -61,8 +61,8 @@ const VAULT_ABI = parseAbi([
 ]);
 
 const MOCK_ENDPOINT_ABI = parseAbi([
-  "function simulateReceive(address _oapp, tuple(uint32 srcEid, bytes32 sender, uint64 nonce) _origin, bytes32 _guid, bytes _message) external",
-  "function lzReceive(tuple(uint32 srcEid, bytes32 sender, uint64 nonce) _origin, bytes32 _guid, bytes _message, address _executor, bytes _extraData) external"
+  "function simulateReceive(address _oapp, (uint32,bytes32,uint64) _origin, bytes32 _guid, bytes _message) external",
+  "function lzReceive((uint32,bytes32,uint64) _origin, bytes32 _guid, bytes _message, address _executor, bytes _extraData) external"
 ]);
 
 console.log("🌐 Starting Multi-Chain Synchronization Tests");
@@ -860,7 +860,7 @@ async function testPerformanceUnderLoad(viem: any, deployer: any, gameCoordinato
 }
 
 // Run tests
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 

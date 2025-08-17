@@ -1,0 +1,77 @@
+{
+  "timestamp": "2025-08-17T03:54:07.550Z",
+  "network": "base-sepolia",
+  "deployment": "2025-08-17T03:52:29.005Z",
+  "summary": {
+    "total": 13,
+    "passed": 7,
+    "failed": 6
+  },
+  "results": [
+    {
+      "test": "Token Name",
+      "status": "PASS",
+      "result": "Barely Human"
+    },
+    {
+      "test": "Token Symbol",
+      "status": "PASS",
+      "result": "BOT"
+    },
+    {
+      "test": "Token Decimals",
+      "status": "PASS",
+      "result": "18"
+    },
+    {
+      "test": "Total Supply",
+      "status": "PASS",
+      "result": "1000000000 BOT"
+    },
+    {
+      "test": "Deployer Balance",
+      "status": "PASS",
+      "result": "1000000000 BOT"
+    },
+    {
+      "test": "Staking Percent",
+      "status": "FAIL",
+      "error": "The contract function \"stakingPercent\" reverted.\n\nContract Call:\n  address:   0x38fc99132ef07bfb2627fd866f42b8d92df92b77\n  function:  stakingPercent()\n\nDocs: https://viem.sh/docs/contract/readContract\nVersion: viem@2.33.3"
+    },
+    {
+      "test": "Buyback Percent",
+      "status": "FAIL",
+      "error": "The contract function \"buybackPercent\" reverted.\n\nContract Call:\n  address:   0x38fc99132ef07bfb2627fd866f42b8d92df92b77\n  function:  buybackPercent()\n\nDocs: https://viem.sh/docs/contract/readContract\nVersion: viem@2.33.3"
+    },
+    {
+      "test": "Dev Percent",
+      "status": "FAIL",
+      "error": "The contract function \"devPercent\" reverted.\n\nContract Call:\n  address:   0x38fc99132ef07bfb2627fd866f42b8d92df92b77\n  function:  devPercent()\n\nDocs: https://viem.sh/docs/contract/readContract\nVersion: viem@2.33.3"
+    },
+    {
+      "test": "Insurance Percent",
+      "status": "FAIL",
+      "error": "The contract function \"insurancePercent\" reverted.\n\nContract Call:\n  address:   0x38fc99132ef07bfb2627fd866f42b8d92df92b77\n  function:  insurancePercent()\n\nDocs: https://viem.sh/docs/contract/readContract\nVersion: viem@2.33.3"
+    },
+    {
+      "test": "Total Staked",
+      "status": "FAIL",
+      "error": "The contract function \"totalSupply\" reverted.\n\nContract Call:\n  address:   0x64dacbf412b382f60e0857197c4a692850c2fc66\n  function:  totalSupply()\n\nDocs: https://viem.sh/docs/contract/readContract\nVersion: viem@2.33.3"
+    },
+    {
+      "test": "Current Series ID",
+      "status": "PASS",
+      "result": "0"
+    },
+    {
+      "test": "Game Phase",
+      "status": "FAIL",
+      "error": "The contract function \"gamePhase\" reverted.\n\nContract Call:\n  address:   0xa1abc0a9b7ae306a0f28552968591caa5eb946b6\n  function:  gamePhase()\n\nDocs: https://viem.sh/docs/contract/readContract\nVersion: viem@2.33.3"
+    },
+    {
+      "test": "Next Bot ID",
+      "status": "PASS",
+      "result": "10"
+    }
+  ]
+}
