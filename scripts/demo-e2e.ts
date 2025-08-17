@@ -99,7 +99,8 @@ async function runDemo() {
     ]);
     await crapsSettlement.write.setContracts([
       crapsGame.address,
-      crapsBets.address
+      crapsBets.address,
+      treasury.address  // Using treasury as vault for now
     ]);
     console.log("✅ Contracts configured");
     
