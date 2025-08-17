@@ -69,13 +69,13 @@ async function main() {
         ]);
         console.log("   ✅ BotManagerV2Plus deployed at:", botManager.address);
         
-        // 7. Deploy CrapsVault Factory (using minimal variant first)
-        console.log("\n7. Deploying VaultFactoryMinimal...");
-        const vaultFactory = await viem.deployContract("VaultFactoryMinimal", [
+        // 7. Deploy BettingVault (no factory needed!)
+        console.log("\n7. Deploying BettingVault...");
+        const bettingVault = await viem.deployContract("BettingVault", [
             botToken.address,
             treasuryContract.address
         ]);
-        console.log("   ✅ VaultFactoryMinimal deployed at:", vaultFactory.address);
+        console.log("   ✅ BettingVault deployed at:", bettingVault.address);
         
         // Test basic functionality
         console.log("\n📊 Testing basic functionality...");
@@ -99,7 +99,7 @@ async function main() {
                 StakingPool: stakingPool.address,
                 CrapsGameV2Plus: crapsGame.address,
                 BotManagerV2Plus: botManager.address,
-                VaultFactoryMinimal: vaultFactory.address
+                BettingVault: bettingVault.address
             },
             deployer: deployer.account.address,
             accounts: {

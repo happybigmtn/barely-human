@@ -25,13 +25,13 @@ describe("House Edge Rebate System", () => {
         const wallets = await viem.getWalletClients();
         [deployer, lp1, lp2] = wallets;
         
-        // Deploy BOTTokenV2
-        botToken = await viem.deployContract("BOTTokenV2", [
-            deployer.account.address, // liquidity manager
-            deployer.account.address, // airdrop distributor  
-            deployer.account.address, // community faucet
-            deployer.account.address, // artist wallet
-            deployer.account.address  // artist giveaway wallet
+        // Deploy BOTToken
+        botToken = await viem.deployContract("BOTToken", [
+            deployer.account.address, // treasury
+            deployer.account.address, // liquidity
+            deployer.account.address, // staking
+            deployer.account.address, // team
+            deployer.account.address  // community
         ]);
         
         // Deploy HouseEdgeRebate
@@ -42,10 +42,11 @@ describe("House Edge Rebate System", () => {
         // Deploy VolumeTracker
         volumeTracker = await viem.deployContract("VolumeTracker", []);
         
-        // Deploy TreasuryV2
-        treasuryV2 = await viem.deployContract("TreasuryV2", [
+        // Deploy Treasury
+        treasuryV2 = await viem.deployContract("Treasury", [
             botToken.address,
-            deployer.account.address // staking pool
+            deployer.account.address, // dev wallet
+            deployer.account.address  // insurance wallet
         ]);
         
         // Deploy TokenDistributor

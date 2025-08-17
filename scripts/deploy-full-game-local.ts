@@ -80,19 +80,19 @@ async function main() {
         ]);
         console.log("   ✅ BotManagerV2Plus deployed at:", botManager.address);
         
-        // 9. Deploy VaultFactoryMinimal  
-        console.log("\n9. Deploying VaultFactoryMinimal...");
-        const vaultFactory = await viem.deployContract("VaultFactoryMinimal", [
+        // 9. Deploy BettingVault (no factory needed!)  
+        console.log("\n9. Deploying BettingVault...");
+        const bettingVault = await viem.deployContract("BettingVault", [
             botToken.address,
             treasuryContract.address
         ]);
-        console.log("   ✅ VaultFactoryMinimal deployed at:", vaultFactory.address);
+        console.log("   ✅ BettingVault deployed at:", bettingVault.address);
         
         // 10. Set up contract permissions and relationships
         console.log("\n10. Setting up contract permissions...");
         
         // Set contracts on CrapsBets
-        await crapsBets.write.setContracts([crapsGame.address, vaultFactory.address, crapsSettlement.address]);
+        await crapsBets.write.setContracts([crapsGame.address, bettingVault.address, crapsSettlement.address]);
         console.log("   ✅ Set contracts on CrapsBets");
         
         // Set contracts on CrapsSettlement  
@@ -139,7 +139,7 @@ async function main() {
                 CrapsBets: crapsBets.address,
                 CrapsSettlement: crapsSettlement.address,
                 BotManagerV2Plus: botManager.address,
-                VaultFactoryMinimal: vaultFactory.address
+                BettingVault: bettingVault.address
             },
             deployer: deployer.account.address,
             accounts: {

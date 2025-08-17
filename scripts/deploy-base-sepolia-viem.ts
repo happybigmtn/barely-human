@@ -107,9 +107,9 @@ async function main() {
     console.log(chalk.green(`✅ StakingPool deployed at: ${contracts.StakingPool}`));
     deploymentLog.push({ name: "StakingPool", address: contracts.StakingPool });
     
-    // ==================== 5. Deploy VaultFactory ====================
-    console.log(chalk.yellow("Deploying VaultFactory..."));
-    const vaultFactory = await viem.deployContract("VaultFactoryMinimal", [
+    // ==================== 5. Deploy BettingVault ====================
+    console.log(chalk.yellow("Deploying BettingVault..."));
+    const bettingVault = await viem.deployContract("BettingVault", [
       contracts.BOTToken,
       contracts.Treasury
     ]);
@@ -221,9 +221,9 @@ async function main() {
     await treasuryContract.write.grantRole([DISTRIBUTOR_ROLE, contracts.StakingPool]);
     
     // Set game contract in VaultFactory
-    const vaultFactoryContract = await viem.getContractAt("VaultFactoryMinimal", contracts.VaultFactory);
-    await vaultFactoryContract.write.setGameContract([contracts.CrapsGameV2Plus]);
-    await vaultFactoryContract.write.setBotManager([contracts.BotManager]);
+    const bettingVaultContract = await viem.getContractAt("BettingVault", contracts.BettingVault);
+    await bettingVaultContract.write.grantBetsRole([contracts.CrapsBets]);
+    await bettingVaultContract.write.grantGameRole([contracts.CrapsGameV2Plus]);
     
     // Note: CrapsGameV2Plus doesn't have setBetsContract/setSettlementContract functions
     // These contracts work independently
