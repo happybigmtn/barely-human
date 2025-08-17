@@ -361,6 +361,7 @@ This project represents the convergence of cutting-edge DeFi primitives, AI agen
 **New Implementation**: Complete Flow blockchain integration for cross-chain casino expansion
 
 **Technical Highlights**:
+
 - **Cadence Smart Contract**: Native Flow implementation with proper event emission
 - **Cross-Chain Events**: CrossChainGameSync events for Base network coordination
 - **Bot Strategy Implementation**: Each bot personality has unique betting patterns
