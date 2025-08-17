@@ -6,6 +6,11 @@ import { parseEther, formatEther } from "viem";
 import * as fs from "fs";
 import * as path from "path";
 import * as dotenv from "dotenv";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Load environment variables
 dotenv.config();
@@ -138,10 +143,10 @@ async function main() {
     console.log(`✅ CrapsSettlement deployed at: ${crapsSettlement.address}\n`);
 
     // ============================================
-    // 9. Deploy BotManager
+    // 9. Deploy BotManagerOptimized
     // ============================================
-    console.log("📦 10/10 Deploying BotManager...");
-    const botManager = await viem.deployContract("BotManager", []);
+    console.log("📦 10/10 Deploying BotManagerOptimized...");
+    const botManager = await viem.deployContract("BotManagerOptimized", []);
     deployedContracts.BotManager = botManager.address;
     console.log(`✅ BotManager deployed at: ${botManager.address}\n`);
 
@@ -162,7 +167,8 @@ async function main() {
     // Set contracts in CrapsSettlement
     const setSettlementContractsHash = await crapsSettlement.write.setContracts([
       crapsGame.address,
-      crapsBets.address
+      crapsBets.address,
+      treasury.address  // Using treasury as vault for now
     ]);
     await publicClient.waitForTransactionReceipt({ hash: setSettlementContractsHash });
     console.log("✅ CrapsSettlement contracts configured");
