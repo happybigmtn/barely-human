@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Latest Deterministic Art Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #fff;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #111;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .controls input, .controls select, .controls button {
+            margin: 5px;
+            padding: 8px 12px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #222;
+            color: #fff;
+        }
+        .controls button {
+            background: #0066cc;
+            cursor: pointer;
+        }
+        .controls button:hover {
+            background: #0088ff;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            background: #222;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow: auto;
+        }
+        .artwork-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            text-align: center;
+        }
+        #artworkDisplay {
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            border: 2px solid #ddd;
+        }
+        .metadata {
+            text-align: left;
+            font-family: monospace;
+            font-size: 12px;
+            background: #f5f5f5;
+            color: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .status {
+            color: #0088ff;
+            font-weight: bold;
+        }
+        .error {
+            color: #ff4444;
+        }
+        .success {
+            color: #44ff44;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Test Latest Deterministic Art Generator</h1>
+    
+    <div class="test-section">
+        <h2>Generator Status</h2>
+        <div id="generatorStatus" class="status">Loading...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Art Generation Test</h2>
+        <div class="controls">
+            <label>
+                Bot Personality:
+                <select id="botSelect">
+                    <option value="0">Alice "All-In" (Aggressive Red)</option>
+                    <option value="1">Bob "Calculator" (Analytical Blue)</option>
+                    <option value="2">Charlie "Lucky" (Golden Lucky)</option>
+                    <option value="3">Diana "Ice Queen" (Cool Ice)</option>
+                    <option value="4">Eddie "Entertainer" (Vibrant Party)</option>
+                    <option value="5">Fiona "Fearless" (Bold Orange)</option>
+                    <option value="6">Greg "Grinder" (Earth Tones)</option>
+                    <option value="7">Helen "Hot Streak" (Fire Red)</option>
+                    <option value="8">Ivan "Intimidator" (Dark Purple)</option>
+                    <option value="9">Julia "Jinx" (Mystical Green)</option>
+                </select>
+            </label>
+            
+            <label>
+                VRF Seed:
+                <input type="text" id="seedInput" placeholder="Enter seed (e.g., 12345 or 0x1234...)" value="12345">
+            </label>
+            
+            <button onclick="generateArt()">Generate Art</button>
+            <button onclick="runDeterministicTest()">Test Deterministic Behavior</button>
+        </div>
+        
+        <div class="artwork-container">
+            <div id="artworkDisplay">Click "Generate Art" to create artwork</div>
+            <div id="metadataDisplay" class="metadata"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="testResults" class="result">
+            Tests will appear here...
+        </div>
+    </div>
+
+    <script>
+        let generator = null;
+        
+        // Check if generator is available
+        function checkGeneratorStatus() {
+            const statusDiv = document.getElementById('generatorStatus');
+            
+            try {
+                // Check if the generator functions exist
+                if (typeof window.BarelyHumanArt !== 'undefined' && window.BarelyHumanArt.BarelyHumanArtGenerator) {
+                    statusDiv.innerHTML = '<span class="success">✅ Latest Deterministic Generator Loaded Successfully</span>';
+                    statusDiv.innerHTML += '<br>Version: Latest deterministic-generator-browser.js';
+                    statusDiv.innerHTML += '<br>Available: BarelyHumanArtGenerator, ArtGeneratorUtils';
+                    statusDiv.innerHTML += '<br>Bot Personalities: ' + Object.keys(window.BarelyHumanArt.BOT_PERSONALITIES).length;
+                    return true;
+                } else {
+                    statusDiv.innerHTML = '<span class="error">❌ Deterministic Generator Not Found</span>';
+                    statusDiv.innerHTML += '<br>Please ensure deterministic-generator-browser.js is loaded.';
+                    statusDiv.innerHTML += '<br>Looking for: window.BarelyHumanArt.BarelyHumanArtGenerator';
+                    return false;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<span class="error">❌ Error loading generator: ' + error.message + '</span>';
+                return false;
+            }
+        }
+        
+        function generateArt() {
+            const resultDiv = document.getElementById('testResults');
+            const artworkDiv = document.getElementById('artworkDisplay');
+            const metadataDiv = document.getElementById('metadataDisplay');
+            
+            if (!window.BarelyHumanArt) {
+                resultDiv.innerHTML = '<span class="error">Generator not available</span>';
+                return;
+            }
+            
+            try {
+                const botId = parseInt(document.getElementById('botSelect').value);
+                const seed = document.getElementById('seedInput').value;
+                
+                resultDiv.innerHTML = `<span class="status">Generating art for Bot ${botId} with seed ${seed}...</span>`;
+                
+                // Convert seed to hex format if it's a number
+                let vrfSeed = seed;
+                if (!seed.startsWith('0x')) {
+                    vrfSeed = '0x' + parseInt(seed).toString(16).padStart(16, '0');
+                }
+                
+                // Generate the artwork using ArtGeneratorUtils
+                const result = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF(vrfSeed, botId, 1);
+                
+                if (result && result.svg) {
+                    // Display the SVG
+                    artworkDiv.innerHTML = result.svg;
+                    
+                    // Display metadata
+                    if (result.metadata || result.traits) {
+                        const bot = window.BarelyHumanArt.BOT_PERSONALITIES[botId];
+                        metadataDiv.innerHTML = `
+                            <strong>Generated Metadata:</strong><br>
+                            Bot: ${bot ? bot.name : 'Bot ' + botId}<br>
+                            Theme: ${bot ? bot.theme : 'Unknown'}<br>
+                            Formation: ${bot ? bot.crackFormation : 'Unknown'}<br>
+                            Traits: ${result.traits ? JSON.stringify(result.traits, null, 2) : 'N/A'}<br>
+                            VRF Seed: ${vrfSeed}
+                        `;
+                    }
+                    
+                    resultDiv.innerHTML = '<span class="success">✅ Art generated successfully!</span>';
+                } else {
+                    resultDiv.innerHTML = '<span class="error">❌ Failed to generate art - no result returned</span>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = '<span class="error">❌ Error generating art: ' + error.message + '</span>';
+                console.error('Art generation error:', error);
+            }
+        }
+        
+        function runDeterministicTest() {
+            const resultDiv = document.getElementById('testResults');
+            
+            if (!window.BarelyHumanArt) {
+                resultDiv.innerHTML = '<span class="error">Generator not available for testing</span>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<span class="status">Running deterministic test...</span>';
+            
+            try {
+                const testSeed = "0x000000000000002a"; // Hex version of 42
+                const testBot = 3; // Diana Ice Queen
+                
+                // Generate the same art twice
+                const result1 = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF(testSeed, testBot, 1);
+                const result2 = window.BarelyHumanArt.ArtGeneratorUtils.generateFromVRF(testSeed, testBot, 1);
+                
+                if (result1 && result2) {
+                    if (result1.svg === result2.svg) {
+                        resultDiv.innerHTML = '<span class="success">✅ Deterministic test PASSED - Same seed produces identical art</span>';
+                        resultDiv.innerHTML += '<br>SVG Length: ' + result1.svg.length + ' characters';
+                        resultDiv.innerHTML += '<br>Test Seed: ' + testSeed;
+                        resultDiv.innerHTML += '<br>Test Bot: ' + window.BarelyHumanArt.BOT_PERSONALITIES[testBot].name;
+                    } else {
+                        resultDiv.innerHTML = '<span class="error">❌ Deterministic test FAILED - Same seed produced different art</span>';
+                        resultDiv.innerHTML += '<br>Result 1 length: ' + result1.svg.length;
+                        resultDiv.innerHTML += '<br>Result 2 length: ' + result2.svg.length;
+                        console.log('Result 1 SVG:', result1.svg.slice(0, 200) + '...');
+                        console.log('Result 2 SVG:', result2.svg.slice(0, 200) + '...');
+                    }
+                } else {
+                    resultDiv.innerHTML = '<span class="error">❌ Deterministic test FAILED - Could not generate test art</span>';
+                    resultDiv.innerHTML += '<br>Result 1: ' + (result1 ? 'OK' : 'NULL');
+                    resultDiv.innerHTML += '<br>Result 2: ' + (result2 ? 'OK' : 'NULL');
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = '<span class="error">❌ Deterministic test ERROR: ' + error.message + '</span>';
+                console.error('Deterministic test error:', error);
+            }
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            setTimeout(checkGeneratorStatus, 100);
+        });
+    </script>
+    
+    <!-- Try to load the latest generator -->
+    <script src="current/deterministic-generator-browser.js"></script>
+</body>
+</html>
